@@ -1,0 +1,115 @@
+# TrademarkChain API Testing
+# Use with REST Client extension in VS Code or similar tools
+
+@baseUrl = http://localhost:3000/api
+@testAddress = 0x1234567890123456789012345678901234567890
+
+### Health Check
+GET {{baseUrl}}/health
+
+### Get All Trademarks
+GET {{baseUrl}}/trademarks
+
+### Get Trademarks with Filters
+GET {{baseUrl}}/trademarks?category=Technology&verified=true&limit=10
+
+### Get Single Trademark
+GET {{baseUrl}}/trademarks/token_1
+
+### Create Trademark
+POST {{baseUrl}}/trademarks
+Content-Type: application/json
+
+{
+  "tokenId": 1,
+  "trademarkName": "TestBrand",
+  "companyName": "Test Company Inc.",
+  "creatorAddress": "{{testAddress}}",
+  "registrationNumber": "TM001234",
+  "ipfsHash": "QmTestHash123",
+  "category": "Technology",
+  "description": "Test trademark for API testing",
+  "royaltyPercentage": 10,
+  "transactionHash": "0xtest123"
+}
+
+### Update Trademark
+PUT {{baseUrl}}/trademarks/token_1
+Content-Type: application/json
+
+{
+  "description": "Updated description",
+  "verified": true
+}
+
+### Verify Trademark
+POST {{baseUrl}}/trademarks/verify
+Content-Type: application/json
+
+{
+  "tokenId": 1,
+  "companyAddress": "{{testAddress}}"
+}
+
+### Verify by Registration Number
+POST {{baseUrl}}/trademarks/verify
+Content-Type: application/json
+
+{
+  "registrationNumber": "TM001234"
+}
+
+### Get User Profile
+GET {{baseUrl}}/users/{{testAddress}}
+
+### Create/Update User
+POST {{baseUrl}}/users/{{testAddress}}
+Content-Type: application/json
+
+{
+  "displayName": "John Doe",
+  "email": "john@example.com",
+  "companyName": "Test Company Inc."
+}
+
+### Search Trademarks
+GET {{baseUrl}}/search?q=tech&category=Technology&limit=20
+
+### Get Statistics
+GET {{baseUrl}}/stats
+
+### Get Categories
+GET {{baseUrl}}/categories
+
+### Blockchain Sync - Trademark Registered
+POST {{baseUrl}}/blockchain/sync
+Content-Type: application/json
+
+{
+  "type": "trademark_registered",
+  "data": {
+    "tokenId": 1,
+    "trademarkName": "TestBrand",
+    "companyName": "Test Company Inc.",
+    "creatorAddress": "{{testAddress}}",
+    "registrationNumber": "TM001234",
+    "ipfsHash": "QmTestHash123",
+    "category": "Technology",
+    "description": "Test trademark",
+    "royaltyPercentage": 10,
+    "transactionHash": "0xtest123"
+  }
+}
+
+### Admin - Verify Trademark
+POST {{baseUrl}}/admin/verify-trademark
+Content-Type: application/json
+
+{
+  "trademarkId": "token_1",
+  "verified": true,
+  "adminAddress": "{{testAddress}}"
+}
+
+### Delete Trademark (if needed)
+DELETE {{baseUrl}}/trademarks/token_1

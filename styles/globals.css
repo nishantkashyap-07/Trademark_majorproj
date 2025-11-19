@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-neutral-200;
+  }
+  
+  html {
+    @apply antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+  
+  body {
+    @apply bg-white text-neutral-900 font-sans;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-bold tracking-tight;
+  }
+}
+
+@layer components {
+  /* Button Styles */
+  .btn-primary {
+    @apply relative inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-white bg-gradient-brand rounded-xl shadow-medium hover:shadow-hard transition-all duration-300 hover:scale-105 active:scale-95;
+  }
+  
+  .btn-secondary {
+    @apply relative inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-neutral-900 bg-white border-2 border-neutral-200 rounded-xl hover:border-brand-500 hover:text-brand-600 transition-all duration-300 hover:shadow-soft;
+  }
+  
+  .btn-ghost {
+    @apply relative inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-neutral-700 hover:text-brand-600 hover:bg-neutral-50 rounded-xl transition-all duration-300;
+  }
+  
+  /* Card Styles */
+  .card {
+    @apply bg-white rounded-2xl border border-neutral-200 p-6 shadow-soft hover:shadow-medium transition-all duration-300;
+  }
+  
+  .card-hover {
+    @apply bg-white rounded-2xl border border-neutral-200 overflow-hidden hover:border-brand-500 hover:shadow-hard transition-all duration-300 cursor-pointer;
+  }
+  
+  /* Input Styles */
+  .input-field {
+    @apply block w-full px-4 py-3 text-base text-neutral-900 bg-white border border-neutral-300 rounded-xl placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all duration-200;
+  }
+  
+  .input-search {
+    @apply block w-full px-4 py-3 pl-12 text-base text-neutral-900 bg-neutral-50 border border-neutral-200 rounded-xl placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent focus:bg-white transition-all duration-200;
+  }
+  
+  /* Badge Styles */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full;
+  }
+  
+  .badge-success {
+    @apply bg-emerald-50 text-emerald-700 border border-emerald-200;
+  }
+  
+  .badge-warning {
+    @apply bg-amber-50 text-amber-700 border border-amber-200;
+  }
+  
+  .badge-info {
+    @apply bg-blue-50 text-blue-700 border border-blue-200;
+  }
+  
+  .trademark-badge {
+    @apply inline-flex items-center px-3 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full;
+  }
+  
+  /* Gradient Text */
+  .gradient-text {
+    @apply text-transparent bg-clip-text bg-gradient-brand;
+  }
+  
+  /* Glass Effect */
+  .glass {
+    @apply bg-white bg-opacity-80 backdrop-blur-xl border border-neutral-200;
+  }
+  
+  /* Mesh Gradient Background */
+  .mesh-bg {
+    @apply bg-mesh-gradient;
+  }
+  
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-neutral-100;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neutral-300 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-400;
+  }
+  
+  /* Selection */
+  ::selection {
+    @apply bg-brand-500 bg-opacity-20 text-brand-900;
+  }
+  
+  /* Focus Visible */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2;
+  }
+  
+  /* Smooth Animations */
+  .animate-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  /* Link Styles */
+  .link {
+    @apply text-brand-600 hover:text-brand-700 font-medium transition-colors duration-200 underline-offset-4 hover:underline;
+  }
+  
+  /* Section Spacing */
+  .section {
+    @apply py-16 md:py-24;
+  }
+  
+  .section-sm {
+    @apply py-12 md:py-16;
+  }
+  
+  /* Container */
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
