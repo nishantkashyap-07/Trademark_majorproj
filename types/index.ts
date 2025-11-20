@@ -14,20 +14,39 @@ export interface Listing {
   seller: string;
   price: string;
   isLicense: boolean;
+  duration?: number; // Duration in seconds for licenses
   active: boolean;
   createdAt: number;
+  expiresAt?: number; // Listing expiration timestamp
+}
+
+export interface License {
+  licenseId: number;
+  tokenId: number;
+  licensee: string;
+  licensor: string;
+  price: string;
+  duration: number; // 0 = perpetual
+  issuedAt: number;
+  expiresAt: number; // 0 = perpetual
+  active: boolean;
 }
 
 // Frontend Types
-export interface TrademarkFormData {
+export interface SloganFormData {
   companyName: string;
-  trademarkName: string;
+  sloganText: string;
   registrationNumber: string;
   category: string;
   description: string;
   royaltyPercentage: number;
+  language: string;
+  usageContext: string;
   files: File[];
 }
+
+// Keep backward compatibility
+export type TrademarkFormData = SloganFormData;
 
 export interface ProductData {
   id: string;
@@ -53,11 +72,11 @@ export interface UserProfile {
   verified: boolean;
 }
 
-export interface TrademarkMetadata {
+export interface SloganMetadata {
   tokenId: number;
   creatorAddress: string;
   companyName: string;
-  trademarkName: string;
+  sloganText: string;
   registrationNumber: string;
   category: string;
   description: string;
@@ -66,7 +85,12 @@ export interface TrademarkMetadata {
   createdAt: Date;
   transactionHash: string;
   verified: boolean;
+  language?: string;
+  usageContext?: string;
 }
+
+// Keep backward compatibility
+export type TrademarkMetadata = SloganMetadata;
 
 // Web3 Context Types
 export interface Web3ContextType {
@@ -107,4 +131,40 @@ export interface VerificationResult {
   trademark: TrademarkMetadata | null;
   owner: string | null;
   message: string;
+}
+
+// Report Types
+export interface Report {
+  id: string;
+  type: 'spam' | 'fraud' | 'copyright' | 'inappropriate' | 'other';
+  targetId: string;
+  targetType: 'trademark' | 'listing' | 'user';
+  reason: string;
+  description?: string;
+  reporterAddress: string;
+  status: 'pending' | 'resolved' | 'dismissed';
+  resolution?: string;
+  resolvedBy?: string;
+  resolvedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Suspension Types
+export interface UserSuspension {
+  address: string;
+  suspended: boolean;
+  suspendedAt?: Date;
+  suspendedBy?: string;
+  suspensionReason?: string;
+  unsuspendedAt?: Date;
+}
+
+export interface ListingSuspension {
+  listingId: string;
+  suspended: boolean;
+  suspendedAt?: Date;
+  suspendedBy?: string;
+  suspensionReason?: string;
+  unsuspendedAt?: Date;
 }

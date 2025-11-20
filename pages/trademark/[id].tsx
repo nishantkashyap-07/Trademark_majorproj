@@ -1,39 +1,84 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import TrademarkBadge from '@/components/TrademarkBadge';
-import { TrademarkMetadata } from '@/types';
+import LicenseModal from '@/components/LicenseModal';
+import PurchaseLicenseModal from '@/components/PurchaseLicenseModal';
+import LicenseCard from '@/components/LicenseCard';
+import { TrademarkMetadata, Listing, License } from '@/types';
+import { useWeb3 } from '@/contexts/Web3Context';
+import { getActiveListingsForToken, getLicensesForToken } from '@/utils/contracts';
+import { ethers } from 'ethers';
 
-// Mock trademark data
+// Mock slogan data
 const mockTrademark: TrademarkMetadata = {
   tokenId: 1,
   creatorAddress: '0x1234567890123456789012345678901234567890',
   companyName: 'TechCorp Inc.',
-  trademarkName: 'TechLogo',
-  registrationNumber: 'TM001234',
+  sloganText: 'Innovation Beyond Imagination',
+  registrationNumber: 'SL001234',
   category: 'Technology',
-  description: 'Innovative technology company logo and brand identity representing cutting-edge solutions in the digital space. This trademark encompasses our complete visual identity including logo, wordmark, and brand colors.',
+  description: 'Inspiring slogan for technology company representing cutting-edge solutions in the digital space. This slogan encompasses our brand promise and innovation-first approach.',
   ipfsHash: 'QmExample1',
   royaltyPercentage: 10,
   createdAt: new Date('2024-01-15'),
   transactionHash: '0xabc123def456789',
   verified: true,
+  language: 'English',
+  usageContext: 'Brand marketing and advertising campaigns',
 };
 
 export default function TrademarkDetail() {
   const router = useRouter();
   const { id } = router.query;
-  const [activeTab, setActiveTab] = useState<'details' | 'history' | 'verification'>('details');
+  const { account, isConnected } = useWeb3();
+  const [activeTab, setActiveTab] = useState<'details' | 'history' | 'verification' | 'licenses'>('details');
+  const [showLicenseModal, setShowLicenseModal] = useState(false);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [licenses, setLicenses] = useState<License[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const trademark = mockTrademark; // In real app, fetch based on id
+  const isOwner = account?.toLowerCase() === trademark.creatorAddress.toLowerCase();
+
+  useEffect(() => {
+    if (id) {
+      loadListingsAndLicenses();
+    }
+  }, [id]);
+
+  const loadListingsAndLicenses = async () => {
+    setIsLoading(true);
+    try {
+      // Load listings
+      const listingIds = await getActiveListingsForToken(trademark.tokenId);
+      // In production, fetch full listing details
+      console.log('Active listings:', listingIds);
+      
+      // Load licenses
+      const licenseData = await getLicensesForToken(trademark.tokenId);
+      setLicenses(licenseData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePurchaseLicense = (listing: Listing) => {
+    setSelectedListing(listing);
+    setShowPurchaseModal(true);
+  };
 
   return (
     <>
       <Head>
-        <title>{trademark.trademarkName} - TrademarkChain</title>
+        <title>{trademark.sloganText} - SloganChain</title>
         <meta name="description" content={trademark.description} />
       </Head>
 
@@ -47,7 +92,7 @@ export default function TrademarkDetail() {
             <span>/</span>
             <Link href="/marketplace" className="hover:text-blue-600">Marketplace</Link>
             <span>/</span>
-            <span className="text-gray-900">{trademark.trademarkName}</span>
+            <span className="text-gray-900">{trademark.sloganText}</span>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -57,26 +102,40 @@ export default function TrademarkDetail() {
                 <div className="aspect-square bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-12">
                   <div className="w-48 h-48 bg-white rounded-full flex items-center justify-center shadow-2xl">
                     <span className="text-8xl font-bold text-blue-600">
-                      {trademark.trademarkName.charAt(0)}
+                      {trademark.sloganText.charAt(0)}
                     </span>
                   </div>
                 </div>
               </div>
 
               {/* Quick Actions */}
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
-                  <span className="font-medium">Share</span>
-                </button>
-                <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                  </svg>
-                  <span className="font-medium">Save</span>
-                </button>
+              <div className="mt-6 space-y-3">
+                {isOwner && (
+                  <button 
+                    onClick={() => setShowLicenseModal(true)}
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-medium"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span>Create License Listing</span>
+                  </button>
+                )}
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                    <span className="font-medium">Share</span>
+                  </button>
+                  <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                    <span className="font-medium">Save</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -97,7 +156,7 @@ export default function TrademarkDetail() {
                       />
                     </div>
                     <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                      {trademark.trademarkName}
+                      {trademark.sloganText}
                     </h1>
                     <p className="text-lg text-gray-600">
                       by {trademark.companyName}
@@ -124,10 +183,10 @@ export default function TrademarkDetail() {
 
               {/* Tabs */}
               <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden mb-6">
-                <div className="flex border-b border-gray-200">
+                <div className="flex border-b border-gray-200 overflow-x-auto">
                   <button
                     onClick={() => setActiveTab('details')}
-                    className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                    className={`flex-1 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
                       activeTab === 'details'
                         ? 'text-blue-600 border-b-2 border-blue-600'
                         : 'text-gray-600 hover:text-gray-900'
@@ -136,8 +195,23 @@ export default function TrademarkDetail() {
                     Details
                   </button>
                   <button
+                    onClick={() => setActiveTab('licenses')}
+                    className={`flex-1 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
+                      activeTab === 'licenses'
+                        ? 'text-blue-600 border-b-2 border-blue-600'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Licenses
+                    {licenses.length > 0 && (
+                      <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full">
+                        {licenses.length}
+                      </span>
+                    )}
+                  </button>
+                  <button
                     onClick={() => setActiveTab('history')}
-                    className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                    className={`flex-1 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
                       activeTab === 'history'
                         ? 'text-blue-600 border-b-2 border-blue-600'
                         : 'text-gray-600 hover:text-gray-900'
@@ -147,7 +221,7 @@ export default function TrademarkDetail() {
                   </button>
                   <button
                     onClick={() => setActiveTab('verification')}
-                    className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                    className={`flex-1 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
                       activeTab === 'verification'
                         ? 'text-blue-600 border-b-2 border-blue-600'
                         : 'text-gray-600 hover:text-gray-900'
@@ -158,6 +232,99 @@ export default function TrademarkDetail() {
                 </div>
 
                 <div className="p-6">
+                  {/* Licenses Tab */}
+                  {activeTab === 'licenses' && (
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          License Information
+                        </h3>
+                        {isOwner && (
+                          <button
+                            onClick={() => setShowLicenseModal(true)}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                          >
+                            Create License
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Active Licenses */}
+                      {licenses.length > 0 ? (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 mb-3">
+                            Active Licenses ({licenses.filter(l => l.active).length})
+                          </h4>
+                          <div className="space-y-3">
+                            {licenses.filter(l => l.active).map((license) => (
+                              <LicenseCard 
+                                key={license.licenseId} 
+                                license={license}
+                                trademarkName={trademark.sloganText}
+                                showTrademark={false}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-12 bg-gray-50 rounded-xl">
+                          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <h3 className="mt-2 text-sm font-medium text-gray-900">No licenses yet</h3>
+                          <p className="mt-1 text-sm text-gray-500">
+                            {isOwner 
+                              ? 'Create a license listing to allow others to use your trademark.'
+                              : 'This trademark is not currently available for licensing.'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* License Benefits */}
+                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                        <h4 className="font-semibold text-gray-900 mb-3">Why License?</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex items-start space-x-3">
+                            <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            <div>
+                              <div className="font-medium text-gray-900">Retain Ownership</div>
+                              <div className="text-sm text-gray-600">Keep your NFT while earning</div>
+                            </div>
+                          </div>
+                          <div className="flex items-start space-x-3">
+                            <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            <div>
+                              <div className="font-medium text-gray-900">Recurring Revenue</div>
+                              <div className="text-sm text-gray-600">Multiple licenses possible</div>
+                            </div>
+                          </div>
+                          <div className="flex items-start space-x-3">
+                            <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            <div>
+                              <div className="font-medium text-gray-900">Blockchain Verified</div>
+                              <div className="text-sm text-gray-600">Immutable license records</div>
+                            </div>
+                          </div>
+                          <div className="flex items-start space-x-3">
+                            <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            <div>
+                              <div className="font-medium text-gray-900">Flexible Terms</div>
+                              <div className="text-sm text-gray-600">Set duration and pricing</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Details Tab */}
                   {activeTab === 'details' && (
                     <div className="space-y-6">
@@ -299,6 +466,28 @@ export default function TrademarkDetail() {
       </main>
 
       <Footer />
+
+      {/* Modals */}
+      <LicenseModal
+        isOpen={showLicenseModal}
+        onClose={() => setShowLicenseModal(false)}
+        tokenId={trademark.tokenId}
+        trademarkName={trademark.sloganText}
+        onSuccess={loadListingsAndLicenses}
+      />
+
+      {selectedListing && (
+        <PurchaseLicenseModal
+          isOpen={showPurchaseModal}
+          onClose={() => {
+            setShowPurchaseModal(false);
+            setSelectedListing(null);
+          }}
+          listing={selectedListing}
+          trademarkName={trademark.sloganText}
+          onSuccess={loadListingsAndLicenses}
+        />
+      )}
     </>
   );
 }

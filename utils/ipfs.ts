@@ -1,4 +1,3 @@
-import { Web3Storage } from 'web3.storage';
 import { IPFSMetadata } from '@/types';
 import { FILE_CONSTRAINTS, IPFS_CONFIG } from './constants';
 
@@ -8,6 +7,8 @@ const getWeb3StorageClient = () => {
   if (!token) {
     throw new Error('Web3.Storage token not configured');
   }
+  // Dynamic import to avoid build issues
+  const { Web3Storage } = require('web3.storage');
   return new Web3Storage({ token });
 };
 
@@ -75,7 +76,7 @@ export async function uploadMetadataToIPFS(metadata: IPFSMetadata): Promise<stri
 export function createTrademarkMetadata(
   trademarkData: {
     companyName: string;
-    trademarkName: string;
+    sloganText: string;
     registrationNumber: string;
     category: string;
     description: string;
@@ -84,7 +85,7 @@ export function createTrademarkMetadata(
   fileNames: string[]
 ): IPFSMetadata {
   return {
-    name: trademarkData.trademarkName,
+    name: trademarkData.sloganText,
     description: trademarkData.description,
     image: `ipfs://${assetsCID}/${fileNames[0]}`, // First file as main image
     attributes: [

@@ -2,10 +2,17 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { withApi, withMethods } from '@/lib/api-middleware';
+import { ethers } from 'ethers';
+import { CONTRACT_ADDRESSES } from '@/utils/constants';
+
+const TRADEMARK_NFT_ABI = [
+  "function verifyTrademark(uint256 tokenId) external",
+  "function getTrademarkInfo(uint256 tokenId) external view returns (tuple(uint256 tokenId, address creator, string companyName, string trademarkName, string registrationNumber, string ipfsHash, string category, uint96 royaltyBps, uint256 createdAt, bool verified))",
+];
 
 /**
  * Admin endpoint to verify trademarks
- * In production, this should have proper authentication
+ * Updates both database and blockchain verification status
  */
 async function handler(
   req: NextApiRequest,
@@ -19,19 +26,29 @@ async function handler(
   }
 
   try {
-    const { trademarkId, verified, adminAddress } = req.body;
+    const { trademarkId, tokenId, adminAddress } = req.body;
 
-    if (!trademarkId || verified === undefined) {
+    if (!trademarkId || tokenId === undefined) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: trademarkId and verified',
+        error: 'Missing required fields: trademarkId and tokenId',
       });
     }
 
-    // TODO: Add admin authentication check
-    // For now, we'll allow any request (NOT SECURE FOR PRODUCTION)
-    // In production, verify adminAddress has admin role
+    // Validate admin address
+    const ADMIN_ADDRESSES = [
+      process.env.NEXT_PUBLIC_ADMIN_ADDRESS?.toLowerCase(),
+      process.env.ADMIN_ADDRESS?.toLowerCase(),
+    ].filter(Boolean);
 
+    if (!adminAddress || !ADMIN_ADDRESSES.includes(adminAddress.toLowerCase())) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized: Admin privileges required',
+      });
+    }
+
+    // Get trademark from database
     const trademarkRef = doc(db, 'trademarks', trademarkId);
     const trademarkSnap = await getDoc(trademarkRef);
 
@@ -42,19 +59,56 @@ async function handler(
       });
     }
 
+    // Update blockchain verification status
+    let blockchainTxHash = null;
+    try {
+      // Connect to blockchain with admin wallet
+      const provider = new ethers.JsonRpcProvider(
+        process.env.NEXT_PUBLIC_RPC_URL || 'https://rpc-amoy.polygon.technology'
+      );
+      
+      // In production, use a secure key management system
+      const adminPrivateKey = process.env.ADMIN_PRIVATE_KEY;
+      if (adminPrivateKey) {
+        const adminSigner = new ethers.Wallet(adminPrivateKey, provider);
+        const trademarkNFT = new ethers.Contract(
+          CONTRACT_ADDRESSES.TRADEMARK_NFT,
+          TRADEMARK_NFT_ABI,
+          adminSigner
+        );
+
+        // Call blockchain verification
+        const tx = await trademarkNFT.verifyTrademark(tokenId);
+        const receipt = await tx.wait();
+        blockchainTxHash = receipt.hash;
+        
+        console.log('Blockchain verification successful:', blockchainTxHash);
+      } else {
+        console.warn('Admin private key not configured, skipping blockchain update');
+      }
+    } catch (blockchainError: any) {
+      console.error('Blockchain verification error:', blockchainError);
+      // Continue with database update even if blockchain fails
+      // In production, you might want to handle this differently
+    }
+
+    // Update database
     await updateDoc(trademarkRef, {
-      verified,
-      verifiedAt: verified ? Timestamp.now() : null,
-      verifiedBy: verified ? adminAddress : null,
+      verified: true,
+      verifiedAt: Timestamp.now(),
+      verifiedBy: adminAddress,
+      verificationTxHash: blockchainTxHash,
       updatedAt: Timestamp.now(),
     });
 
     return res.status(200).json({
       success: true,
-      message: `Trademark ${verified ? 'verified' : 'unverified'} successfully`,
+      message: 'Trademark verified successfully',
       data: {
         trademarkId,
-        verified,
+        tokenId,
+        verified: true,
+        blockchainTxHash,
       },
     });
   } catch (error: any) {

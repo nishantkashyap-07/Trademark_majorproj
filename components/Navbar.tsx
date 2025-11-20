@@ -13,15 +13,42 @@ export default function Navbar() {
     { name: 'Explore', href: '/marketplace' },
     { name: 'Verify', href: '/verify' },
     { name: 'Categories', href: '/categories' },
+    { name: 'Licenses', href: '/licenses' },
     { name: 'Create', href: '/register' },
   ];
+
+  const handleBack = () => {
+    router.back();
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/marketplace?search=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const showBackButton = router.pathname !== '/';
 
   return (
     <nav className="glass sticky top-0 z-50 border-b border-neutral-200">
       <div className="container-custom">
         <div className="flex justify-between items-center h-20">
-          {/* Logo */}
-          <div className="flex items-center space-x-10">
+          {/* Logo and Back Button */}
+          <div className="flex items-center space-x-4">
+            {/* Back Button */}
+            {showBackButton && (
+              <button
+                onClick={handleBack}
+                className="flex items-center justify-center w-10 h-10 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-all duration-200"
+                aria-label="Go back"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+
             <Link href="/" className="flex items-center space-x-3 group">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-brand rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
@@ -54,7 +81,7 @@ export default function Navbar() {
 
           {/* Search Bar */}
           <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
+            <form onSubmit={handleSearch} className="relative w-full">
               <input
                 type="text"
                 value={searchQuery}
@@ -62,10 +89,16 @@ export default function Navbar() {
                 placeholder="Search trademarks..."
                 className="input-search"
               />
-              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
+              <button
+                type="submit"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+                aria-label="Search"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </form>
           </div>
 
           {/* Right Side Actions */}

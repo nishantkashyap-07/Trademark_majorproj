@@ -25,7 +25,7 @@ async function handler(
       });
     }
 
-    let trademarkData = null;
+    let trademarkData: any = null;
 
     // Query by tokenId
     if (tokenId) {
@@ -83,9 +83,9 @@ async function handler(
       ownershipValid,
       message: trademarkData.verified
         ? ownershipValid
-          ? 'Trademark is verified and ownership is valid'
-          : 'Trademark is verified but ownership does not match'
-        : 'Trademark is registered but not yet verified',
+          ? 'Slogan is verified and ownership is valid'
+          : 'Slogan is verified but ownership does not match'
+        : 'Slogan is registered but not yet verified',
     };
 
     return res.status(200).json({

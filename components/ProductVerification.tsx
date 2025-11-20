@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { TrademarkMetadata } from '@/types';
 import TrademarkBadge from './TrademarkBadge';
-import { getTrademarkInfo, verifyTrademarkOwnership } from '@/utils/contracts';
 
 interface ProductVerificationProps {
   productName: string;
@@ -59,18 +58,20 @@ export default function ProductVerification({
           tokenId: trademarkId || 1,
           creatorAddress: '0x1234...5678',
           companyName: companyName,
-          trademarkName: productName,
-          registrationNumber: registrationNumber || 'TM001234',
+          sloganText: productName,
+          registrationNumber: registrationNumber || 'SL001234',
           category: 'Technology',
-          description: 'Verified blockchain trademark',
+          description: 'Verified blockchain slogan',
           ipfsHash: 'QmExample1',
           royaltyPercentage: 10,
           createdAt: new Date('2024-01-15'),
           transactionHash: '0xabc123',
           verified: true,
+          language: 'English',
+          usageContext: 'Product branding and marketing',
         },
         owner: '0x1234567890123456789012345678901234567890',
-        message: 'Trademark verified successfully on blockchain',
+        message: 'Slogan verified successfully on blockchain',
       };
       
       setVerificationResult(mockResult);

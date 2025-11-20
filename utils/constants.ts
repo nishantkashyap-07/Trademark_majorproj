@@ -32,8 +32,8 @@ export const CONTRACT_ADDRESSES = {
   MARKETPLACE: process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS || '',
 };
 
-// Trademark Categories
-export const TRADEMARK_CATEGORIES = [
+// Slogan Categories
+export const SLOGAN_CATEGORIES = [
   'Technology',
   'Fashion & Apparel',
   'Food & Beverage',
@@ -50,6 +50,9 @@ export const TRADEMARK_CATEGORIES = [
   'Manufacturing',
   'Other',
 ];
+
+// Keep backward compatibility
+export const TRADEMARK_CATEGORIES = SLOGAN_CATEGORIES;
 
 // File Upload Constraints
 export const FILE_CONSTRAINTS = {

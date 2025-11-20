@@ -19,6 +19,8 @@
 - 📦 **IPFS Storage** - Decentralized storage for trademark assets and metadata
 - ⚡ **Instant Verification** - Verify trademark authenticity using QR codes or registration numbers
 - 🏪 **NFT Marketplace** - Buy, sell, and license trademarks with automated royalty distribution
+- 📜 **License Management** - Create and purchase trademark licenses while retaining NFT ownership
+- 💰 **Flexible Licensing** - Time-limited or perpetual licenses with custom pricing
 - 📊 **Activity Monitoring** - Real-time marketplace activity tracking (listings, sales, verifications)
 - ✅ **Admin Verification** - Secure admin dashboard for trademark verification
 - 📱 **Product Authentication** - QR code-based product verification system
@@ -28,13 +30,18 @@
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Node.js 18+ installed
-- MetaMask or compatible Web3 wallet
-- Firebase project (for backend)
-- Alchemy account (for blockchain RPC)
+### Automated Setup (Recommended)
 
-### Installation
+```bash
+# For Linux/Mac
+chmod +x setup.sh
+./setup.sh
+
+# For Windows
+setup.bat
+```
+
+### Manual Setup
 
 ```bash
 # 1. Clone the repository
@@ -51,11 +58,16 @@ cp .env.example .env.local
 # 4. Compile smart contracts
 npm run compile
 
-# 5. Start development server
+# 5. Deploy contracts (after getting test MATIC)
+npm run deploy
+
+# 6. Start development server
 npm run dev
 ```
 
 Visit **http://localhost:3000** 🎉
+
+**📚 For detailed setup instructions, see [SETUP_GUIDE.md](./SETUP_GUIDE.md)**
 
 ---
 
@@ -145,15 +157,29 @@ trademark-verification-system/
 5. Store metadata in Firestore
 6. Await admin verification
 
-### 2. Trademark Verification
+### 2. License Management (NEW!)
+**For Owners:**
+1. Navigate to owned trademark
+2. Create license listing
+3. Set price and duration (1 month to perpetual)
+4. Earn revenue while keeping NFT
+
+**For Buyers:**
+1. Browse marketplace
+2. View available licenses
+3. Purchase usage rights
+4. Get blockchain-verified license
+
+### 3. Trademark Verification
 1. Enter token ID, registration number, or scan QR
 2. Query blockchain for ownership
 3. Retrieve metadata from IPFS
 4. Display verification results
 
-### 3. Marketplace Activity
-- **New Listings**: Trademarks listed for sale
+### 4. Marketplace Activity
+- **New Listings**: Trademarks listed for sale/license
 - **Sales**: Completed trademark purchases
+- **Licenses**: Active license agreements
 - **Verifications**: Newly verified trademarks
 
 ---
@@ -189,11 +215,12 @@ The platform includes comprehensive demo data:
 
 | Document | Description |
 |----------|-------------|
-| [PRESENTATION_GUIDE.md](./PRESENTATION_GUIDE.md) | Complete presentation guide |
-| [BACKEND_API.md](./BACKEND_API.md) | API documentation |
-| [UI_UX_IMPROVEMENTS.md](./UI_UX_IMPROVEMENTS.md) | UI/UX design docs |
-| [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) | Deployment instructions |
-| [QUICK_START.md](./QUICK_START.md) | Quick start guide |
+| [SETUP_GUIDE.md](./SETUP_GUIDE.md) | **Complete setup instructions** |
+| [QUICK_REFERENCE.md](./QUICK_REFERENCE.md) | **Quick reference card** |
+| [LICENSING_QUICK_START.md](./LICENSING_QUICK_START.md) | **Licensing user guide** |
+| [LICENSING_IMPLEMENTATION.md](./LICENSING_IMPLEMENTATION.md) | **Licensing technical details** |
+| [ADMIN_FEATURES_GUIDE.md](./ADMIN_FEATURES_GUIDE.md) | Admin features documentation |
+| [COMPLETE_PROJECT_STATUS.md](./COMPLETE_PROJECT_STATUS.md) | Project status overview |
 
 ---
 

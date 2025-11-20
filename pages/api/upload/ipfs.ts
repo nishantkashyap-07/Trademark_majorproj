@@ -1,7 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import formidable from 'formidable';
-import fs from 'fs';
-import { Web3Storage } from 'web3.storage';
 
 export const config = {
   api: {
@@ -14,6 +11,8 @@ function getWeb3StorageClient() {
   if (!token) {
     throw new Error('WEB3_STORAGE_TOKEN is not configured');
   }
+  // Dynamic import to avoid build issues
+  const { Web3Storage } = require('web3.storage');
   return new Web3Storage({ token });
 }
 
@@ -38,7 +37,11 @@ export default async function handler(
       });
     }
 
-    const form = formidable({
+    // Dynamic imports to avoid build issues
+    const formidable = require('formidable');
+    const fs = require('fs');
+    
+    const form = formidable.formidable({
       maxFileSize: 10 * 1024 * 1024, // 10MB
       keepExtensions: true,
     });
@@ -53,7 +56,7 @@ export default async function handler(
 
       try {
         const client = getWeb3StorageClient();
-        const uploadFiles: File[] = [];
+        const uploadFiles: any[] = [];
 
         // Process uploaded files
         const fileArray = Array.isArray(files.files) ? files.files : [files.files];
@@ -80,7 +83,7 @@ export default async function handler(
 
         // Upload to IPFS
         const cid = await client.put(uploadFiles, {
-          name: `trademark-${Date.now()}`,
+          name: `slogan-${Date.now()}`,
           maxRetries: 3,
         });
 
@@ -88,7 +91,7 @@ export default async function handler(
           success: true,
           data: {
             cid,
-            files: uploadFiles.map(f => f.name),
+            files: uploadFiles.map((f: any) => f.name),
             url: `https://ipfs.io/ipfs/${cid}`,
           },
         });

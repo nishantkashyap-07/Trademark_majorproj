@@ -1,26 +1,22 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
 import { useWeb3 } from '@/contexts/Web3Context';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import TrademarkBadge from '@/components/TrademarkBadge';
 import { apiClient } from '@/lib/api-client';
 
 export default function Dashboard() {
-  const router = useRouter();
   const { account, isConnected, connect } = useWeb3();
   
-  const [activeTab, setActiveTab] = useState('overview');
   const [userTrademarks, setUserTrademarks] = useState<any[]>([]);
-  const [marketplaceActivity, setMarketplaceActivity] = useState<any[]>([]);
+  const [featuredTrademarks, setFeaturedTrademarks] = useState<any[]>([]);
+  const [trendingTrademarks, setTrendingTrademarks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [stats, setStats] = useState({
     totalTrademarks: 0,
     verifiedTrademarks: 0,
-    totalValue: '0.00',
-    marketplaceListings: 0,
+    floorPrice: '0.03',
+    totalVolume: '5,555',
   });
 
   useEffect(() => {
@@ -34,9 +30,8 @@ export default function Dashboard() {
     
     setIsLoading(true);
     try {
-      const [userRes, statsRes] = await Promise.all([
+      const [userRes] = await Promise.all([
         apiClient.getUser(account),
-        apiClient.getStats(),
       ]);
 
       if (userRes.success && userRes.data) {
@@ -45,14 +40,15 @@ export default function Dashboard() {
         setStats({
           totalTrademarks: userData.stats?.totalTrademarks || 0,
           verifiedTrademarks: userData.stats?.verifiedTrademarks || 0,
-          totalValue: '0.00',
-          marketplaceListings: 0,
+          floorPrice: '0.03',
+          totalVolume: '5,555',
         });
       }
 
-      // Load marketplace activity from demo data
-      const { demoMarketplaceActivity } = await import('@/lib/demo-data');
-      setMarketplaceActivity(demoMarketplaceActivity);
+      // Load demo data
+      const { demoTrademarks } = await import('@/lib/demo-data');
+      setFeaturedTrademarks(demoTrademarks.slice(0, 1));
+      setTrendingTrademarks(demoTrademarks.slice(1, 7));
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
@@ -67,18 +63,18 @@ export default function Dashboard() {
           <title>Dashboard - TrademarkChain</title>
         </Head>
         
-        <div className="min-h-screen bg-white flex items-center justify-center">
-          <div className="max-w-md w-full bg-gray-50 rounded-2xl border border-gray-200 p-10 text-center">
-            <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="min-h-screen bg-[#202225] flex items-center justify-center">
+          <div className="max-w-md w-full bg-[#2f3136] rounded-2xl border border-[#3a3d42] p-10 text-center">
+            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-3">Connect Your Wallet</h1>
-            <p className="text-gray-600 mb-8">
+            <h1 className="text-2xl font-bold text-white mb-3">Connect Your Wallet</h1>
+            <p className="text-gray-400 mb-8">
               Access your dashboard and manage your trademarks
             </p>
-            <button onClick={connect} className="w-full px-6 py-3 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-800 transition-all">
+            <button onClick={connect} className="w-full px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all">
               Connect Wallet
             </button>
           </div>
@@ -87,379 +83,307 @@ export default function Dashboard() {
     );
   }
 
-  const tabs = [
-    { id: 'overview', name: 'Overview', icon: '📊' },
-    { id: 'trademarks', name: 'My Trademarks', icon: '🏷️' },
-    { id: 'marketplace', name: 'Marketplace Activity', icon: '📈' },
-  ];
-
   return (
     <>
       <Head>
         <title>Dashboard - TrademarkChain</title>
       </Head>
 
-      <div className="min-h-screen bg-white">
-        <Navbar />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {/* Header */}
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Dashboard</h1>
-            <p className="text-gray-600">
-              Manage your trademarks and monitor marketplace activity
-            </p>
-          </div>
-
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Sidebar */}
-            <div className="lg:w-64 flex-shrink-0">
-              <nav className="bg-gray-50 rounded-2xl border border-gray-200 p-2">
-                <div className="space-y-1">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all ${
-                        activeTab === tab.id
-                          ? 'bg-gray-900 text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      <span className="text-xl">{tab.icon}</span>
-                      <span className="font-medium">{tab.name}</span>
-                    </button>
-                  ))}
+      <div className="min-h-screen bg-[#202225]">
+        {/* Header */}
+        <header className="bg-[#2f3136] border-b border-[#3a3d42] sticky top-0 z-50">
+          <div className="max-w-[1920px] mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-8">
+                <Link href="/" className="text-2xl font-bold text-white">
+                  TrademarkChain
+                </Link>
+                
+                {/* Search Bar */}
+                <div className="hidden md:block">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search OpenSea"
+                      className="w-[400px] bg-[#202225] text-white placeholder-gray-500 px-4 py-2.5 pl-10 rounded-xl border border-[#3a3d42] focus:border-blue-500 focus:outline-none"
+                    />
+                    <svg className="absolute left-3 top-3 w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
                 </div>
-              </nav>
+              </div>
 
-              {/* Quick Actions */}
-              <div className="mt-6 bg-gray-50 rounded-2xl border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                <div className="space-y-3">
-                  <Link
-                    href="/register"
-                    className="block w-full px-4 py-2 bg-gray-900 text-white text-center rounded-xl font-medium hover:bg-gray-800 transition-all"
-                  >
-                    Register Trademark
-                  </Link>
-                  <Link
-                    href="/marketplace"
-                    className="block w-full px-4 py-2 bg-white text-gray-900 text-center rounded-xl font-medium border border-gray-200 hover:border-gray-900 transition-all"
-                  >
-                    Browse Marketplace
-                  </Link>
-                  <Link
-                    href="/verify"
-                    className="block w-full px-4 py-2 bg-white text-gray-900 text-center rounded-xl font-medium border border-gray-200 hover:border-gray-900 transition-all"
-                  >
-                    Verify Trademark
-                  </Link>
+              <div className="flex items-center gap-4">
+                <button className="text-gray-400 hover:text-white transition-colors">
+                  <span className="text-sm font-medium">Connect Wallet</span>
+                </button>
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">
+                    {account?.slice(2, 4).toUpperCase()}
+                  </span>
                 </div>
               </div>
             </div>
+          </div>
+        </header>
 
-            {/* Main Content */}
-            <div className="flex-1">
-              {/* Overview Tab */}
-              {activeTab === 'overview' && (
-                <div className="space-y-8">
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                          <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                          </svg>
-                        </div>
-                      </div>
-                      <p className="text-3xl font-bold text-gray-900 mb-1">{stats.totalTrademarks}</p>
-                      <p className="text-sm text-gray-600">Total Trademarks</p>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                      </div>
-                      <p className="text-3xl font-bold text-gray-900 mb-1">{stats.verifiedTrademarks}</p>
-                      <p className="text-sm text-gray-600">Verified</p>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                          <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                          </svg>
-                        </div>
-                      </div>
-                      <p className="text-3xl font-bold text-gray-900 mb-1">{stats.totalValue}</p>
-                      <p className="text-sm text-gray-600">Portfolio Value (MATIC)</p>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                          <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                          </svg>
-                        </div>
-                      </div>
-                      <p className="text-3xl font-bold text-gray-900 mb-1">{stats.marketplaceListings}</p>
-                      <p className="text-sm text-gray-600">Active Listings</p>
-                    </div>
-                  </div>
-
-                  {/* Recent Trademarks */}
-                  <div className="bg-gray-50 rounded-2xl border border-gray-200 p-8">
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-xl font-bold text-gray-900">Your Trademarks</h3>
-                      <button
-                        onClick={() => setActiveTab('trademarks')}
-                        className="text-gray-600 hover:text-gray-900 text-sm font-medium flex items-center gap-1"
-                      >
-                        View all
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    </div>
-                    
-                    {isLoading ? (
-                      <div className="text-center py-12">
-                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                      </div>
-                    ) : userTrademarks.length === 0 ? (
-                      <div className="text-center py-12">
-                        <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                          </svg>
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No trademarks yet</h3>
-                        <p className="text-gray-600 mb-6">
-                          Register your first trademark to get started
-                        </p>
-                        <Link
-                          href="/register"
-                          className="inline-block px-6 py-3 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-800 transition-all"
-                        >
-                          Register Trademark
-                        </Link>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {userTrademarks.slice(0, 5).map((trademark) => (
-                          <div
-                            key={trademark.id}
-                            className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-all"
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                                <span className="text-lg font-bold text-gray-700">
-                                  {trademark.trademarkName?.charAt(0) || '?'}
-                                </span>
-                              </div>
-                              <div>
-                                <p className="font-semibold text-gray-900">{trademark.trademarkName}</p>
-                                <p className="text-sm text-gray-600">{trademark.category}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              {trademark.verified && (
-                                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                                  Verified
-                                </span>
-                              )}
-                              <Link
-                                href={`/trademark/${trademark.id}`}
-                                className="text-gray-600 hover:text-gray-900"
-                              >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                              </Link>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* My Trademarks Tab */}
-              {activeTab === 'trademarks' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-gray-900">My Trademarks</h2>
-                    <Link
-                      href="/register"
-                      className="px-6 py-3 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-800 transition-all"
-                    >
-                      Register New
-                    </Link>
-                  </div>
-
-                  {isLoading ? (
-                    <div className="text-center py-20">
-                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-                      <p className="mt-4 text-gray-600">Loading trademarks...</p>
-                    </div>
-                  ) : userTrademarks.length === 0 ? (
-                    <div className="text-center py-20 bg-gray-50 rounded-2xl border border-gray-200">
-                      <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                        </svg>
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-3">No trademarks registered</h3>
-                      <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                        Start protecting your brand by registering your first trademark on the blockchain
-                      </p>
-                      <Link
-                        href="/register"
-                        className="inline-block px-8 py-4 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-800 transition-all"
-                      >
-                        Register Your First Trademark
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {userTrademarks.map((trademark) => (
-                        <div
-                          key={trademark.id}
-                          className="bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden hover:border-gray-300 transition-all"
-                        >
-                          <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-8">
-                            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg">
-                              <span className="text-4xl font-bold text-gray-700">
-                                {trademark.trademarkName?.charAt(0) || '?'}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="p-6">
-                            <div className="flex items-start justify-between mb-3">
-                              <h3 className="text-lg font-bold text-gray-900">
-                                {trademark.trademarkName}
-                              </h3>
-                              {trademark.verified && (
-                                <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                                  ✓ Verified
-                                </span>
-                              )}
-                            </div>
-
-                            <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                              {trademark.description || 'No description'}
-                            </p>
-
-                            <div className="space-y-2 text-xs text-gray-500 mb-4">
-                              <div className="flex justify-between">
-                                <span>Token ID</span>
-                                <span className="font-mono">#{trademark.tokenId}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span>Category</span>
-                                <span>{trademark.category}</span>
-                              </div>
-                            </div>
-
-                            <Link
-                              href={`/trademark/${trademark.id}`}
-                              className="block w-full px-4 py-2 bg-gray-900 text-white text-center rounded-xl font-medium hover:bg-gray-800 transition-all"
-                            >
-                              View Details
-                            </Link>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Marketplace Activity Tab */}
-              {activeTab === 'marketplace' && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Marketplace Activity</h2>
-                    <p className="text-gray-600">Recent listings, sales, and verifications</p>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-2xl border border-gray-200 p-8">
-                    {marketplaceActivity.length === 0 ? (
-                      <div className="text-center py-12">
-                        <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                          </svg>
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No activity yet</h3>
-                        <p className="text-gray-600">
-                          Marketplace activities will appear here
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {marketplaceActivity.map((activity) => (
-                          <div
-                            key={activity.id}
-                            className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200"
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                                activity.type === 'listing' ? 'bg-blue-100' :
-                                activity.type === 'sale' ? 'bg-green-100' :
-                                'bg-purple-100'
-                              }`}>
-                                {activity.type === 'listing' && (
-                                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                  </svg>
-                                )}
-                                {activity.type === 'sale' && (
-                                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                                  </svg>
-                                )}
-                                {activity.type === 'verification' && (
-                                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                )}
-                              </div>
-                              <div>
-                                <p className="font-semibold text-gray-900">
-                                  {activity.type === 'listing' && 'New Listing'}
-                                  {activity.type === 'sale' && 'Sale Completed'}
-                                  {activity.type === 'verification' && 'Trademark Verified'}
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  {activity.trademarkName}
-                                  {activity.price && ` • ${activity.price}`}
-                                </p>
-                              </div>
-                            </div>
-                            <span className="text-sm text-gray-500">{activity.time}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+        {/* Navigation Tabs */}
+        <div className="bg-[#2f3136] border-b border-[#3a3d42]">
+          <div className="max-w-[1920px] mx-auto px-6">
+            <div className="flex items-center gap-1 overflow-x-auto">
+              {['All', 'Gaming', 'Art', 'PFPs', 'More'].map((tab, idx) => (
+                <button
+                  key={tab}
+                  className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
+                    idx === 0 
+                      ? 'text-white border-b-2 border-blue-500' 
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+              
+              {/* Filter Icons */}
+              <div className="ml-auto flex items-center gap-2">
+                <button className="p-2 rounded-lg hover:bg-[#3a3d42] transition-colors">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                  </svg>
+                </button>
+                <button 
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-[#3a3d42]' : 'hover:bg-[#3a3d42]'}`}
+                >
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                </button>
+                <button 
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-[#3a3d42]' : 'hover:bg-[#3a3d42]'}`}
+                >
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <Footer />
+        <div className="max-w-[1920px] mx-auto px-6 py-8">
+          <div className="flex gap-8">
+            {/* Main Content */}
+            <div className="flex-1">
+              {/* Featured Collection */}
+              {featuredTrademarks.length > 0 && (
+                <div className="mb-8">
+                  {featuredTrademarks.map((trademark) => (
+                    <div key={trademark.tokenId} className="relative bg-[#2f3136] rounded-2xl overflow-hidden border border-[#3a3d42] hover:border-[#4a4d52] transition-all">
+                      <div className="flex flex-col lg:flex-row">
+                        {/* Image Section */}
+                        <div className="lg:w-1/2 aspect-[4/3] lg:aspect-auto bg-gradient-to-br from-gray-700 to-gray-900 relative">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-32 h-32 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center">
+                              <span className="text-6xl font-bold text-white">
+                                {trademark.sloganText?.charAt(0) || '?'}
+                              </span>
+                            </div>
+                          </div>
+                          {/* Overlay gradient */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#2f3136] via-transparent to-transparent"></div>
+                        </div>
+
+                        {/* Info Section */}
+                        <div className="lg:w-1/2 p-8">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                              <span className="text-white text-sm font-bold">
+                                {trademark.companyName?.charAt(0) || '?'}
+                              </span>
+                            </div>
+                            <div>
+                              <h2 className="text-2xl font-bold text-white">{trademark.sloganText}</h2>
+                              <p className="text-sm text-gray-400">By {trademark.companyName}</p>
+                            </div>
+                            {trademark.verified && (
+                              <svg className="w-6 h-6 text-blue-500 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-4 gap-4 mb-6">
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase mb-1">Mint Price</p>
+                              <p className="text-white font-bold">{stats.floorPrice} ETH</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase mb-1">Total Items</p>
+                              <p className="text-white font-bold">{stats.totalVolume}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase mb-1">Mint Starts In</p>
+                              <p className="text-white font-bold">00:09:35:20</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase mb-1">Category</p>
+                              <p className="text-white font-bold">{trademark.category}</p>
+                            </div>
+                          </div>
+
+                          <p className="text-gray-400 text-sm mb-6 line-clamp-3">
+                            {trademark.description || 'Blockchain-verified trademark with immutable ownership records and decentralized asset storage.'}
+                          </p>
+
+                          <Link
+                            href={`/trademark/${trademark.tokenId}`}
+                            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all"
+                          >
+                            View Collection
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Trending Tokens Section */}
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-white">Trending Tokens</h2>
+                  <p className="text-sm text-gray-400">Largest price change in the past day</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {isLoading ? (
+                    <div className="text-center py-12">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : trendingTrademarks.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-gray-400">No trending tokens available</p>
+                    </div>
+                  ) : (
+                    trendingTrademarks.map((trademark, idx) => (
+                      <Link
+                        key={trademark.tokenId}
+                        href={`/trademark/${trademark.tokenId}`}
+                        className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-4 hover:border-[#4a4d52] transition-all block"
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-lg font-bold">
+                              {trademark.sloganText?.charAt(0) || '?'}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-white font-semibold truncate">{trademark.companyName}</h3>
+                              {trademark.verified && (
+                                <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-400 truncate">{trademark.sloganText}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-sm">
+                          <div>
+                            <p className="text-gray-500 text-xs">Floor</p>
+                            <p className="text-white font-semibold">{(0.03 + idx * 0.01).toFixed(2)} ETH</p>
+                          </div>
+                          <div className={`px-2 py-1 rounded ${
+                            idx % 2 === 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+                          }`}>
+                            {idx % 2 === 0 ? '+' : '-'}{(Math.random() * 10 + 1).toFixed(1)}%
+                          </div>
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Collections Sidebar */}
+              <div className="w-80 flex-shrink-0">
+                <div className="bg-[#2f3136] rounded-2xl border border-[#3a3d42] p-6 sticky top-24">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-bold text-white">Collection</h3>
+                    <div className="flex gap-2">
+                      <button className="text-gray-400 hover:text-white text-sm">1d</button>
+                      <button className="text-white text-sm font-semibold">7d</button>
+                      <button className="text-gray-400 hover:text-white text-sm">30d</button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {trendingTrademarks.slice(0, 7).map((trademark, idx) => (
+                      <Link
+                        key={trademark.tokenId}
+                        href={`/trademark/${trademark.tokenId}`}
+                        className="flex items-center gap-3 hover:bg-[#3a3d42] p-2 rounded-lg transition-colors"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <span className="text-white text-sm font-bold">
+                            {trademark.companyName?.charAt(0) || '?'}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <p className="text-white text-sm font-medium truncate">{trademark.companyName}</p>
+                            {trademark.verified && (
+                              <svg className="w-3 h-3 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-gray-400">{(0.03 + idx * 0.01).toFixed(2)} ETH</p>
+                            <p className={`text-xs ${idx % 2 === 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              {idx % 2 === 0 ? '+' : '-'}{(Math.random() * 5 + 0.5).toFixed(1)}%
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-gray-400 text-xs">
+                          {idx === 0 && '🔥'}
+                          {idx === 1 && '⚡'}
+                          {idx === 2 && '✨'}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+
+                  <Link
+                    href="/marketplace"
+                    className="block w-full mt-6 px-4 py-2 bg-[#3a3d42] text-white text-center rounded-xl font-medium hover:bg-[#4a4d52] transition-all"
+                  >
+                    View All Collections
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="bg-[#2f3136] border-t border-[#3a3d42] mt-16">
+          <div className="max-w-[1920px] mx-auto px-6 py-8">
+            <div className="flex items-center justify-between text-sm text-gray-400">
+              <p>© 2024 TrademarkChain. All rights reserved.</p>
+              <div className="flex gap-6">
+                <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+                <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+                <Link href="/support" className="hover:text-white transition-colors">Support</Link>
+              </div>
+            </div>
+          </div>
+        </footer>
       </div>
     </>
   );

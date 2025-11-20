@@ -64,7 +64,7 @@ export async function registerTrademark(
   signer: ethers.Signer,
   trademarkData: {
     companyName: string;
-    trademarkName: string;
+    sloganText: string;
     registrationNumber: string;
     ipfsHash: string;
     category: string;
@@ -80,7 +80,7 @@ export async function registerTrademark(
     
     const tx = await trademarkNFT.registerTrademark(
       trademarkData.companyName,
-      trademarkData.trademarkName,
+      trademarkData.sloganText,
       trademarkData.registrationNumber,
       trademarkData.ipfsHash,
       trademarkData.category,
@@ -278,8 +278,8 @@ export async function buyTrademark(
 export async function licenseTrademark(
   signer: ethers.Signer,
   listingId: number,
-  price: string,
-  duration: number
+  duration: number,
+  price: string
 ): Promise<string> {
   try {
     const { marketplace } = getContracts(signer);
@@ -348,6 +348,31 @@ export async function hasActiveLicense(tokenId: number, userAddress: string): Pr
   } catch (error: any) {
     console.error('Error checking license:', error);
     return false;
+  }
+}
+
+/**
+ * Get licenses for a token
+ */
+export async function getLicensesForToken(tokenId: number): Promise<any[]> {
+  try {
+    const { marketplace } = getContracts();
+    const licenses = await marketplace.getLicensesForToken(tokenId);
+    
+    return licenses.map((license: any) => ({
+      licenseId: Number(license.licenseId),
+      tokenId: Number(license.tokenId),
+      licensee: license.licensee,
+      licensor: license.licensor,
+      price: ethers.formatEther(license.price),
+      duration: Number(license.duration),
+      issuedAt: Number(license.issuedAt),
+      expiresAt: Number(license.expiresAt),
+      active: license.active,
+    }));
+  } catch (error: any) {
+    console.error('Error getting licenses:', error);
+    return [];
   }
 }
 

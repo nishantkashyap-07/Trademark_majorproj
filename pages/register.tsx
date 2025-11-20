@@ -14,11 +14,13 @@ export default function RegisterTrademark() {
   
   const [formData, setFormData] = useState<TrademarkFormData>({
     companyName: '',
-    trademarkName: '',
+    sloganText: '',
     registrationNumber: '',
     category: '',
     description: '',
     royaltyPercentage: ROYALTY_CONSTRAINTS.DEFAULT_PERCENTAGE,
+    language: 'English',
+    usageContext: '',
     files: [],
   });
   
@@ -125,8 +127,8 @@ export default function RegisterTrademark() {
           setError('Company name is required');
           return false;
         }
-        if (!formData.trademarkName.trim()) {
-          setError('Trademark name is required');
+        if (!formData.sloganText.trim()) {
+          setError('Slogan text is required');
           return false;
         }
         if (!formData.registrationNumber.trim()) {
@@ -190,7 +192,7 @@ export default function RegisterTrademark() {
       const metadata = createTrademarkMetadata(
         {
           companyName: formData.companyName,
-          trademarkName: formData.trademarkName,
+          sloganText: formData.sloganText,
           registrationNumber: formData.registrationNumber,
           category: formData.category,
           description: formData.description,
@@ -202,14 +204,14 @@ export default function RegisterTrademark() {
       const metadataCID = await uploadMetadataToIPFS(metadata);
       const tokenURI = `ipfs://${metadataCID}/metadata.json`;
       
-      // Step 3: Register trademark on blockchain
-      console.log('Registering trademark on blockchain...');
+      // Step 3: Register slogan on blockchain
+      console.log('Registering slogan on blockchain...');
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       
       const result = await registerTrademark(signer, {
         companyName: formData.companyName,
-        trademarkName: formData.trademarkName,
+        sloganText: formData.sloganText,
         registrationNumber: formData.registrationNumber,
         ipfsHash: assetsCID,
         category: formData.category,
@@ -262,18 +264,60 @@ export default function RegisterTrademark() {
 
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">Register Trademark</h1>
-              <div className="text-sm text-gray-600">
-                Connected: {account?.slice(0, 6)}...{account?.slice(-4)}
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Trademark Registration</h1>
+                <p className="text-sm text-gray-600 mt-1">Secure your intellectual property on the blockchain</p>
+              </div>
+              <div className="bg-gray-50 px-4 py-2 rounded-xl border border-gray-200">
+                <div className="text-xs text-gray-500 mb-1">Connected Wallet</div>
+                <div className="text-sm font-mono text-gray-900">
+                  {account?.slice(0, 6)}...{account?.slice(-4)}
+                </div>
               </div>
             </div>
           </div>
         </header>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Information Banner */}
+          <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
+            <div className="flex items-start">
+              <svg className="w-6 h-6 text-blue-600 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Registration Process</h3>
+                <p className="text-gray-700 mb-3">
+                  Your trademark will be minted as an ERC-721 NFT on Polygon blockchain with metadata stored on IPFS. 
+                  This ensures permanent, immutable ownership records and decentralized asset storage.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="flex items-center">
+                    <svg className="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">Blockchain Secured</span>
+                  </div>
+                  <div className="flex items-center">
+                    <svg className="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">IPFS Storage</span>
+                  </div>
+                  <div className="flex items-center">
+                    <svg className="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">Instant Verification</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Progress Steps */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
@@ -333,14 +377,14 @@ export default function RegisterTrademark() {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Trademark Name *
+                      Slogan Text *
                     </label>
                     <input
                       type="text"
-                      value={formData.trademarkName}
-                      onChange={(e) => handleInputChange('trademarkName', e.target.value)}
+                      value={formData.sloganText}
+                      onChange={(e) => handleInputChange('sloganText', e.target.value)}
                       className="input-field"
-                      placeholder="Enter trademark name"
+                      placeholder="Enter your slogan"
                     />
                   </div>
                 </div>
@@ -505,8 +549,8 @@ export default function RegisterTrademark() {
                       <dd className="text-sm text-gray-900">{formData.companyName}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Trademark Name</dt>
-                      <dd className="text-sm text-gray-900">{formData.trademarkName}</dd>
+                      <dt className="text-sm font-medium text-gray-500">Slogan Text</dt>
+                      <dd className="text-sm text-gray-900">{formData.sloganText}</dd>
                     </div>
                     <div>
                       <dt className="text-sm font-medium text-gray-500">Registration Number</dt>
