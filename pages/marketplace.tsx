@@ -89,34 +89,62 @@ export default function Marketplace() {
   return (
     <>
       <Head>
-        <title>Explore Trademarks - TrademarkChain</title>
-        <meta name="description" content="Browse and verify blockchain-registered trademarks across all industries" />
+        <title>Marketplace - SloganChain</title>
+        <meta
+          name="description"
+          content="Browse and verify blockchain-registered trademarks secured on Polygon with IPFS-backed assets."
+        />
       </Head>
 
       <Navbar />
 
         <main className="min-h-screen bg-white">
           {/* Hero Section */}
-          <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-16">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center">
-                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                  Explore Trademarks
-                </h1>
-                <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                  Discover and verify blockchain-registered trademarks. Each trademark is secured with 
-                  immutable on-chain records and IPFS-stored assets.
-                </p>
+          <section className="relative overflow-hidden bg-gray-950 text-white py-16">
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute -top-32 -right-32 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-500/40 via-purple-500/20 to-transparent blur-3xl" />
+              <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gradient-to-tr from-blue-500/30 via-cyan-400/10 to-transparent blur-3xl" />
+            </div>
+
+            <div className="relative z-10 mx-auto max-w-6xl px-4">
+              <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-[0.25em] text-gray-400">
+                    Marketplace
+                  </p>
+                  <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-white mb-3">
+                    Explore on-chain trademarks
+                  </h1>
+                  <p className="max-w-xl text-sm md:text-base text-gray-300">
+                    Discover IP assets registered on SloganChain. Every listing is backed by verifiable Polygon
+                    ownership and IPFS-stored content.
+                  </p>
+                </div>
+
+                <div className="flex flex-col items-start gap-3 text-xs text-gray-300 md:items-end">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    Live demo data – no gas required
+                  </div>
+                  <div className="flex flex-wrap gap-3 md:justify-end">
+                    <span className="rounded-full bg-white/5 px-3 py-1 text-[11px] text-gray-200">
+                      Polygon • ERC-721 • EIP-2981
+                    </span>
+                    <span className="rounded-full bg-white/5 px-3 py-1 text-[11px] text-gray-200">
+                      IPFS-backed assets
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mx-auto max-w-6xl px-4 py-10">
           
           <Breadcrumbs />
 
           {/* Filters and Search */}
-          <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 mb-8">
+          <section className="mb-8 rounded-2xl border border-gray-200 bg-white/80 p-6 shadow-sm backdrop-blur-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
               {/* Search */}
               <div className="lg:col-span-2">
@@ -174,7 +202,7 @@ export default function Marketplace() {
 
             {/* Additional Filters and View Toggle */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
+              <div className="flex flex-wrap items-center gap-4">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
@@ -185,17 +213,19 @@ export default function Marketplace() {
                   <span className="ml-2 text-sm text-gray-700">Show verified only</span>
                 </label>
                 
-                <div className="text-sm text-gray-600">
+                <div className="text-xs text-gray-500">
                   Showing {filteredTrademarks.length} of {trademarks.length} trademarks
                 </div>
               </div>
 
               {/* View Mode Toggle */}
-              <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+              <div className="inline-flex items-center gap-1 rounded-full bg-gray-100 p-1 text-xs">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`px-3 py-2 rounded-md transition-all ${
-                    viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-600 hover:text-gray-900'
+                  className={`flex items-center gap-1 rounded-full px-3 py-1.5 transition-all ${
+                    viewMode === 'grid'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
                   }`}
                   aria-label="Grid view"
                 >
@@ -205,8 +235,10 @@ export default function Marketplace() {
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`px-3 py-2 rounded-md transition-all ${
-                    viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-600 hover:text-gray-900'
+                  className={`flex items-center gap-1 rounded-full px-3 py-1.5 transition-all ${
+                    viewMode === 'list'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
                   }`}
                   aria-label="List view"
                 >
@@ -216,7 +248,7 @@ export default function Marketplace() {
                 </button>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Trademark Grid/List */}
           {isLoading ? (
@@ -243,84 +275,37 @@ export default function Marketplace() {
           )}
 
           {/* Stats Section */}
-          <div className="mt-16 bg-white rounded-2xl border-2 border-gray-200 p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              Marketplace Statistics
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-2">
-                  {trademarks.length}
-                </div>
-                <div className="text-sm text-gray-600">Total Trademarks</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 mb-2">
-                  {trademarks.filter(tm => tm.verified).length}
-                </div>
-                <div className="text-sm text-gray-600">Verified Trademarks</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600 mb-2">
-                  {new Set(trademarks.map(tm => tm.category)).size}
-                </div>
-                <div className="text-sm text-gray-600">Categories</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-3xl font-bold text-orange-600 mb-2">
-                  {new Set(trademarks.map(tm => tm.creatorAddress)).size}
-                </div>
-                <div className="text-sm text-gray-600">Unique Owners</div>
+          <section className="mt-14 rounded-2xl border border-gray-200 bg-white px-6 py-6 text-sm text-gray-800">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.22em] text-gray-500">
+                  Marketplace Snapshot
+                </p>
+                <p className="text-sm text-gray-600">
+                  High-level metrics from the current demo dataset.
+                </p>
               </div>
             </div>
-          </div>
 
-          {/* Advanced Filtering Options */}
-          <div className="mt-16 bg-white rounded-2xl border-2 border-gray-200 p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Advanced Search & Filtering
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Registration Date Range
-                </label>
-                <div className="flex gap-2">
-                  <input type="date" className="input-field flex-1" placeholder="From" />
-                  <input type="date" className="input-field flex-1" placeholder="To" />
-                </div>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500 mb-1">Total Trademarks</p>
+                <p className="text-xl font-semibold text-gray-900">{trademarks.length}</p>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Verification Status
-                </label>
-                <select className="input-field">
-                  <option value="">All Status</option>
-                  <option value="verified">Verified Only</option>
-                  <option value="pending">Pending Verification</option>
-                  <option value="unverified">Unverified</option>
-                </select>
+              <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500 mb-1">Verified</p>
+                <p className="text-xl font-semibold text-gray-900">{trademarks.filter(tm => tm.verified).length}</p>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Owner Type
-                </label>
-                <select className="input-field">
-                  <option value="">All Owners</option>
-                  <option value="individual">Individual</option>
-                  <option value="company">Company</option>
-                  <option value="organization">Organization</option>
-                </select>
+              <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500 mb-1">Categories</p>
+                <p className="text-xl font-semibold text-gray-900">{new Set(trademarks.map(tm => tm.category)).size}</p>
+              </div>
+              <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500 mb-1">Unique Owners</p>
+                <p className="text-xl font-semibold text-gray-900">{new Set(trademarks.map(tm => tm.creatorAddress)).size}</p>
               </div>
             </div>
-          </div>
+          </section>
         </div>
       </main>
 

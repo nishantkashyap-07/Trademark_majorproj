@@ -84,69 +84,95 @@ export default function TrademarkDetail() {
 
       <Navbar />
 
-      <main className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="min-h-screen bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-10">
           {/* Breadcrumb */}
-          <div className="flex items-center space-x-2 text-sm text-gray-600 mb-6">
-            <Link href="/" className="hover:text-blue-600">Home</Link>
+          <div className="mb-6 flex items-center space-x-2 text-xs text-gray-500">
+            <Link href="/" className="hover:text-gray-900">Home</Link>
             <span>/</span>
-            <Link href="/marketplace" className="hover:text-blue-600">Marketplace</Link>
+            <Link href="/marketplace" className="hover:text-gray-900">Marketplace</Link>
             <span>/</span>
-            <span className="text-gray-900">{trademark.sloganText}</span>
+            <span className="text-gray-900 line-clamp-1">{trademark.sloganText}</span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column - Image */}
-            <div className="lg:sticky lg:top-8 h-fit">
-              <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
-                <div className="aspect-square bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-12">
-                  <div className="w-48 h-48 bg-white rounded-full flex items-center justify-center shadow-2xl">
-                    <span className="text-8xl font-bold text-blue-600">
-                      {trademark.sloganText.charAt(0)}
-                    </span>
+          <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+            {/* Left Column - Asset Preview */}
+            <div className="space-y-4 lg:sticky lg:top-8">
+              <div className="overflow-hidden rounded-3xl border border-gray-200 bg-gradient-to-br from-neutral-50 via-neutral-100 to-neutral-50 shadow-sm">
+                <div className="relative flex aspect-square items-center justify-center p-10">
+                  <div className="absolute inset-0 bg-gradient-brand opacity-10 blur-3xl" />
+                  <div className="relative flex h-40 w-40 items-center justify-center rounded-3xl border border-neutral-200 bg-white text-6xl font-display font-bold gradient-text shadow-xl">
+                    {trademark.sloganText.charAt(0)}
                   </div>
+                  {trademark.verified && (
+                    <div className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-medium text-emerald-700 shadow-sm">
+                      <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Verified on-chain
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Minimal key identifiers under asset */}
+              <div className="grid gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-xs text-gray-700 sm:grid-cols-2">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-gray-500">Registration</p>
+                  <p className="mt-1 font-mono text-xs text-gray-900 break-all">{trademark.registrationNumber}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-gray-500">Token ID</p>
+                  <p className="mt-1 font-mono text-xs text-gray-900">#{trademark.tokenId}</p>
                 </div>
               </div>
 
               {/* Quick Actions */}
-              <div className="mt-6 space-y-3">
+              <div className="space-y-3">
                 {isOwner && (
-                  <button 
+                  <button
                     onClick={() => setShowLicenseModal(true)}
-                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-medium"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    <span>Create License Listing</span>
+                    Create license listing
                   </button>
                 )}
-                
+
                 <div className="grid grid-cols-2 gap-3">
-                  <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <button className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-900 transition hover:border-gray-300 hover:bg-gray-50">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                     </svg>
-                    <span className="font-medium">Share</span>
+                    Share
                   </button>
-                  <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <button className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-900 transition hover:border-gray-300 hover:bg-gray-50">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                     </svg>
-                    <span className="font-medium">Save</span>
+                    Save
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Right Column - Details */}
-            <div>
-              {/* Header */}
-              <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 mb-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Link href={`/marketplace?category=${trademark.category}`} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+            {/* Right Column - Metadata & Tabs */}
+            <div className="space-y-6">
+              {/* Header & owner */}
+              <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+                <div className="mb-4 flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 inline-flex items-center gap-2">
+                      <Link
+                        href={`/marketplace?category=${trademark.category}`}
+                        className="text-xs font-medium text-gray-600 hover:text-gray-900"
+                      >
                         {trademark.category}
                       </Link>
                       <TrademarkBadge
@@ -155,40 +181,47 @@ export default function TrademarkDetail() {
                         companyName={trademark.companyName}
                       />
                     </div>
-                    <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                    <h1 className="mb-1 line-clamp-2 text-2xl md:text-3xl font-semibold text-gray-900">
                       {trademark.sloganText}
                     </h1>
-                    <p className="text-lg text-gray-600">
-                      by {trademark.companyName}
+                    <p className="text-sm text-gray-600">
+                      by <span className="font-medium text-gray-900">{trademark.companyName}</span>
                     </p>
                   </div>
                 </div>
 
-                {/* Owner Info */}
-                <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full"></div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Owned by</div>
-                    <div className="font-mono text-sm font-medium text-gray-900">
-                      {trademark.creatorAddress.slice(0, 10)}...{trademark.creatorAddress.slice(-8)}
+                <div className="flex flex-wrap items-center gap-4 rounded-2xl bg-gray-50 px-4 py-3 text-xs text-gray-700">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500" />
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-gray-500">Owned by</p>
+                      <p className="font-mono text-xs font-semibold text-gray-900">
+                        {trademark.creatorAddress.slice(0, 10)}...{trademark.creatorAddress.slice(-8)}
+                      </p>
+                      <p className="mt-1 text-[11px] text-gray-500">
+                        Token #{trademark.tokenId}
+                      </p>
                     </div>
                   </div>
-                  <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg transition-colors">
-                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
 
-              {/* Tabs */}
-              <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden mb-6">
-                <div className="flex border-b border-gray-200 overflow-x-auto">
+                  <div className="h-6 w-px bg-gray-200 hidden sm:block" />
+
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-[11px] text-gray-700">
+                      Registered {trademark.createdAt.toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </section>
+
+              {/* Tabs & content */}
+              <section className="rounded-3xl border border-gray-200 bg-white shadow-sm">
+                <div className="flex gap-1 border-b border-gray-100 px-4 pt-2 overflow-x-auto text-xs">
                   <button
                     onClick={() => setActiveTab('details')}
-                    className={`flex-1 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
+                    className={`mb-1 rounded-full px-3 py-2 font-medium transition-colors ${
                       activeTab === 'details'
-                        ? 'text-blue-600 border-b-2 border-blue-600'
+                        ? 'bg-gray-900 text-white'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
@@ -196,24 +229,24 @@ export default function TrademarkDetail() {
                   </button>
                   <button
                     onClick={() => setActiveTab('licenses')}
-                    className={`flex-1 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
+                    className={`mb-1 rounded-full px-3 py-2 font-medium transition-colors flex items-center gap-2 ${
                       activeTab === 'licenses'
-                        ? 'text-blue-600 border-b-2 border-blue-600'
+                        ? 'bg-gray-900 text-white'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
                     Licenses
                     {licenses.length > 0 && (
-                      <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full">
+                      <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[10px]">
                         {licenses.length}
                       </span>
                     )}
                   </button>
                   <button
                     onClick={() => setActiveTab('history')}
-                    className={`flex-1 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
+                    className={`mb-1 rounded-full px-3 py-2 font-medium transition-colors ${
                       activeTab === 'history'
-                        ? 'text-blue-600 border-b-2 border-blue-600'
+                        ? 'bg-gray-900 text-white'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
@@ -221,9 +254,9 @@ export default function TrademarkDetail() {
                   </button>
                   <button
                     onClick={() => setActiveTab('verification')}
-                    className={`flex-1 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
+                    className={`mb-1 rounded-full px-3 py-2 font-medium transition-colors ${
                       activeTab === 'verification'
-                        ? 'text-blue-600 border-b-2 border-blue-600'
+                        ? 'bg-gray-900 text-white'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
@@ -343,10 +376,6 @@ export default function TrademarkDetail() {
                           <p className="font-mono text-gray-900">#{trademark.tokenId}</p>
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-2">Royalty</h3>
-                          <p className="text-gray-900">{trademark.royaltyPercentage}%</p>
-                        </div>
-                        <div>
                           <h3 className="text-sm font-medium text-gray-500 mb-2">Registered</h3>
                           <p className="text-gray-900">{trademark.createdAt.toLocaleDateString()}</p>
                         </div>
@@ -459,7 +488,7 @@ export default function TrademarkDetail() {
                     </div>
                   )}
                 </div>
-              </div>
+              </section>
             </div>
           </div>
         </div>
