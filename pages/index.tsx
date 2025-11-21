@@ -34,6 +34,7 @@ export default function Home() {
               <div className="inline-block mb-8 px-8 py-3 bg-white bg-opacity-10 backdrop-blur-sm border border-white border-opacity-20 rounded-full">
                 <span className="text-sm font-semibold tracking-wide">ENTERPRISE BLOCKCHAIN IP PROTECTION</span>
               </div>
+              <p>Heheh</p>
               
               <h1 className="text-6xl md:text-8xl font-bold mb-8 leading-tight">
                 Protect Your Brand
