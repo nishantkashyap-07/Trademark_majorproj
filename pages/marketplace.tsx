@@ -124,7 +124,7 @@ export default function Marketplace() {
                 <div className="flex flex-col items-start gap-3 text-xs text-gray-300 md:items-end">
                   <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    Live demo data – no gas required
+                    Live demo data - no gas required
                   </div>
                   <div className="flex flex-wrap gap-3 md:justify-end">
                     <span className="rounded-full bg-white/5 px-3 py-1 text-[11px] text-gray-200">

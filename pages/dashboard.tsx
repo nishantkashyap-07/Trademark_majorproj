@@ -96,7 +96,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-8">
                 <Link href="/" className="text-2xl font-bold text-white">
-                  TrademarkChain
+                  SloganChain
                 </Link>
                 
                 {/* Search Bar */}
@@ -104,7 +104,7 @@ export default function Dashboard() {
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Search OpenSea"
+                      placeholder="Search SloganChain"
                       className="w-[400px] bg-[#202225] text-white placeholder-gray-500 px-4 py-2.5 pl-10 rounded-xl border border-[#3a3d42] focus:border-blue-500 focus:outline-none"
                     />
                     <svg className="absolute left-3 top-3 w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
