@@ -26,208 +26,164 @@ export default function Home() {
         <Navbar />
 
         {/* Hero Section */}
-        <section className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-32">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-40"></div>
-          
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-6xl mx-auto text-center">
-              <div className="inline-block mb-8 px-8 py-3 bg-white bg-opacity-10 backdrop-blur-sm border border-white border-opacity-20 rounded-full">
-                <span className="text-sm font-semibold tracking-wide">ENTERPRISE BLOCKCHAIN IP PROTECTION</span>
+        <section className="relative overflow-hidden bg-gray-950 text-white py-28 selection:bg-white selection:text-indigo-900">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-gradient-to-br from-indigo-500/40 via-purple-500/20 to-transparent blur-3xl" />
+            <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gradient-to-tr from-blue-500/30 via-cyan-400/10 to-transparent blur-3xl" />
+          </div>
+
+          <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-16 px-4 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-medium uppercase tracking-[0.25em] text-gray-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                Real-Time IP Protection on Polygon
               </div>
-              <p>Heheh</p>
-              
-              <h1 className="text-6xl md:text-8xl font-bold mb-8 leading-tight">
-                Protect Your Brand
-                <span className="block bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mt-3">
-                  With Blockchain Technology
+
+              <h1 className="mt-8 text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-6xl">
+                Own your ideas.
+                <span className="block bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                  Prove it on-chain.
                 </span>
               </h1>
-              
-              <p className="text-2xl text-gray-300 mb-16 max-w-4xl mx-auto leading-relaxed">
-                Professional-grade platform for registering, verifying, and managing slogans as NFT-based intellectual property. 
-                Leveraging Polygon blockchain for immutable ownership records, IPFS for decentralized storage, and smart contracts for automated royalty distribution.
+
+              <p className="mt-6 text-base text-gray-300 sm:text-lg">
+                SloganChain turns your trademarks and slogans into verifiable on-chain assets. 
+                Register once, prove ownership anywhere, and unlock new revenue through a compliant IP marketplace.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-20">
+              <div className="mt-10 flex flex-col items-stretch gap-4 sm:flex-row sm:items-center">
                 {isConnected ? (
                   <>
-                    <Link href="/register" className="px-12 py-5 bg-white text-gray-900 rounded-xl font-bold hover:bg-gray-100 transition-all shadow-2xl text-lg">
-                      Register Slogan
+                    <Link
+                      href="/register"
+                      className="inline-flex flex-1 items-center justify-center rounded-full bg-white px-8 py-3 text-sm font-semibold text-gray-950 shadow-lg shadow-white/10 transition hover:bg-gray-100"
+                    >
+                      Register a Trademark
                     </Link>
-                    <Link href="/marketplace" className="px-12 py-5 bg-transparent text-white rounded-xl font-bold border-2 border-white hover:bg-white hover:text-gray-900 transition-all text-lg">
-                      Explore Marketplace
+                    <Link
+                      href="/marketplace"
+                      className="inline-flex flex-1 items-center justify-center rounded-full border border-white/20 bg-white/0 px-8 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white hover:text-gray-950"
+                    >
+                      Open Marketplace
                     </Link>
                   </>
                 ) : (
-                  <button onClick={connect} className="px-12 py-5 bg-white text-gray-900 rounded-xl font-bold hover:bg-gray-100 transition-all shadow-2xl text-lg">
-                    Connect Wallet to Begin
+                  <button
+                    onClick={connect}
+                    className="inline-flex w-full items-center justify-center rounded-full bg-white px-8 py-3 text-sm font-semibold text-gray-950 shadow-lg shadow-white/10 transition hover:bg-gray-100 sm:w-auto"
+                  >
+                    Connect Wallet to Get Started
                   </button>
                 )}
               </div>
 
-              {/* Platform Statistics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
-                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-8 border border-white border-opacity-20">
-                  <div className="text-5xl font-bold mb-3">{stats.overview.totalSlogans}</div>
-                  <div className="text-sm text-gray-300 font-medium">Registered Slogans</div>
+              <div className="mt-10 flex items-center gap-6 text-xs text-gray-400">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  Audited smart contracts
                 </div>
-                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-8 border border-white border-opacity-20">
-                  <div className="text-5xl font-bold mb-3">{stats.overview.verifiedSlogans}</div>
-                  <div className="text-sm text-gray-300 font-medium">Verified Assets</div>
+                <div className="hidden h-3 w-px bg-gray-700 sm:block" />
+                <div className="hidden items-center gap-2 sm:flex">
+                  <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
+                  IPFS + Polygon powered
                 </div>
-                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-8 border border-white border-opacity-20">
-                  <div className="text-5xl font-bold mb-3">{stats.overview.totalUsers}</div>
-                  <div className="text-sm text-gray-300 font-medium">Active Users</div>
+              </div>
+            </div>
+
+            <div className="max-w-md rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur">
+              <div className="mb-6 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.22em] text-gray-300">Live Snapshot</p>
+                  <p className="mt-1 text-sm text-gray-400">Demo network metrics for SloganChain</p>
                 </div>
-                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-8 border border-white border-opacity-20">
-                  <div className="text-5xl font-bold mb-3">{stats.overview.verificationRate}%</div>
-                  <div className="text-sm text-gray-300 font-medium">Verification Rate</div>
+                <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300">
+                  Testnet
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-2xl bg-black/30 px-4 py-3">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.17em] text-gray-400">Registered IP</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{stats.overview.totalSlogans}</p>
+                  <p className="mt-1 text-[11px] text-gray-400">Slogans tokenized</p>
                 </div>
+                <div className="rounded-2xl bg-black/30 px-4 py-3">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.17em] text-gray-400">Verified Assets</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{stats.overview.verifiedSlogans}</p>
+                  <p className="mt-1 text-[11px] text-gray-400">On-chain proofs</p>
+                </div>
+                <div className="rounded-2xl bg-black/20 px-4 py-3">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.17em] text-gray-400">Active Users</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{stats.overview.totalUsers}</p>
+                  <p className="mt-1 text-[11px] text-gray-400">Creators & buyers</p>
+                </div>
+                <div className="rounded-2xl bg-black/20 px-4 py-3">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.17em] text-gray-400">Verification Rate</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{stats.overview.verificationRate}%</p>
+                  <p className="mt-1 text-[11px] text-gray-400">Instant checks</p>
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4 text-[11px] text-gray-400">
+                <span>Designed for enterprises & startups</span>
+                <span className="text-gray-300">Polygon • IPFS • EIP-2981</span>
               </div>
             </div>
           </div>
         </section>
 
         {/* Technical Architecture */}
-        <section className="py-24 bg-white">
+        <section className="py-20 bg-white">
           <div className="container mx-auto px-4">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-20">
-                <h2 className="text-5xl font-bold text-gray-900 mb-6">
-                  Enterprise-Grade IP Management System
-                </h2>
-                <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-                  Built on cutting-edge blockchain technology with comprehensive features for intellectual property protection, 
-                  verification, and monetization. Our platform combines security, transparency, and efficiency.
+            <div className="max-w-5xl mx-auto text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-4">
+                Turn trademarks into verifiable on-chain assets
+              </h2>
+              <p className="text-base md:text-lg text-gray-600">
+                SloganChain gives creators and brands a single place to register IP, prove ownership in seconds,
+                and monetize rights through a compliant marketplace.
+              </p>
+            </div>
+
+            <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
+              <div className="rounded-2xl border border-gray-200 bg-white p-8 text-left">
+                <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600/10 text-blue-600">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 1.105-.895 2-2 2s-2-.895-2-2 .895-2 2-2 2 .895 2 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h6l4 4v10a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" />
+                  </svg>
+                </div>
+                <h3 className="mb-2 text-lg font-semibold text-gray-900">1. Register your IP</h3>
+                <p className="text-sm text-gray-600">
+                  Upload logos, slogans, or other IP once. We store the asset on IPFS and mint an ERC-721 token on
+                  Polygon representing provable ownership.
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-10 mb-20">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-3xl p-10 shadow-lg">
-                  <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mb-8 shadow-xl">
-                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-3xl font-bold text-gray-900 mb-5">Blockchain Security</h3>
-                  <p className="text-gray-700 leading-relaxed mb-6 text-lg">
-                    Immutable ownership records on Polygon blockchain ensure permanent, tamper-proof verification. 
-                    Each slogan is minted as an ERC-721 NFT with complete metadata and provenance tracking.
-                  </p>
-                  <div className="space-y-4">
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-green-600 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <div>
-                        <p className="font-semibold text-gray-900">Immutable Records</p>
-                        <p className="text-sm text-gray-600">Permanent on-chain ownership proof</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-green-600 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <div>
-                        <p className="font-semibold text-gray-900">Smart Contract Automation</p>
-                        <p className="text-sm text-gray-600">Automated verification and transfers</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-green-600 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <div>
-                        <p className="font-semibold text-gray-900">Transparent History</p>
-                        <p className="text-sm text-gray-600">Complete transaction audit trail</p>
-                      </div>
-                    </div>
-                  </div>
+              <div className="rounded-2xl border border-gray-200 bg-white p-8 text-left">
+                <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600/10 text-emerald-600">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
                 </div>
+                <h3 className="mb-2 text-lg font-semibold text-gray-900">2. Prove and verify instantly</h3>
+                <p className="text-sm text-gray-600">
+                  Anyone can verify ownership using the token ID, IPFS hash, or wallet address. No paperwork,
+                  no waiting months for a registry response.
+                </p>
+              </div>
 
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-3xl p-10 shadow-lg">
-                  <div className="w-20 h-20 bg-purple-600 rounded-2xl flex items-center justify-center mb-8 shadow-xl">
-                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                  </div>
-                  <h3 className="text-3xl font-bold text-gray-900 mb-5">IPFS Storage</h3>
-                  <p className="text-gray-700 leading-relaxed mb-6 text-lg">
-                    Decentralized storage on IPFS ensures permanent availability of trademark assets and metadata. 
-                    Content-addressed storage guarantees data integrity and censorship resistance.
-                  </p>
-                  <div className="space-y-4">
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-green-600 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <div>
-                        <p className="font-semibold text-gray-900">Decentralized Storage</p>
-                        <p className="text-sm text-gray-600">No single point of failure</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-green-600 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <div>
-                        <p className="font-semibold text-gray-900">Content Addressing</p>
-                        <p className="text-sm text-gray-600">Cryptographic verification of data</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-green-600 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <div>
-                        <p className="font-semibold text-gray-900">Permanent Availability</p>
-                        <p className="text-sm text-gray-600">Assets remain accessible forever</p>
-                      </div>
-                    </div>
-                  </div>
+              <div className="rounded-2xl border border-gray-200 bg-white p-8 text-left">
+                <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600/10 text-purple-600">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M5 6h14M7 14h10m-9 4h8" />
+                  </svg>
                 </div>
-
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-3xl p-10 shadow-lg">
-                  <div className="w-20 h-20 bg-green-600 rounded-2xl flex items-center justify-center mb-8 shadow-xl">
-                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-3xl font-bold text-gray-900 mb-5">NFT Marketplace</h3>
-                  <p className="text-gray-700 leading-relaxed mb-6 text-lg">
-                    ERC-721 NFTs with ERC-2981 royalty standard enable secure ownership transfer and automated royalty distribution. 
-                    Built-in marketplace for trading intellectual property rights.
-                  </p>
-                  <div className="space-y-4">
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-green-600 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <div>
-                        <p className="font-semibold text-gray-900">Transferable Rights</p>
-                        <p className="text-sm text-gray-600">Secure ownership transfers</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-green-600 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <div>
-                        <p className="font-semibold text-gray-900">Automated Royalties</p>
-                        <p className="text-sm text-gray-600">ERC-2981 standard implementation</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-green-600 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <div>
-                        <p className="font-semibold text-gray-900">Marketplace Integration</p>
-                        <p className="text-sm text-gray-600">Built-in trading platform</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <h3 className="mb-2 text-lg font-semibold text-gray-900">3. Monetize through licensing</h3>
+                <p className="text-sm text-gray-600">
+                  List your IP in the marketplace, create licensing terms, and receive automated royalty payouts via
+                  smart contracts each time your IP is used.
+                </p>
               </div>
             </div>
           </div>
@@ -239,11 +195,22 @@ export default function Home() {
             <div className="max-w-7xl mx-auto">
               <div className="flex justify-between items-center mb-12">
                 <div>
-                  <h2 className="text-4xl font-bold text-gray-900 mb-3">Featured Slogans</h2>
-                  <p className="text-lg text-gray-600">Recently registered and verified intellectual property</p>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-[0.25em] text-gray-500">
+                    Marketplace Preview
+                  </p>
+                  <h2 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-2">
+                    Featured slogans on chain
+                  </h2>
+                  <p className="text-sm md:text-base text-gray-600 max-w-xl">
+                    A snapshot of recently registered and verified IP assets available to explore and license.
+                  </p>
                 </div>
-                <Link href="/marketplace" className="px-6 py-3 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-800 transition-all">
-                  View All
+
+                <Link
+                  href="/marketplace"
+                  className="inline-flex items-center justify-center rounded-full border border-gray-900/10 bg-white px-6 py-2 text-sm font-semibold text-gray-900 shadow-sm hover:border-gray-900/40 hover:shadow-md transition"
+                >
+                  View full marketplace
                 </Link>
               </div>
 
@@ -257,88 +224,70 @@ export default function Home() {
         </section>
 
         {/* Platform Features */}
-        <section className="py-24 bg-white">
+        <section className="py-20 bg-white border-t border-gray-100">
           <div className="container mx-auto px-4">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-20">
-                <h2 className="text-5xl font-bold text-gray-900 mb-6">
-                  Comprehensive Feature Set
+            <div className="max-w-6xl mx-auto grid gap-12 md:grid-cols-2 items-start">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-4">
+                  Built for creators, brands, and buyers
                 </h2>
-                <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                  Everything you need to protect, manage, and monetize your intellectual property
+                <p className="text-base md:text-lg text-gray-600 mb-8">
+                  Whether you are protecting a new brand, managing an existing portfolio, or discovering IP to
+                  license, SloganChain keeps the experience simple while blockchain handles the complexity.
                 </p>
+
+                <div className="space-y-4 text-sm text-gray-700">
+                  <div className="flex gap-3">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <p><strong>Creators & brands</strong> – Register IP, prove priority, and control how your assets
+                      can be licensed worldwide.</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sky-500" />
+                    <p><strong>Buyers & licensees</strong> – Verify legitimacy in seconds and access transparent
+                      on-chain licensing terms.</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-purple-500" />
+                    <p><strong>Admins</strong> – Review flagged listings, remove abuse, and keep the marketplace
+                      compliant for everyone.</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
-                  <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mb-6">
-                    <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">Registration System</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    Streamlined registration process with multi-step verification, file upload support, and instant blockchain minting.
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-gray-500 mb-2">Registration</p>
+                  <p className="text-base font-semibold text-gray-900 mb-2">Guided IP onboarding</p>
+                  <p className="text-sm text-gray-600">
+                    Simple flows to upload assets, describe ownership, set categories, and mint on Polygon without
+                    touching contract code.
                   </p>
                 </div>
 
-                <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
-                  <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
-                    <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">Instant Verification</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    Real-time verification system allowing anyone to verify trademark authenticity and ownership through blockchain queries.
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-gray-500 mb-2">Verification</p>
+                  <p className="text-base font-semibold text-gray-900 mb-2">Instant authenticity checks</p>
+                  <p className="text-sm text-gray-600">
+                    Look up IP by name, owner, or token ID and confirm authenticity through immutable on-chain
+                    records.
                   </p>
                 </div>
 
-                <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
-                  <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-6">
-                    <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">Marketplace Trading</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    Integrated marketplace for buying, selling, and licensing intellectual property with automated royalty distribution.
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-gray-500 mb-2">Monetization</p>
+                  <p className="text-base font-semibold text-gray-900 mb-2">Sales & licensing</p>
+                  <p className="text-sm text-gray-600">
+                    List assets for sale or license with clear terms. Royalties are handled automatically by
+                    smart contracts.
                   </p>
                 </div>
 
-                <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
-                  <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center mb-6">
-                    <svg className="w-7 h-7 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">Analytics Dashboard</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    Comprehensive dashboard with portfolio tracking, market analytics, and detailed transaction history.
-                  </p>
-                </div>
-
-                <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
-                  <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                    <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">Smart Contracts</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    Audited smart contracts handling registration, transfers, and royalty payments with complete transparency.
-                  </p>
-                </div>
-
-                <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
-                  <div className="w-14 h-14 bg-indigo-100 rounded-xl flex items-center justify-center mb-6">
-                    <svg className="w-7 h-7 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">API Integration</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    RESTful API for integrating trademark verification into your existing applications and workflows.
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-gray-500 mb-2">Governance</p>
+                  <p className="text-base font-semibold text-gray-900 mb-2">Future DAO dispute layer</p>
+                  <p className="text-sm text-gray-600">
+                    Planned community voting and dispute resolution to keep IP decisions transparent and fair.
                   </p>
                 </div>
               </div>
@@ -347,59 +296,45 @@ export default function Home() {
         </section>
 
         {/* Technical Specifications */}
-        <section className="py-24 bg-gray-900 text-white">
+        <section className="py-16 bg-gray-950 text-white">
           <div className="container mx-auto px-4">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-16">
-                <h2 className="text-5xl font-bold mb-6">Technical Specifications</h2>
-                <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-                  Built with industry-leading technologies and best practices
-                </p>
+            <div className="max-w-6xl mx-auto">
+              <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-semibold">Built on battle-tested Web3 primitives</h2>
+                  <p className="mt-2 text-sm text-gray-300 max-w-xl">
+                    A modern stack combining Polygon, IPFS, and Firebase to deliver fast UX with tamper-proof
+                    records under the hood.
+                  </p>
+                </div>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-8 border border-white border-opacity-20">
-                  <h3 className="text-2xl font-bold mb-4">Blockchain</h3>
-                  <ul className="space-y-3 text-gray-300">
-                    <li>• Polygon Network</li>
-                    <li>• ERC-721 NFT Standard</li>
-                    <li>• ERC-2981 Royalties</li>
-                    <li>• Solidity Smart Contracts</li>
-                    <li>• Hardhat Development</li>
-                  </ul>
+              <div className="grid gap-6 md:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-gray-300 mb-3">Blockchain</p>
+                  <p className="text-sm text-gray-100 mb-3">Polygon • ERC-721 • EIP-2981</p>
+                  <p className="text-xs text-gray-400">
+                    Smart contracts on Polygon provide low-fee transactions, NFT ownership, and programmable
+                    royalties for every listing.
+                  </p>
                 </div>
 
-                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-8 border border-white border-opacity-20">
-                  <h3 className="text-2xl font-bold mb-4">Storage</h3>
-                  <ul className="space-y-3 text-gray-300">
-                    <li>• IPFS Decentralized Storage</li>
-                    <li>• Pinata Cloud Service</li>
-                    <li>• Content Addressing</li>
-                    <li>• Metadata Standards</li>
-                    <li>• Asset Permanence</li>
-                  </ul>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-gray-300 mb-3">Storage</p>
+                  <p className="text-sm text-gray-100 mb-3">IPFS • Filecoin-ready</p>
+                  <p className="text-xs text-gray-400">
+                    Assets and metadata are stored off-chain on IPFS, with content-addressed hashes recorded on
+                    chain for integrity.
+                  </p>
                 </div>
 
-                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-8 border border-white border-opacity-20">
-                  <h3 className="text-2xl font-bold mb-4">Frontend</h3>
-                  <ul className="space-y-3 text-gray-300">
-                    <li>• Next.js Framework</li>
-                    <li>• TypeScript</li>
-                    <li>• Tailwind CSS</li>
-                    <li>• Ethers.js Integration</li>
-                    <li>• Responsive Design</li>
-                  </ul>
-                </div>
-
-                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-8 border border-white border-opacity-20">
-                  <h3 className="text-2xl font-bold mb-4">Backend</h3>
-                  <ul className="space-y-3 text-gray-300">
-                    <li>• Firebase Database</li>
-                    <li>• RESTful API</li>
-                    <li>• Real-time Sync</li>
-                    <li>• Authentication</li>
-                    <li>• Cloud Functions</li>
-                  </ul>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-gray-300 mb-3">Application</p>
+                  <p className="text-sm text-gray-100 mb-3">Next.js • Tailwind • Firebase</p>
+                  <p className="text-xs text-gray-400">
+                    A responsive Next.js frontend with Tailwind UI, backed by Firebase for metadata, profiles,
+                    and real-time updates.
+                  </p>
                 </div>
               </div>
             </div>

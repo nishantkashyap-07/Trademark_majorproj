@@ -10,11 +10,9 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const navigation = [
-    { name: 'Explore', href: '/marketplace' },
-    { name: 'Verify', href: '/verify' },
-    { name: 'Categories', href: '/categories' },
-    { name: 'Licenses', href: '/licenses' },
-    { name: 'Create', href: '/register' },
+    { name: 'Marketplace', href: '/marketplace' },
+    { name: 'Register IP', href: '/register' },
+    { name: 'Verify IP', href: '/verify' },
   ];
 
   const handleBack = () => {
@@ -58,7 +56,7 @@ export default function Navbar() {
                   </svg>
                 </div>
               </div>
-              <span className="text-xl font-display font-bold text-neutral-900 hidden sm:block">TrademarkChain</span>
+              <span className="text-xl font-display font-bold text-neutral-900 hidden sm:block">SloganChain</span>
             </Link>
 
             {/* Desktop Navigation */}
