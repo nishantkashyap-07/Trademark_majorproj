@@ -113,7 +113,7 @@ html {
   
   /* Input Styles */
   .input-field {
-    @apply block w-full px-4 py-3 text-base text-neutral-900 bg-white border border-neutral-300 rounded-xl placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all duration-200;
+    @apply block w-full px-4 py-3 text-base text-white bg-gray-800 border border-gray-700 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
   }
   
   .input-search {
@@ -206,5 +206,103 @@ html {
   /* Container */
   .container-custom {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
+
+
+/* Dark Theme Text Visibility Fixes */
+@layer utilities {
+  /* Override dark text on dark backgrounds */
+  .bg-gray-950 .text-gray-900,
+  .bg-gray-900 .text-gray-900,
+  .bg-gray-800 .text-gray-900 {
+    @apply text-white !important;
+  }
+  
+  .bg-gray-950 .text-gray-800,
+  .bg-gray-900 .text-gray-800,
+  .bg-gray-800 .text-gray-800 {
+    @apply text-gray-200 !important;
+  }
+  
+  .bg-gray-950 .text-gray-700,
+  .bg-gray-900 .text-gray-700,
+  .bg-gray-800 .text-gray-700 {
+    @apply text-gray-300 !important;
+  }
+  
+  .bg-gray-950 .text-gray-600,
+  .bg-gray-900 .text-gray-600,
+  .bg-gray-800 .text-gray-600 {
+    @apply text-gray-400 !important;
+  }
+  
+  /* Labels on dark backgrounds */
+  .bg-gray-950 label,
+  .bg-gray-900 label,
+  .bg-gray-800 label {
+    @apply text-gray-300 !important;
+  }
+  
+  /* Headings on dark backgrounds */
+  .bg-gray-950 h1,
+  .bg-gray-950 h2,
+  .bg-gray-950 h3,
+  .bg-gray-900 h1,
+  .bg-gray-900 h2,
+  .bg-gray-900 h3,
+  .bg-gray-800 h1,
+  .bg-gray-800 h2,
+  .bg-gray-800 h3 {
+    @apply text-white !important;
+  }
+  
+  /* Paragraphs on dark backgrounds */
+  .bg-gray-950 p,
+  .bg-gray-900 p,
+  .bg-gray-800 p {
+    @apply text-gray-300 !important;
+  }
+  
+  /* Spans on dark backgrounds */
+  .bg-gray-950 span,
+  .bg-gray-900 span,
+  .bg-gray-800 span {
+    @apply text-gray-300 !important;
+  }
+  
+  /* Divs with text on dark backgrounds */
+  .bg-gray-950 div,
+  .bg-gray-900 div,
+  .bg-gray-800 div {
+    @apply text-gray-300;
+  }
+  
+  /* Input fields on dark backgrounds */
+  .bg-gray-950 input,
+  .bg-gray-900 input,
+  .bg-gray-800 input {
+    @apply bg-gray-800 text-white border-gray-700 !important;
+  }
+  
+  .bg-gray-950 select,
+  .bg-gray-900 select,
+  .bg-gray-800 select {
+    @apply bg-gray-800 text-white border-gray-700 !important;
+  }
+  
+  .bg-gray-950 textarea,
+  .bg-gray-900 textarea,
+  .bg-gray-800 textarea {
+    @apply bg-gray-800 text-white border-gray-700 !important;
+  }
+  
+  /* Buttons text visibility */
+  .bg-gray-200 {
+    @apply text-gray-900 !important;
+  }
+  
+  .bg-gray-100 {
+    @apply text-gray-900 !important;
   }
 }

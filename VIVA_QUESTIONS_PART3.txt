@@ -1,0 +1,596 @@
+================================================================================
+SECTION 9: CODE WALKTHROUGH QUESTIONS
+================================================================================
+
+Q41. Walk me through the TrademarkMarketplace.sol contract structure.
+ANSWER:
+IMPORTS:
+- ReentrancyGuard: Security against reentrancy
+- Ownable: Admin access control
+- IERC721: NFT interface
+- Counters: Safe counter for IDs
+
+STATE VARIABLES:
+- _listingIdCounter: Tracks listing IDs
+- trademarkNFT: Reference to NFT contract
+- marketplaceFee: Platform fee (250 = 2.5%)
+
+STRUCTS:
+- Listing: Stores listing details
+- License: Tracks license information
+
+MAPPINGS:
+- listings: listingId => Listing
+- tokenListings: tokenId => listingIds[]
+- sellerListings: seller => listingIds[]
+- tokenLicenses: tokenId => License[]
+
+EVENTS:
+- ListingCreated, ListingCancelled
+- TrademarkSold, TrademarkLicensed
+- MarketplaceFeeUpdated
+
+FUNCTIONS:
+- createListing(): Create new listing
+- buyTrademark(): Purchase NFT
+- licenseTrademark(): License usage rights
+- cancelListing(): Remove listing
+- View functions for queries
+
+Q42. Explain the buyTrademark function step by step.
+ANSWER:
+```solidity
+function buyTrademark(uint256 listingId) external payable nonReentrant {
+    // 1. Get listing from storage
+    Listing storage listing = listings[listingId];
+    
+    // 2. Validate listing is active and not expired
+    require(listing.active, "Listing is not active");
+    require(!listing.isLicense, "This is a license listing");
+    require(listing.expiresAt == 0 || listing.expiresAt > block.timestamp);
+    
+    // 3. Validate payment
+    require(msg.value == listing.price, "Incorrect payment amount");
+    require(msg.sender != listing.seller, "Cannot buy your own listing");
+    
+    // 4. Calculate royalty using EIP-2981
+    (address royaltyReceiver, uint256 royaltyAmount) = 
+        trademarkNFT.royaltyInfo(listing.tokenId, listing.price);
+    
+    // 5. Calculate marketplace fee
+    uint256 marketplaceFeeAmount = (listing.price * marketplaceFee) / 10000;
+    
+    // 6. Calculate seller amount
+    uint256 sellerAmount = listing.price - royaltyAmount - marketplaceFeeAmount;
+    
+    // 7. Mark listing inactive
+    listing.active = false;
+    
+    // 8. Transfer NFT to buyer
+    trademarkNFT.safeTransferFrom(listing.seller, msg.sender, listing.tokenId);
+    
+    // 9. Distribute payments
+    if (royaltyAmount > 0 && royaltyReceiver != listing.seller) {
+        payable(royaltyReceiver).transfer(royaltyAmount);
+    } else {
+        sellerAmount += royaltyAmount;
+    }
+    payable(owner()).transfer(marketplaceFeeAmount);
+    payable(listing.seller).transfer(sellerAmount);
+    
+    // 10. Emit event
+    emit TrademarkSold(...);
+}
+```
+
+Q43. Show me the Web3Context implementation.
+ANSWER:
+```typescript
+export function Web3Provider({ children }: Web3ProviderProps) {
+  // State management
+  const [account, setAccount] = useState<string | null>(null);
+  const [chainId, setChainId] = useState<number | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Check connection on mount
+  useEffect(() => {
+    checkConnection();
+    
+    // Event listeners
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      window.ethereum.on('chainChanged', handleChainChanged);
+    }
+    
+    // Cleanup
+    return () => {
+      if (window.ethereum) {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        window.ethereum.removeListener('chainChanged', handleChainChanged);
+      }
+    };
+  }, []);
+
+  // Connect function
+  const connect = async () => {
+    setIsLoading(true);
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send('eth_requestAccounts', []);
+    const signer = await provider.getSigner();
+    const address = await signer.getAddress();
+    setAccount(address);
+    setIsConnected(true);
+    setIsLoading(false);
+  };
+
+  return (
+    <Web3Context.Provider value={{ account, chainId, isConnected, connect, ... }}>
+      {children}
+    </Web3Context.Provider>
+  );
+}
+```
+
+Q44. How does the IPFS upload work in your code?
+ANSWER:
+```typescript
+export async function uploadFilesToIPFS(files: File[]): Promise<string> {
+  // 1. Validate files (size, type, count)
+  validateFiles(files);
+  
+  // 2. Get Web3.Storage client with API token
+  const client = getWeb3StorageClient();
+  
+  // 3. Upload files and get CID
+  const cid = await client.put(files, {
+    name: `trademark-assets-${Date.now()}`,
+    maxRetries: 3,
+  });
+  
+  // 4. Return IPFS hash
+  return cid;
+}
+
+// Metadata upload
+export async function uploadMetadataToIPFS(metadata: IPFSMetadata): Promise<string> {
+  // Convert metadata to File
+  const metadataBlob = new Blob([JSON.stringify(metadata, null, 2)], {
+    type: 'application/json',
+  });
+  const metadataFile = new File([metadataBlob], 'metadata.json');
+  
+  // Upload to IPFS
+  const client = getWeb3StorageClient();
+  const cid = await client.put([metadataFile], {
+    name: `trademark-metadata-${Date.now()}`,
+  });
+  
+  return cid;
+}
+```
+
+Q45. Show the trademark registration API route.
+ANSWER:
+```typescript
+// pages/api/trademarks/index.ts
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method === 'POST') {
+    try {
+      // 1. Extract data from request
+      const { tokenId, creatorAddress, companyName, sloganText, ... } = req.body;
+      
+      // 2. Validate required fields
+      if (!tokenId || !creatorAddress) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+      
+      // 3. Store in Firebase
+      const trademarkRef = db.collection('trademarks').doc(tokenId.toString());
+      await trademarkRef.set({
+        tokenId,
+        creatorAddress,
+        companyName,
+        sloganText,
+        verificationStatus: 'pending',
+        createdAt: new Date(),
+        ...
+      });
+      
+      // 4. Return success
+      return res.status(201).json({ 
+        success: true, 
+        data: { tokenId } 
+      });
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to save trademark' });
+    }
+  }
+  
+  if (req.method === 'GET') {
+    // Fetch trademarks with filters
+    const { category, verified, creator } = req.query;
+    // Query Firebase and return results
+  }
+}
+```
+
+================================================================================
+SECTION 10: ADVANCED CONCEPTS
+================================================================================
+
+Q46. What is gas optimization and how did you implement it?
+ANSWER:
+GAS OPTIMIZATION TECHNIQUES:
+- Use uint256 instead of smaller uints (except for packing)
+- Pack struct variables efficiently
+- Use immutable for constants set in constructor
+- Avoid unnecessary storage writes
+- Use memory instead of storage where possible
+- Batch operations when possible
+- Use events instead of storage for historical data
+- Short-circuit boolean operations
+
+EXAMPLE:
+```solidity
+// Expensive - multiple storage writes
+listing.active = false;
+listing.soldAt = block.timestamp;
+listing.buyer = msg.sender;
+
+// Better - single storage write with struct
+listings[listingId] = Listing({
+    ...listing,
+    active: false,
+    soldAt: block.timestamp,
+    buyer: msg.sender
+});
+```
+
+Q47. Explain the EIP-2981 royalty standard.
+ANSWER:
+EIP-2981 provides standard way to retrieve royalty payment information:
+
+```solidity
+function royaltyInfo(uint256 tokenId, uint256 salePrice) 
+    external view returns (address receiver, uint256 royaltyAmount) {
+    // Get royalty percentage for token
+    uint96 royaltyBps = _tokenRoyalties[tokenId];
+    
+    // Calculate royalty amount (basis points)
+    royaltyAmount = (salePrice * royaltyBps) / 10000;
+    
+    // Return creator address and amount
+    receiver = _tokenCreators[tokenId];
+}
+```
+
+Benefits:
+- Standardized across marketplaces
+- Automatic royalty calculation
+- Creator gets paid on secondary sales
+- Basis points (1/100th of percent) for precision
+
+Q48. What is the difference between memory and storage in Solidity?
+ANSWER:
+STORAGE:
+- Persistent data stored on blockchain
+- Expensive (costs gas)
+- State variables are storage by default
+- Modifications are permanent
+
+MEMORY:
+- Temporary data during function execution
+- Cheaper than storage
+- Cleared after function completes
+- Used for function parameters and local variables
+
+EXAMPLE:
+```solidity
+// Storage - persistent
+Listing storage listing = listings[listingId];
+listing.active = false; // Modifies blockchain state
+
+// Memory - temporary
+Listing memory tempListing = listings[listingId];
+tempListing.active = false; // Only in memory, not saved
+```
+
+Q49. How does event indexing work and why is it important?
+ANSWER:
+Events are logged on blockchain and can be filtered/searched:
+
+```solidity
+event TrademarkSold(
+    uint256 indexed listingId,    // Indexed - can filter by this
+    uint256 indexed tokenId,       // Indexed - can filter by this
+    address indexed buyer,         // Indexed - can filter by this
+    address seller,                // Not indexed - in event data
+    uint256 price,                 // Not indexed - in event data
+    uint256 royaltyAmount,
+    uint256 marketplaceFeeAmount
+);
+```
+
+BENEFITS:
+- Up to 3 indexed parameters per event
+- Indexed params become searchable topics
+- Frontend can filter events efficiently
+- Build transaction history
+- Track specific user activities
+- Lower cost than storing in state
+
+Q50. Explain the concept of gas and gas fees.
+ANSWER:
+GAS is the unit measuring computational work on Ethereum/Polygon:
+
+COMPONENTS:
+- Gas Limit: Maximum gas willing to spend
+- Gas Price: Price per unit of gas (in Gwei)
+- Total Fee = Gas Used × Gas Price
+
+EXAMPLE:
+- Simple transfer: ~21,000 gas
+- NFT mint: ~100,000 gas
+- Complex contract: 200,000+ gas
+
+WHY POLYGON:
+- Ethereum: $50-100 per transaction
+- Polygon: $0.01-0.10 per transaction
+- Same security model, much cheaper
+
+================================================================================
+SECTION 11: DATABASE & API DESIGN
+================================================================================
+
+Q51. Why use both Firebase and blockchain?
+ANSWER:
+BLOCKCHAIN:
+- Ownership records (immutable)
+- Transaction history
+- Smart contract logic
+- Trustless verification
+
+FIREBASE:
+- Fast queries and search
+- User profiles and preferences
+- Off-chain metadata
+- Admin verification status
+- Reports and notifications
+- Cost-effective for large data
+
+HYBRID APPROACH:
+- Critical data on blockchain
+- Supplementary data in Firebase
+- Best of both worlds
+
+Q52. Explain your database schema in Firebase.
+ANSWER:
+COLLECTIONS:
+
+trademarks/
+  {tokenId}/
+    - tokenId, creatorAddress, companyName
+    - sloganText, registrationNumber
+    - category, description, ipfsHash
+    - verificationStatus, verifiedBy, verifiedAt
+    - createdAt, updatedAt
+
+listings/
+  {listingId}/
+    - listingId, tokenId, seller
+    - price, type, duration
+    - status, suspended
+    - createdAt, expiresAt
+
+users/
+  {address}/
+    - address, displayName, email
+    - role, verified, suspended
+    - totalTrademarks, totalSales
+    - averageRating, ratingCount
+
+ratings/
+  {ratingId}/
+    - creatorAddress, trademarkId
+    - rating, review, reviewerAddress
+    - createdAt
+
+reports/
+  {reportId}/
+    - type, targetId, targetType
+    - reason, description
+    - reporterAddress, status
+    - resolvedBy, resolvedAt
+
+notifications/
+  {notificationId}/
+    - userId, type, title, message
+    - read, relatedId, actionUrl
+    - createdAt
+
+Q53. How do you handle API authentication?
+ANSWER:
+```typescript
+// Verify wallet signature
+export async function verifyWalletSignature(
+  address: string, 
+  signature: string, 
+  message: string
+): Promise<boolean> {
+  try {
+    const recoveredAddress = ethers.verifyMessage(message, signature);
+    return recoveredAddress.toLowerCase() === address.toLowerCase();
+  } catch {
+    return false;
+  }
+}
+
+// Middleware for protected routes
+export function requireAuth(handler) {
+  return async (req, res) => {
+    const { address, signature } = req.headers;
+    
+    if (!address || !signature) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const isValid = await verifyWalletSignature(address, signature, 'Auth message');
+    
+    if (!isValid) {
+      return res.status(403).json({ error: 'Invalid signature' });
+    }
+    
+    return handler(req, res);
+  };
+}
+```
+
+Q54. How do you handle pagination in your API?
+ANSWER:
+```typescript
+export default async function handler(req, res) {
+  const { page = 1, limit = 20, category, verified } = req.query;
+  
+  let query = db.collection('trademarks');
+  
+  // Apply filters
+  if (category) {
+    query = query.where('category', '==', category);
+  }
+  if (verified === 'true') {
+    query = query.where('verificationStatus', '==', 'verified');
+  }
+  
+  // Pagination
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+  query = query.orderBy('createdAt', 'desc')
+               .limit(parseInt(limit))
+               .offset(offset);
+  
+  const snapshot = await query.get();
+  const trademarks = snapshot.docs.map(doc => doc.data());
+  
+  // Get total count
+  const totalSnapshot = await db.collection('trademarks').count().get();
+  const total = totalSnapshot.data().count;
+  
+  return res.json({
+    data: trademarks,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      totalPages: Math.ceil(total / parseInt(limit))
+    }
+  });
+}
+```
+
+================================================================================
+SECTION 12: UI/UX & FRONTEND
+================================================================================
+
+Q55. How did you implement the dark theme?
+ANSWER:
+Using Tailwind CSS with custom color palette:
+
+```css
+/* globals.css */
+:root {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #2a2a2a;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --accent: #3b82f6;
+}
+
+/* Tailwind config */
+theme: {
+  extend: {
+    colors: {
+      dark: {
+        bg: '#0a0a0a',
+        card: '#1a1a1a',
+        border: '#2a2a2a',
+      }
+    }
+  }
+}
+```
+
+Applied consistently across all components with proper contrast ratios.
+
+Q56. Explain your component architecture.
+ANSWER:
+LAYOUT COMPONENTS:
+- Navbar: Navigation and wallet connection
+- Footer: Links and information
+- Layout: Wraps all pages
+
+FEATURE COMPONENTS:
+- TrademarkCard: Display trademark in grid
+- CategoryGrid: Show categories
+- ProductVerification: Verify products
+- RatingDisplay/RatingModal: Rating system
+- ReportModal: Report functionality
+- Toast: Notifications
+
+FORM COMPONENTS:
+- Input fields with validation
+- File upload with preview
+- Category selector
+- Price input with ETH conversion
+
+Q57. How do you handle loading states?
+ANSWER:
+```typescript
+const [isLoading, setIsLoading] = useState(false);
+const [error, setError] = useState<string | null>(null);
+
+const handleSubmit = async () => {
+  setIsLoading(true);
+  setError(null);
+  
+  try {
+    await performOperation();
+    // Success handling
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+return (
+  <button disabled={isLoading}>
+    {isLoading ? 'Processing...' : 'Submit'}
+  </button>
+);
+```
+
+Q58. How do you optimize images from IPFS?
+ANSWER:
+```typescript
+// Multiple gateway fallback
+const [imageSrc, setImageSrc] = useState(getIPFSUrl(hash));
+const [currentGatewayIndex, setCurrentGatewayIndex] = useState(0);
+
+const handleImageError = () => {
+  const gateways = IPFS_CONFIG.GATEWAY_URLS;
+  if (currentGatewayIndex < gateways.length - 1) {
+    setCurrentGatewayIndex(prev => prev + 1);
+    setImageSrc(gateways[currentGatewayIndex + 1] + hash);
+  } else {
+    setImageSrc('/placeholder.png');
+  }
+};
+
+<img 
+  src={imageSrc} 
+  onError={handleImageError}
+  loading="lazy"
+  alt="Trademark"
+/>
+```

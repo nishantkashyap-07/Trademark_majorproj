@@ -1,0 +1,430 @@
+================================================================================
+SECTION 17: DEMONSTRATION QUESTIONS
+================================================================================
+
+Q75. Can you demonstrate the trademark registration process?
+DEMO STEPS:
+1. Navigate to /register page
+2. Connect MetaMask wallet
+3. Fill in trademark details:
+   - Company name
+   - Slogan/trademark text
+   - Registration number
+   - Category selection
+   - Description
+   - Royalty percentage
+4. Upload trademark images/documents
+5. Review information
+6. Click "Register Trademark"
+7. Approve IPFS upload transaction
+8. Sign blockchain transaction in MetaMask
+9. Wait for confirmation
+10. View registered trademark with tokenId
+
+EXPLAIN DURING DEMO:
+- Files uploading to IPFS
+- Metadata creation
+- Smart contract interaction
+- Gas fee estimation
+- Transaction confirmation
+- Event emission
+- Database update
+
+Q76. Show me how the marketplace listing works.
+DEMO STEPS:
+1. Go to dashboard
+2. Select owned trademark
+3. Click "Create Listing"
+4. Choose listing type:
+   - Sale (full ownership transfer)
+   - License (usage rights)
+5. Set price in ETH
+6. For license: Set duration or perpetual
+7. Optional: Set listing expiration
+8. Sign transaction
+9. Listing appears in marketplace
+10. Show listing details page
+
+EXPLAIN:
+- Difference between sale and license
+- Price setting considerations
+- Duration options for licenses
+- Marketplace fee calculation
+- Listing visibility
+
+Q77. Demonstrate the buying process.
+DEMO STEPS:
+1. Browse marketplace
+2. Filter by category
+3. Select a trademark
+4. View details (images, description, price)
+5. Check ownership on blockchain
+6. Click "Buy Now"
+7. Review transaction details:
+   - Price
+   - Royalty amount
+   - Marketplace fee
+   - Total cost
+8. Confirm purchase in MetaMask
+9. Wait for transaction confirmation
+10. NFT transferred to buyer
+11. Show in buyer's dashboard
+
+EXPLAIN:
+- Payment distribution (seller, creator, platform)
+- NFT ownership transfer
+- Transaction finality
+- Ownership verification
+
+Q78. Show the admin verification process.
+DEMO STEPS:
+1. Login as admin
+2. Navigate to admin dashboard
+3. View pending trademarks
+4. Select trademark for review
+5. Check details:
+   - Company information
+   - Registration number
+   - Uploaded documents
+   - IPFS content
+6. Verify authenticity
+7. Options:
+   - Approve: Mark as verified
+   - Reject: Provide reason
+8. Action recorded on blockchain
+9. User notified
+10. Verified badge appears
+
+EXPLAIN:
+- Admin role and permissions
+- Verification criteria
+- Blockchain update
+- Audit trail
+- User notification
+
+Q79. Demonstrate product verification.
+DEMO STEPS:
+1. Go to /verify page
+2. Enter registration number
+3. System queries blockchain
+4. Display results:
+   - Trademark found/not found
+   - Owner information
+   - Company details
+   - Verification status
+   - Images from IPFS
+5. Show blockchain proof
+6. Explain authenticity verification
+
+EXPLAIN:
+- How consumers use this
+- Anti-counterfeiting benefits
+- Blockchain as source of truth
+- IPFS content retrieval
+
+Q80. Show the rating system.
+DEMO STEPS:
+1. After purchase, rate creator
+2. Select star rating (1-5)
+3. Write optional review
+4. Submit rating
+5. Rating stored in database
+6. Average rating calculated
+7. Display on creator profile
+8. Show rating history
+
+EXPLAIN:
+- Trust building mechanism
+- Reputation system
+- Preventing spam ratings
+- Impact on creator visibility
+
+================================================================================
+SECTION 18: TROUBLESHOOTING QUESTIONS
+================================================================================
+
+Q81. What if MetaMask is not installed?
+ANSWER:
+```typescript
+if (typeof window === 'undefined' || !window.ethereum) {
+  // Show installation prompt
+  return (
+    <div>
+      <p>MetaMask not detected</p>
+      <a href="https://metamask.io/download">Install MetaMask</a>
+    </div>
+  );
+}
+```
+
+Alternative: Support WalletConnect for mobile wallets
+
+Q82. What if user is on wrong network?
+ANSWER:
+```typescript
+const switchNetwork = async () => {
+  try {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x89' }], // Polygon mainnet
+    });
+  } catch (error) {
+    if (error.code === 4902) {
+      // Network not added, add it
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [{
+          chainId: '0x89',
+          chainName: 'Polygon Mainnet',
+          rpcUrls: ['https://polygon-rpc.com'],
+          nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+          blockExplorerUrls: ['https://polygonscan.com']
+        }]
+      });
+    }
+  }
+};
+```
+
+Q83. What if transaction fails?
+ANSWER:
+COMMON CAUSES:
+1. Insufficient gas
+2. User rejection
+3. Network congestion
+4. Contract revert (validation failed)
+
+HANDLING:
+```typescript
+try {
+  const tx = await contract.buyTrademark(listingId, { value: price });
+  await tx.wait();
+} catch (error) {
+  if (error.code === 4001) {
+    showError('Transaction rejected by user');
+  } else if (error.code === 'INSUFFICIENT_FUNDS') {
+    showError('Insufficient balance');
+  } else if (error.reason) {
+    showError(`Transaction failed: ${error.reason}`);
+  } else {
+    showError('Transaction failed. Please try again.');
+  }
+}
+```
+
+Q84. What if IPFS content doesn't load?
+ANSWER:
+FALLBACK MECHANISM:
+```typescript
+const IPFS_GATEWAYS = [
+  'https://ipfs.io/ipfs/',
+  'https://gateway.pinata.cloud/ipfs/',
+  'https://cloudflare-ipfs.com/ipfs/',
+  'https://dweb.link/ipfs/'
+];
+
+async function fetchFromIPFS(hash) {
+  for (const gateway of IPFS_GATEWAYS) {
+    try {
+      const response = await fetch(gateway + hash, { timeout: 10000 });
+      if (response.ok) return response;
+    } catch (error) {
+      continue; // Try next gateway
+    }
+  }
+  throw new Error('Failed to load from IPFS');
+}
+```
+
+Q85. How do you handle concurrent transactions?
+ANSWER:
+- Each transaction has unique nonce
+- MetaMask queues transactions
+- Wait for confirmation before next transaction
+- Show pending state in UI
+- Allow cancellation with higher gas price
+
+================================================================================
+SECTION 19: PERFORMANCE & OPTIMIZATION
+================================================================================
+
+Q86. How do you optimize smart contract gas usage?
+ANSWER:
+1. USE EVENTS INSTEAD OF STORAGE:
+   ```solidity
+   // Expensive
+   mapping(uint256 => string[]) public history;
+   
+   // Cheaper
+   event HistoryUpdated(uint256 indexed id, string data);
+   ```
+
+2. PACK VARIABLES:
+   ```solidity
+   // Expensive - 3 storage slots
+   uint256 a;
+   uint8 b;
+   uint256 c;
+   
+   // Cheaper - 2 storage slots
+   uint256 a;
+   uint256 c;
+   uint8 b;
+   ```
+
+3. USE IMMUTABLE:
+   ```solidity
+   address public immutable trademarkNFT; // Set once, cheaper reads
+   ```
+
+4. BATCH OPERATIONS:
+   ```solidity
+   function batchMint(uint256[] calldata amounts) external {
+     // Process multiple in one transaction
+   }
+   ```
+
+Q87. How do you optimize frontend performance?
+ANSWER:
+1. LAZY LOADING:
+   ```typescript
+   const AdminDashboard = dynamic(() => import('./AdminDashboard'), {
+     loading: () => <Spinner />,
+     ssr: false
+   });
+   ```
+
+2. IMAGE OPTIMIZATION:
+   ```typescript
+   <Image
+     src={ipfsUrl}
+     width={300}
+     height={300}
+     loading="lazy"
+     placeholder="blur"
+   />
+   ```
+
+3. MEMOIZATION:
+   ```typescript
+   const expensiveCalculation = useMemo(() => {
+     return calculateRoyalty(price, percentage);
+   }, [price, percentage]);
+   ```
+
+4. PAGINATION:
+   - Load 20 items at a time
+   - Infinite scroll or page numbers
+   - Reduce initial load time
+
+Q88. How do you handle caching?
+ANSWER:
+1. BROWSER CACHE:
+   - Cache IPFS content
+   - Cache contract ABIs
+   - Cache user preferences
+
+2. API RESPONSE CACHE:
+   ```typescript
+   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
+   ```
+
+3. REACT QUERY:
+   ```typescript
+   const { data } = useQuery('trademarks', fetchTrademarks, {
+     staleTime: 5 * 60 * 1000, // 5 minutes
+     cacheTime: 10 * 60 * 1000 // 10 minutes
+   });
+   ```
+
+================================================================================
+SECTION 20: FINAL QUESTIONS
+================================================================================
+
+Q89. What did you learn from this project?
+ANSWER:
+TECHNICAL SKILLS:
+- Solidity smart contract development
+- Web3 integration with ethers.js
+- IPFS decentralized storage
+- Next.js full-stack development
+- TypeScript type safety
+- Firebase database management
+
+BLOCKCHAIN CONCEPTS:
+- NFT standards (ERC-721, EIP-2981)
+- Gas optimization techniques
+- Security best practices
+- Event-driven architecture
+- Decentralized application design
+
+SOFT SKILLS:
+- Problem-solving complex issues
+- Reading documentation
+- Debugging blockchain transactions
+- Project planning and execution
+- Time management
+
+Q90. How is this project relevant to industry?
+ANSWER:
+GROWING MARKET:
+- NFT market size: $40+ billion
+- IP protection is critical for businesses
+- Blockchain adoption increasing
+- Web3 skills in high demand
+
+REAL APPLICATIONS:
+- Nike uses blockchain for authenticity
+- Luxury brands fighting counterfeits
+- Digital art and IP protection
+- Supply chain verification
+
+CAREER RELEVANCE:
+- Blockchain developer roles
+- Web3 application development
+- Smart contract auditing
+- DApp architecture
+- Full-stack blockchain development
+
+Q91. What makes your project unique?
+ANSWER:
+1. FOCUS ON IP PROTECTION:
+   - Not just NFT marketplace
+   - Solves real-world problem
+   - Anti-counterfeiting features
+
+2. HYBRID ARCHITECTURE:
+   - Blockchain + traditional database
+   - Best of both worlds
+   - Practical approach
+
+3. COMPLETE ECOSYSTEM:
+   - Registration, verification, marketplace
+   - Multiple user roles
+   - Admin moderation
+   - Rating system
+
+4. ACADEMIC IMPLEMENTATION:
+   - Well-documented
+   - Clean code structure
+   - Educational value
+   - Production-ready concepts
+
+Q92. Final thoughts and conclusion?
+ANSWER:
+This project demonstrates:
+- Practical application of blockchain technology
+- Solving real-world IP protection challenges
+- Full-stack Web3 development skills
+- Integration of multiple technologies
+- Security-first approach
+- Scalable architecture
+
+The platform provides a foundation for decentralized IP management, combining 
+blockchain's immutability with practical usability. While designed as an 
+academic project, the concepts and implementation are production-ready and 
+address genuine market needs in IP protection and verification.
+
+================================================================================
+END OF VIVA QUESTIONS
+================================================================================

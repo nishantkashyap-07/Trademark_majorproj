@@ -98,9 +98,9 @@ export default function Marketplace() {
 
       <Navbar />
 
-        <main className="min-h-screen bg-white">
+        <main className="min-h-screen bg-gray-950">
           {/* Hero Section */}
-          <section className="relative overflow-hidden bg-gray-950 text-white py-16">
+          <section className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-950 to-black text-white py-12">
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute -top-32 -right-32 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-500/40 via-purple-500/20 to-transparent blur-3xl" />
               <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gradient-to-tr from-blue-500/30 via-cyan-400/10 to-transparent blur-3xl" />
@@ -144,7 +144,7 @@ export default function Marketplace() {
           <Breadcrumbs />
 
           {/* Filters and Search */}
-          <section className="mb-8 rounded-2xl border border-gray-200 bg-white/80 p-6 shadow-sm backdrop-blur-sm">
+          <section className="mb-8 rounded-2xl border border-gray-800 bg-gray-900/50 p-6 backdrop-blur-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
               {/* Search */}
               <div className="lg:col-span-2">
@@ -258,7 +258,7 @@ export default function Marketplace() {
               <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.562M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No trademarks found</h3>
+              <h3 className="mt-2 text-sm font-medium text-white">No trademarks found</h3>
               <p className="mt-1 text-sm text-gray-500">
                 Try adjusting your search criteria or filters.
               </p>
@@ -275,7 +275,7 @@ export default function Marketplace() {
           )}
 
           {/* Stats Section */}
-          <section className="mt-14 rounded-2xl border border-gray-200 bg-white px-6 py-6 text-sm text-gray-800">
+          <section className="mt-14 rounded-2xl border border-gray-800 bg-gray-900/50 px-6 py-6 text-sm text-gray-300">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.22em] text-gray-500">
@@ -288,21 +288,21 @@ export default function Marketplace() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-4">
-              <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+              <div className="rounded-xl border border-gray-800 bg-gray-950/50 px-4 py-3">
                 <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500 mb-1">Total Trademarks</p>
-                <p className="text-xl font-semibold text-gray-900">{trademarks.length}</p>
+                <p className="text-xl font-semibold text-white">{trademarks.length}</p>
               </div>
-              <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+              <div className="rounded-xl border border-gray-800 bg-gray-950/50 px-4 py-3">
                 <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500 mb-1">Verified</p>
-                <p className="text-xl font-semibold text-gray-900">{trademarks.filter(tm => tm.verified).length}</p>
+                <p className="text-xl font-semibold text-white">{trademarks.filter(tm => tm.verified).length}</p>
               </div>
-              <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+              <div className="rounded-xl border border-gray-800 bg-gray-950/50 px-4 py-3">
                 <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500 mb-1">Categories</p>
-                <p className="text-xl font-semibold text-gray-900">{new Set(trademarks.map(tm => tm.category)).size}</p>
+                <p className="text-xl font-semibold text-white">{new Set(trademarks.map(tm => tm.category)).size}</p>
               </div>
-              <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+              <div className="rounded-xl border border-gray-800 bg-gray-950/50 px-4 py-3">
                 <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500 mb-1">Unique Owners</p>
-                <p className="text-xl font-semibold text-gray-900">{new Set(trademarks.map(tm => tm.creatorAddress)).size}</p>
+                <p className="text-xl font-semibold text-white">{new Set(trademarks.map(tm => tm.creatorAddress)).size}</p>
               </div>
             </div>
           </section>

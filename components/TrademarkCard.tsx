@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { TrademarkMetadata } from '@/types';
 import TrademarkBadge from './TrademarkBadge';
+import RatingDisplay from './RatingDisplay';
 
 interface TrademarkCardProps {
   trademark: TrademarkMetadata;
@@ -13,7 +14,7 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid' }:
     return (
       <Link href={`/trademark/${trademark.tokenId}`}>
         <div
-          className="bg-white rounded-xl border-2 border-gray-200 p-6 hover:border-blue-500 hover:shadow-lg transition-all duration-300 group"
+          className="bg-gray-900/50 rounded-xl border border-gray-800 p-6 hover:border-blue-500 hover:shadow-lg transition-all duration-300 group"
           onClick={onClick}
         >
           <div className="flex items-center gap-6">
@@ -21,7 +22,7 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid' }:
             <div className="flex-shrink-0">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-brand rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity"></div>
-                <div className="relative w-20 h-20 bg-white rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all border border-neutral-200">
+                <div className="relative w-20 h-20 bg-gray-800 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all border border-gray-700">
                   <span className="text-3xl font-display font-bold gradient-text">
                     {trademark.sloganText.charAt(0)}
                   </span>
@@ -91,7 +92,7 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid' }:
           <div className="absolute inset-0 flex items-center justify-center p-8">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-brand rounded-2xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-              <div className="relative w-28 h-28 bg-white rounded-2xl flex items-center justify-center shadow-soft group-hover:shadow-medium group-hover:scale-105 transition-all duration-300 border border-neutral-200">
+              <div className="relative w-28 h-28 bg-gray-800 rounded-2xl flex items-center justify-center shadow-soft group-hover:shadow-medium group-hover:scale-105 transition-all duration-300 border border-gray-700">
                 <span className="text-5xl font-display font-bold gradient-text">
                   {trademark.sloganText.charAt(0)}
                 </span>
@@ -102,7 +103,7 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid' }:
           {/* Verified Badge Overlay */}
           {trademark.verified && (
             <div className="absolute top-4 right-4">
-              <div className="bg-white rounded-full p-2 shadow-medium border border-emerald-200">
+              <div className="bg-gray-900 rounded-full p-2 shadow-medium border border-emerald-600/30">
                 <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
@@ -126,9 +127,18 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid' }:
           </h3>
 
           {/* Company Name */}
-          <p className="text-sm text-neutral-600 mb-4 truncate">
+          <p className="text-sm text-neutral-600 mb-2 truncate">
             by <span className="font-semibold">{trademark.companyName}</span>
           </p>
+
+          {/* Creator Rating */}
+          <div className="mb-4">
+            <RatingDisplay 
+              creatorAddress={trademark.creatorAddress} 
+              size="small"
+              showCount={false}
+            />
+          </div>
 
           {/* Bottom Row */}
           <div className="flex items-center justify-between pt-4 border-t border-neutral-100">

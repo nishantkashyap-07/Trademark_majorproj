@@ -265,18 +265,18 @@ export default function RegisterTrademark() {
         <title>Register Trademark - TrademarkChain</title>
       </Head>
 
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-950">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
+        <header className="bg-gray-900 border-b border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Trademark Registration</h1>
-                <p className="text-sm text-gray-600 mt-1">Secure your intellectual property on the blockchain</p>
+                <h1 className="text-3xl font-bold text-white">Trademark Registration</h1>
+                <p className="text-sm text-gray-400 mt-1">Secure your intellectual property on the blockchain</p>
               </div>
-              <div className="bg-gray-50 px-4 py-2 rounded-xl border border-gray-200">
-                <div className="text-xs text-gray-500 mb-1">Connected Wallet</div>
-                <div className="text-sm font-mono text-gray-900">
+              <div className="bg-gray-800 px-4 py-2 rounded-xl border border-gray-700">
+                <div className="text-xs text-gray-400 mb-1">Connected Wallet</div>
+                <div className="text-sm font-mono text-white">
                   {account?.slice(0, 6)}...{account?.slice(-4)}
                 </div>
               </div>
@@ -292,8 +292,8 @@ export default function RegisterTrademark() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Registration Process</h3>
-                <p className="text-gray-700 mb-3">
+                <h3 className="text-lg font-semibold text-white mb-2">Registration Process</h3>
+                <p className="text-gray-300 mb-3">
                   Your trademark will be minted as an ERC-721 NFT on Polygon blockchain with metadata stored on IPFS. 
                   This ensures permanent, immutable ownership records and decentralized asset storage.
                 </p>
@@ -302,19 +302,19 @@ export default function RegisterTrademark() {
                     <svg className="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    <span className="text-gray-700">Blockchain Secured</span>
+                    <span className="text-gray-300">Blockchain Secured</span>
                   </div>
                   <div className="flex items-center">
-                    <svg className="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-4 h-4 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    <span className="text-gray-700">IPFS Storage</span>
+                    <span className="text-gray-300">IPFS Storage</span>
                   </div>
                   <div className="flex items-center">
-                    <svg className="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-4 h-4 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    <span className="text-gray-700">Instant Verification</span>
+                    <span className="text-gray-300">Instant Verification</span>
                   </div>
                 </div>
               </div>
@@ -358,11 +358,11 @@ export default function RegisterTrademark() {
           </div>
 
           {/* Form Content */}
-          <div className="bg-white rounded-lg shadow-md p-8">
+          <div className="bg-gray-900 rounded-lg border border-gray-800 p-8">
             {/* Step 1: Company Info */}
             {currentStep === 1 && (
               <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Company Information</h2>
+                <h2 className="text-xl font-semibold text-white mb-6">Company Information</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -544,8 +544,8 @@ export default function RegisterTrademark() {
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Review & Submit</h2>
                 
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="font-medium text-gray-900 mb-4">Trademark Information</h3>
+                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                  <h3 className="font-medium text-white mb-4">Trademark Information</h3>
                   <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <dt className="text-sm font-medium text-gray-500">Company Name</dt>
