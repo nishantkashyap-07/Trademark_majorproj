@@ -14,15 +14,15 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid' }:
     return (
       <Link href={`/trademark/${trademark.tokenId}`}>
         <div
-          className="bg-gray-900/50 rounded-xl border border-gray-800 p-6 hover:border-blue-500 hover:shadow-lg transition-all duration-300 group"
+          className="bg-gray-800 rounded-xl border border-gray-700 p-6 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 group"
           onClick={onClick}
         >
           <div className="flex items-center gap-6">
             {/* Icon */}
             <div className="flex-shrink-0">
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-brand rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity"></div>
-                <div className="relative w-20 h-20 bg-gray-800 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all border border-gray-700">
+                <div className="absolute inset-0 bg-gradient-brand rounded-xl blur-lg opacity-20  transition-opacity"></div>
+                <div className="relative w-20 h-20 bg-gray-800 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all bor2der border-gray-700">
                   <span className="text-3xl font-display font-bold gradient-text">
                     {trademark.sloganText.charAt(0)}
                   </span>
@@ -47,13 +47,13 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid' }:
                       </span>
                     )}
                   </div>
-                  <h3 className="text-xl font-display font-bold text-neutral-900 mb-1 group-hover:text-brand-600 transition-colors">
+                  <h3 className="text-xl font-display font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">
                     {trademark.sloganText}
                   </h3>
-                  <p className="text-sm text-neutral-600 mb-2">
-                    by <span className="font-semibold">{trademark.companyName}</span>
+                  <p className="text-sm text-gray-400 mb-2">
+                    by <span className="font-semibold text-gray-200">{trademark.companyName}</span>
                   </p>
-                  <p className="text-sm text-neutral-500 line-clamp-2">
+                  <p className="text-sm text-gray-400 line-clamp-2">
                     {trademark.description}
                   </p>
                 </div>
@@ -63,14 +63,14 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid' }:
             {/* Right Side Info */}
             <div className="flex-shrink-0 text-right">
               <div className="mb-3">
-                <span className="text-xs text-neutral-500 font-medium">Registered</span>
-                <p className="text-sm font-semibold text-neutral-900 mt-1">
+                <span className="text-xs text-gray-400 font-medium">Registered</span>
+                <p className="text-sm font-semibold text-white mt-1">
                   {trademark.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </p>
               </div>
               <div className="flex items-center justify-end gap-2">
                 <div className="w-6 h-6 bg-gradient-brand rounded-lg shadow-sm"></div>
-                <span className="text-xs text-neutral-500 font-mono font-semibold">
+                <span className="text-xs text-gray-300 font-mono font-semibold">
                   #{trademark.tokenId}
                 </span>
               </div>
@@ -84,11 +84,11 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid' }:
   return (
     <Link href={`/trademark/${trademark.tokenId}`}>
       <div
-        className="card-hover group animate-in"
+        className="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group animate-in"
         onClick={onClick}
       >
         {/* Image Container */}
-        <div className="relative aspect-square bg-gradient-to-br from-neutral-50 to-neutral-100 overflow-hidden">
+        <div className="relative aspect-square bg-gradient-to-br from-gray-700 to-gray-800 overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-center p-8">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-brand rounded-2xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
@@ -122,13 +122,13 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid' }:
           </div>
 
           {/* Slogan Text */}
-          <h3 className="text-lg font-display font-bold text-neutral-900 mb-1 truncate group-hover:text-brand-600 transition-colors">
+          <h3 className="text-lg font-display font-bold text-white mb-1 truncate group-hover:text-blue-400 transition-colors">
             {trademark.sloganText}
           </h3>
 
           {/* Company Name */}
-          <p className="text-sm text-neutral-600 mb-2 truncate">
-            by <span className="font-semibold">{trademark.companyName}</span>
+          <p className="text-sm text-gray-400 mb-2 truncate">
+            by <span className="font-semibold text-gray-200">{trademark.companyName}</span>
           </p>
 
           {/* Creator Rating */}
@@ -141,17 +141,17 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid' }:
           </div>
 
           {/* Bottom Row */}
-          <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
+          <div className="flex items-center justify-between pt-4 border-t border-gray-700">
             <div className="flex flex-col">
-              <span className="text-xs text-neutral-500 font-medium">Registered</span>
-              <span className="text-sm font-semibold text-neutral-900 mt-0.5">
+              <span className="text-xs text-gray-400 font-medium">Registered</span>
+              <span className="text-sm font-semibold text-white mt-0.5">
                 {trademark.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </div>
             
             <div className="flex items-center space-x-2">
               <div className="w-6 h-6 bg-gradient-brand rounded-lg shadow-sm"></div>
-              <span className="text-xs text-neutral-500 font-mono font-semibold">
+              <span className="text-xs text-gray-300 font-mono font-semibold">
                 #{trademark.tokenId}
               </span>
             </div>

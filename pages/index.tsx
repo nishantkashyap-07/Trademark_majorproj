@@ -47,7 +47,7 @@ export default function Home() {
                   <div className="flex gap-4">
                     <Link
                       href="/register"
-                      className="px-6 py-3 bg-white text-gray-900 rounded-lg hover:bg-gray-100 font-medium transition"
+                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition shadow-lg shadow-blue-600/20"
                     >
                       Register Trademark
                     </Link>
@@ -61,7 +61,7 @@ export default function Home() {
                 ) : (
                   <button
                     onClick={connect}
-                    className="px-8 py-3 bg-white text-gray-900 rounded-lg hover:bg-gray-100 font-medium transition"
+                    className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition shadow-lg shadow-blue-600/20"
                   >
                     Connect Wallet to Get Started
                   </button>
