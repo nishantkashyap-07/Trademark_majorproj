@@ -3,56 +3,104 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useWeb3 } from '@/contexts/Web3Context';
 import { apiClient } from '@/lib/api-client';
+import { SloganMetadata } from '@/types';
+
+interface DashboardStats {
+  totalTrademarks: number;
+  verifiedTrademarks: number;
+  pendingTrademarks: number;
+  totalUsers: number;
+  totalCategories: number;
+  verificationRate: string;
+  recentActivity: any[];
+}
 
 export default function Dashboard() {
   const { account, isConnected, connect } = useWeb3();
   
-  const [userTrademarks, setUserTrademarks] = useState<any[]>([]);
-  const [featuredTrademarks, setFeaturedTrademarks] = useState<any[]>([]);
-  const [trendingTrademarks, setTrendingTrademarks] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [allTrademarks, setAllTrademarks] = useState<SloganMetadata[]>([]);
+  const [userTrademarks, setUserTrademarks] = useState<SloganMetadata[]>([]);
+  const [featuredTrademarks, setFeaturedTrademarks] = useState<SloganMetadata[]>([]);
+  const [trendingTrademarks, setTrendingTrademarks] = useState<SloganMetadata[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DashboardStats>({
     totalTrademarks: 0,
     verifiedTrademarks: 0,
-    floorPrice: '0.03',
-    totalVolume: '5,555',
+    pendingTrademarks: 0,
+    totalUsers: 0,
+    totalCategories: 0,
+    verificationRate: '0',
+    recentActivity: [],
   });
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
+  // Load dashboard data on mount and when account changes
   useEffect(() => {
-    if (isConnected && account) {
-      loadDashboardData();
-    }
-  }, [isConnected, account]);
-
-  const loadDashboardData = async () => {
-    if (!account) return;
+    loadDashboardData();
     
-    setIsLoading(true);
-    try {
-      const [userRes] = await Promise.all([
-        apiClient.getUser(account),
-      ]);
+    // Set up auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      loadDashboardData(true);
+    }, 30000);
+    
+    setRefreshInterval(interval);
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [account, isConnected]);
 
-      if (userRes.success && userRes.data) {
-        const userData = userRes.data as any;
-        setUserTrademarks(userData.trademarks || []);
+  const loadDashboardData = async (silent = false) => {
+    if (!silent) setIsLoading(true);
+    
+    try {
+      // Fetch real-time stats from API
+      const statsRes = await fetch('/api/stats');
+      const statsData = await statsRes.json();
+      
+      if (statsData.success) {
         setStats({
-          totalTrademarks: userData.stats?.totalTrademarks || 0,
-          verifiedTrademarks: userData.stats?.verifiedTrademarks || 0,
-          floorPrice: '0.03',
-          totalVolume: '5,555',
+          totalTrademarks: statsData.data.overview.totalSlogans || 0,
+          verifiedTrademarks: statsData.data.overview.verifiedSlogans || 0,
+          pendingTrademarks: (statsData.data.overview.totalSlogans || 0) - (statsData.data.overview.verifiedSlogans || 0),
+          totalUsers: statsData.data.overview.totalUsers || 0,
+          totalCategories: statsData.data.overview.totalCategories || 0,
+          verificationRate: statsData.data.overview.verificationRate || '0',
+          recentActivity: statsData.data.recentActivity || [],
         });
       }
 
-      // Load demo data
-      const { demoTrademarks } = await import('@/lib/demo-data');
-      setFeaturedTrademarks(demoTrademarks.slice(0, 1));
-      setTrendingTrademarks(demoTrademarks.slice(1, 7));
+      // Fetch all trademarks
+      const trademarksRes = await fetch('/api/trademarks');
+      const trademarksData = await trademarksRes.json();
+      
+      if (trademarksData.success && trademarksData.data) {
+        const trademarks = trademarksData.data as SloganMetadata[];
+        setAllTrademarks(trademarks);
+        
+        // Filter verified trademarks for featured
+        const verified = trademarks.filter(t => t.verified);
+        setFeaturedTrademarks(verified.slice(0, 1));
+        
+        // Sort by views or recent for trending
+        const trending = [...trademarks]
+          .sort((a, b) => (b.views || 0) - (a.views || 0))
+          .slice(0, 6);
+        setTrendingTrademarks(trending);
+        
+        // Filter user's trademarks if connected
+        if (account) {
+          const userTms = trademarks.filter(
+            t => t.creatorAddress.toLowerCase() === account.toLowerCase()
+          );
+          setUserTrademarks(userTms);
+        }
+      }
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
@@ -174,6 +222,103 @@ export default function Dashboard() {
         </div>
 
         <div className="max-w-[1920px] mx-auto px-6 py-8">
+          {/* Real-time Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm text-gray-400 uppercase">Total Trademarks</h3>
+                <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-white mb-1">{stats.totalTrademarks}</p>
+              <p className="text-xs text-green-500">+{stats.pendingTrademarks} pending</p>
+            </div>
+
+            <div className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm text-gray-400 uppercase">Verified</h3>
+                <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-white mb-1">{stats.verifiedTrademarks}</p>
+              <p className="text-xs text-gray-400">{stats.verificationRate}% rate</p>
+            </div>
+
+            <div className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm text-gray-400 uppercase">Active Users</h3>
+                <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-white mb-1">{stats.totalUsers}</p>
+              <p className="text-xs text-gray-400">Registered creators</p>
+            </div>
+
+            <div className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm text-gray-400 uppercase">Categories</h3>
+                <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-white mb-1">{stats.totalCategories}</p>
+              <p className="text-xs text-gray-400">Industry sectors</p>
+            </div>
+          </div>
+
+          {/* User's Trademarks Section (if connected) */}
+          {isConnected && account && userTrademarks.length > 0 && (
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-white">Your Trademarks</h2>
+                <Link href="/register" className="text-blue-500 hover:text-blue-400 text-sm font-medium">
+                  Register New →
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {userTrademarks.slice(0, 3).map((trademark) => (
+                  <Link
+                    key={trademark.tokenId}
+                    href={`/trademark/${trademark.tokenId}`}
+                    className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-4 hover:border-blue-500 transition-all"
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-lg font-bold">
+                          {trademark.sloganText?.charAt(0) || '?'}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-white font-semibold truncate">{trademark.sloganText}</h3>
+                        <p className="text-sm text-gray-400 truncate">{trademark.companyName}</p>
+                      </div>
+                      {trademark.verified ? (
+                        <span className="px-2 py-1 bg-green-500/10 text-green-500 text-xs rounded">Verified</span>
+                      ) : (
+                        <span className="px-2 py-1 bg-yellow-500/10 text-yellow-500 text-xs rounded">Pending</span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-gray-400">
+                      <span>Token #{trademark.tokenId}</span>
+                      <span>{trademark.category}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-8">
             {/* Main Content */}
             <div className="flex-1">
@@ -217,16 +362,16 @@ export default function Dashboard() {
 
                           <div className="grid grid-cols-4 gap-4 mb-6">
                             <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">Mint Price</p>
-                              <p className="text-white font-bold">{stats.floorPrice} ETH</p>
+                              <p className="text-xs text-gray-500 uppercase mb-1">Token ID</p>
+                              <p className="text-white font-bold">#{trademark.tokenId}</p>
                             </div>
                             <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">Total Items</p>
-                              <p className="text-white font-bold">{stats.totalVolume}</p>
+                              <p className="text-xs text-gray-500 uppercase mb-1">Royalty</p>
+                              <p className="text-white font-bold">{trademark.royaltyPercentage}%</p>
                             </div>
                             <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">Mint Starts In</p>
-                              <p className="text-white font-bold">00:09:35:20</p>
+                              <p className="text-xs text-gray-500 uppercase mb-1">Views</p>
+                              <p className="text-white font-bold">{trademark.views || 0}</p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500 uppercase mb-1">Category</p>
@@ -254,28 +399,47 @@ export default function Dashboard() {
               {/* Trending Tokens Section */}
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-white">Trending Tokens</h2>
-                  <p className="text-sm text-gray-400">Largest price change in the past day</p>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Trending Tokens</h2>
+                    <p className="text-sm text-gray-400 mt-1">Most viewed in the past 24 hours</p>
+                  </div>
+                  <button
+                    onClick={() => loadDashboardData()}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#3a3d42] text-white rounded-lg hover:bg-[#4a4d52] transition-all disabled:opacity-50"
+                  >
+                    <svg className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span className="text-sm">Refresh</span>
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {isLoading ? (
-                    <div className="text-center py-12">
+                    <div className="col-span-full text-center py-12">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                      <p className="text-gray-400 mt-4">Loading real-time data...</p>
                     </div>
                   ) : trendingTrademarks.length === 0 ? (
-                    <div className="text-center py-12">
-                      <p className="text-gray-400">No trending tokens available</p>
+                    <div className="col-span-full text-center py-12">
+                      <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                      </svg>
+                      <p className="text-gray-400">No trademarks available yet</p>
+                      <Link href="/register" className="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
+                        Register First Trademark
+                      </Link>
                     </div>
                   ) : (
                     trendingTrademarks.map((trademark, idx) => (
                       <Link
                         key={trademark.tokenId}
                         href={`/trademark/${trademark.tokenId}`}
-                        className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-4 hover:border-[#4a4d52] transition-all block"
+                        className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-4 hover:border-[#4a4d52] transition-all block group"
                       >
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                             <span className="text-white text-lg font-bold">
                               {trademark.sloganText?.charAt(0) || '?'}
                             </span>
@@ -295,13 +459,33 @@ export default function Dashboard() {
 
                         <div className="flex items-center justify-between text-sm">
                           <div>
-                            <p className="text-gray-500 text-xs">Floor</p>
-                            <p className="text-white font-semibold">{(0.03 + idx * 0.01).toFixed(2)} ETH</p>
+                            <p className="text-gray-500 text-xs">Token ID</p>
+                            <p className="text-white font-semibold">#{trademark.tokenId}</p>
                           </div>
-                          <div className={`px-2 py-1 rounded ${
-                            idx % 2 === 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-                          }`}>
-                            {idx % 2 === 0 ? '+' : '-'}{(Math.random() * 10 + 1).toFixed(1)}%
+                          <div>
+                            <p className="text-gray-500 text-xs">Views</p>
+                            <p className="text-white font-semibold">{trademark.views || 0}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 text-xs">Category</p>
+                            <p className="text-white font-semibold text-xs truncate max-w-[80px]">{trademark.category}</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 pt-3 border-t border-[#3a3d42]">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-400">
+                              Registered {new Date(trademark.createdAt).toLocaleDateString()}
+                            </span>
+                            <span className={`px-2 py-1 rounded ${
+                              trademark.verificationStatus === 'verified' 
+                                ? 'bg-green-500/10 text-green-500' 
+                                : trademark.verificationStatus === 'pending'
+                                ? 'bg-yellow-500/10 text-yellow-500'
+                                : 'bg-red-500/10 text-red-500'
+                            }`}>
+                              {trademark.verificationStatus}
+                            </span>
                           </div>
                         </div>
                       </Link>
@@ -314,57 +498,73 @@ export default function Dashboard() {
               <div className="w-80 flex-shrink-0">
                 <div className="bg-[#2f3136] rounded-2xl border border-[#3a3d42] p-6 sticky top-24">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-bold text-white">Collection</h3>
-                    <div className="flex gap-2">
-                      <button className="text-gray-400 hover:text-white text-sm">1d</button>
-                      <button className="text-white text-sm font-semibold">7d</button>
-                      <button className="text-gray-400 hover:text-white text-sm">30d</button>
+                    <h3 className="text-lg font-bold text-white">Top Collections</h3>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-xs text-gray-400">Live</span>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    {trendingTrademarks.slice(0, 7).map((trademark, idx) => (
+                  <div className="space-y-3">
+                    {allTrademarks.slice(0, 8).map((trademark, idx) => (
                       <Link
                         key={trademark.tokenId}
                         href={`/trademark/${trademark.tokenId}`}
-                        className="flex items-center gap-3 hover:bg-[#3a3d42] p-2 rounded-lg transition-colors"
+                        className="flex items-center gap-3 hover:bg-[#3a3d42] p-2 rounded-lg transition-colors group"
                       >
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-sm font-bold">
-                            {trademark.companyName?.charAt(0) || '?'}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1">
-                            <p className="text-white text-sm font-medium truncate">{trademark.companyName}</p>
-                            {trademark.verified && (
-                              <svg className="w-3 h-3 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                              </svg>
-                            )}
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className="text-gray-500 text-sm font-medium w-6">{idx + 1}</span>
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                            <span className="text-white text-sm font-bold">
+                              {trademark.companyName?.charAt(0) || '?'}
+                            </span>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-gray-400">{(0.03 + idx * 0.01).toFixed(2)} ETH</p>
-                            <p className={`text-xs ${idx % 2 === 0 ? 'text-green-500' : 'text-red-500'}`}>
-                              {idx % 2 === 0 ? '+' : '-'}{(Math.random() * 5 + 0.5).toFixed(1)}%
-                            </p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1">
+                              <p className="text-white text-sm font-medium truncate">{trademark.companyName}</p>
+                              {trademark.verified && (
+                                <svg className="w-3 h-3 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-gray-400 truncate">{trademark.category}</p>
+                              <p className="text-xs text-gray-500">#{trademark.tokenId}</p>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-gray-400 text-xs">
+                        <div className="text-gray-400 text-base flex-shrink-0">
                           {idx === 0 && '🔥'}
                           {idx === 1 && '⚡'}
                           {idx === 2 && '✨'}
+                          {idx === 3 && '💎'}
+                          {idx === 4 && '🚀'}
                         </div>
                       </Link>
                     ))}
                   </div>
 
-                  <Link
-                    href="/marketplace"
-                    className="block w-full mt-6 px-4 py-2 bg-[#3a3d42] text-white text-center rounded-xl font-medium hover:bg-[#4a4d52] transition-all"
-                  >
-                    View All Collections
-                  </Link>
+                  {allTrademarks.length === 0 && !isLoading && (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400 text-sm">No collections yet</p>
+                    </div>
+                  )}
+
+                  <div className="mt-6 space-y-2">
+                    <Link
+                      href="/marketplace"
+                      className="block w-full px-4 py-2 bg-blue-600 text-white text-center rounded-xl font-medium hover:bg-blue-700 transition-all"
+                    >
+                      Explore Marketplace
+                    </Link>
+                    <Link
+                      href="/categories"
+                      className="block w-full px-4 py-2 bg-[#3a3d42] text-white text-center rounded-xl font-medium hover:bg-[#4a4d52] transition-all"
+                    >
+                      Browse Categories
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

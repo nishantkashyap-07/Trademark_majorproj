@@ -1,19 +1,8 @@
 import { IPFSMetadata } from '@/types';
 import { FILE_CONSTRAINTS, IPFS_CONFIG } from './constants';
 
-// Initialize Web3.Storage client
-const getWeb3StorageClient = () => {
-  const token = process.env.NEXT_PUBLIC_WEB3_STORAGE_TOKEN;
-  if (!token) {
-    throw new Error('Web3.Storage token not configured');
-  }
-  // Dynamic import to avoid build issues
-  const { Web3Storage } = require('web3.storage');
-  return new Web3Storage({ token });
-};
-
 /**
- * Upload files to IPFS using Web3.Storage
+ * Upload files to IPFS using Pinata
  * @param files Array of files to upload
  * @returns Promise resolving to IPFS hash
  */
@@ -22,14 +11,32 @@ export async function uploadFilesToIPFS(files: File[]): Promise<string> {
     // Validate files
     validateFiles(files);
     
-    const client = getWeb3StorageClient();
-    const cid = await client.put(files, {
-      name: `trademark-assets-${Date.now()}`,
-      maxRetries: 3,
+    const formData = new FormData();
+    
+    // Add files to form data
+    files.forEach((file) => {
+      formData.append('file', file);
     });
     
-    console.log('Files uploaded to IPFS:', cid);
-    return cid;
+    // Add metadata
+    const metadata = JSON.stringify({
+      name: `trademark-assets-${Date.now()}`,
+    });
+    formData.append('pinataMetadata', metadata);
+    
+    const response = await fetch('/api/upload/ipfs', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
+    }
+    
+    const data = await response.json();
+    console.log('Files uploaded to IPFS:', data.data.cid);
+    return data.data.cid;
   } catch (error) {
     console.error('Error uploading to IPFS:', error);
     throw new Error('Failed to upload files to IPFS');
@@ -37,30 +44,28 @@ export async function uploadFilesToIPFS(files: File[]): Promise<string> {
 }
 
 /**
- * Upload JSON metadata to IPFS
+ * Upload JSON metadata to IPFS using Pinata
  * @param metadata Metadata object to upload
  * @returns Promise resolving to IPFS hash
  */
 export async function uploadMetadataToIPFS(metadata: IPFSMetadata): Promise<string> {
   try {
-    const client = getWeb3StorageClient();
-    
-    // Convert metadata to File object
-    const metadataBlob = new Blob([JSON.stringify(metadata, null, 2)], {
-      type: 'application/json',
+    const response = await fetch('/api/upload/metadata', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(metadata),
     });
     
-    const metadataFile = new File([metadataBlob], 'metadata.json', {
-      type: 'application/json',
-    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Metadata upload failed');
+    }
     
-    const cid = await client.put([metadataFile], {
-      name: `trademark-metadata-${Date.now()}`,
-      maxRetries: 3,
-    });
-    
-    console.log('Metadata uploaded to IPFS:', cid);
-    return cid;
+    const data = await response.json();
+    console.log('Metadata uploaded to IPFS:', data.data.cid);
+    return data.data.cid;
   } catch (error) {
     console.error('Error uploading metadata to IPFS:', error);
     throw new Error('Failed to upload metadata to IPFS');

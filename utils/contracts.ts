@@ -327,9 +327,13 @@ export async function getListingInfo(listingId: number): Promise<Listing> {
       listingId: Number(info.listingId),
       tokenId: Number(info.tokenId),
       seller: info.seller,
+      owner: info.seller, // Initially owner is seller
       price: ethers.formatEther(info.price),
+      type: info.isLicense ? 'license' : 'sale',
       isLicense: info.isLicense,
       active: info.active,
+      status: info.active ? 'active' : 'cancelled',
+      suspended: false,
       createdAt: Number(info.createdAt),
     };
   } catch (error: any) {

@@ -216,32 +216,32 @@ html {
   .bg-gray-950 .text-gray-900,
   .bg-gray-900 .text-gray-900,
   .bg-gray-800 .text-gray-900 {
-    @apply text-white !important;
+    color: white !important;
   }
   
   .bg-gray-950 .text-gray-800,
   .bg-gray-900 .text-gray-800,
   .bg-gray-800 .text-gray-800 {
-    @apply text-gray-200 !important;
+    color: rgb(229 231 235) !important;
   }
   
   .bg-gray-950 .text-gray-700,
   .bg-gray-900 .text-gray-700,
   .bg-gray-800 .text-gray-700 {
-    @apply text-gray-300 !important;
+    color: rgb(209 213 219) !important;
   }
   
   .bg-gray-950 .text-gray-600,
   .bg-gray-900 .text-gray-600,
   .bg-gray-800 .text-gray-600 {
-    @apply text-gray-400 !important;
+    color: rgb(156 163 175) !important;
   }
   
   /* Labels on dark backgrounds */
   .bg-gray-950 label,
   .bg-gray-900 label,
   .bg-gray-800 label {
-    @apply text-gray-300 !important;
+    color: rgb(209 213 219) !important;
   }
   
   /* Headings on dark backgrounds */
@@ -254,55 +254,61 @@ html {
   .bg-gray-800 h1,
   .bg-gray-800 h2,
   .bg-gray-800 h3 {
-    @apply text-white !important;
+    color: white !important;
   }
   
   /* Paragraphs on dark backgrounds */
   .bg-gray-950 p,
   .bg-gray-900 p,
   .bg-gray-800 p {
-    @apply text-gray-300 !important;
+    color: rgb(209 213 219) !important;
   }
   
   /* Spans on dark backgrounds */
   .bg-gray-950 span,
   .bg-gray-900 span,
   .bg-gray-800 span {
-    @apply text-gray-300 !important;
+    color: rgb(209 213 219) !important;
   }
   
   /* Divs with text on dark backgrounds */
   .bg-gray-950 div,
   .bg-gray-900 div,
   .bg-gray-800 div {
-    @apply text-gray-300;
+    color: rgb(209 213 219);
   }
   
   /* Input fields on dark backgrounds */
   .bg-gray-950 input,
   .bg-gray-900 input,
   .bg-gray-800 input {
-    @apply bg-gray-800 text-white border-gray-700 !important;
+    background-color: rgb(31 41 55) !important;
+    color: white !important;
+    border-color: rgb(55 65 81) !important;
   }
   
   .bg-gray-950 select,
   .bg-gray-900 select,
   .bg-gray-800 select {
-    @apply bg-gray-800 text-white border-gray-700 !important;
+    background-color: rgb(31 41 55) !important;
+    color: white !important;
+    border-color: rgb(55 65 81) !important;
   }
   
   .bg-gray-950 textarea,
   .bg-gray-900 textarea,
   .bg-gray-800 textarea {
-    @apply bg-gray-800 text-white border-gray-700 !important;
+    background-color: rgb(31 41 55) !important;
+    color: white !important;
+    border-color: rgb(55 65 81) !important;
   }
   
   /* Buttons text visibility */
   .bg-gray-200 {
-    @apply text-gray-900 !important;
+    color: rgb(17 24 39) !important;
   }
   
   .bg-gray-100 {
-    @apply text-gray-900 !important;
+    color: rgb(17 24 39) !important;
   }
 }

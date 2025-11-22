@@ -29,6 +29,7 @@ const mockTrademark: TrademarkMetadata = {
   createdAt: new Date('2024-01-15'),
   transactionHash: '0xabc123def456789',
   verified: true,
+  verificationStatus: 'verified',
   language: 'English',
   usageContext: 'Brand marketing and advertising campaigns',
 };

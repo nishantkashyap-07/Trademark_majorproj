@@ -1,20 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import formidable from 'formidable';
+import FormData from 'form-data';
+import fs from 'fs';
 
 export const config = {
   api: {
-    bodyParser: false, // Disable default body parser for file uploads
+    bodyParser: false,
   },
 };
-
-function getWeb3StorageClient() {
-  const token = process.env.WEB3_STORAGE_TOKEN;
-  if (!token) {
-    throw new Error('WEB3_STORAGE_TOKEN is not configured');
-  }
-  // Dynamic import to avoid build issues
-  const { Web3Storage } = require('web3.storage');
-  return new Web3Storage({ token });
-}
 
 export default async function handler(
   req: NextApiRequest,
@@ -28,25 +21,22 @@ export default async function handler(
   }
 
   try {
-    // Check if Web3Storage token is configured
-    if (!process.env.WEB3_STORAGE_TOKEN) {
-      return res.status(200).json({
-        success: true,
-        message: 'Server-side IPFS upload not configured. Use client-side upload via utils/ipfs.ts',
-        note: 'Set WEB3_STORAGE_TOKEN environment variable to enable server-side uploads',
+    const apiKey = process.env.PINATA_API_KEY;
+    const secretKey = process.env.PINATA_SECRET_KEY;
+
+    if (!apiKey || !secretKey) {
+      return res.status(500).json({
+        success: false,
+        error: 'Pinata API credentials not configured',
       });
     }
 
-    // Dynamic imports to avoid build issues
-    const formidable = require('formidable');
-    const fs = require('fs');
-    
-    const form = formidable.formidable({
+    const form = formidable({
       maxFileSize: 10 * 1024 * 1024, // 10MB
       keepExtensions: true,
     });
 
-    form.parse(req, async (err: any, fields: any, files: any) => {
+    form.parse(req, async (err, fields, files) => {
       if (err) {
         return res.status(400).json({
           success: false,
@@ -55,44 +45,56 @@ export default async function handler(
       }
 
       try {
-        const client = getWeb3StorageClient();
-        const uploadFiles: any[] = [];
+        const formData = new FormData();
+        const fileArray = Array.isArray(files.file) ? files.file : [files.file];
+        const uploadedFiles: string[] = [];
 
-        // Process uploaded files
-        const fileArray = Array.isArray(files.files) ? files.files : [files.files];
-        
+        // Add files to form data
         for (const file of fileArray) {
           if (file) {
-            const fileData = fs.readFileSync(file.filepath);
-            const fileName = file.originalFilename || 'file';
-            
-            uploadFiles.push(
-              new File([fileData], fileName, {
-                type: file.mimetype || 'application/octet-stream',
-              })
-            );
+            const fileStream = fs.createReadStream(file.filepath);
+            formData.append('file', fileStream, file.originalFilename || 'file');
+            uploadedFiles.push(file.originalFilename || 'file');
           }
         }
 
-        if (uploadFiles.length === 0) {
+        if (uploadedFiles.length === 0) {
           return res.status(400).json({
             success: false,
             error: 'No files provided',
           });
         }
 
-        // Upload to IPFS
-        const cid = await client.put(uploadFiles, {
-          name: `slogan-${Date.now()}`,
-          maxRetries: 3,
+        // Add metadata
+        const metadata = JSON.stringify({
+          name: `trademark-assets-${Date.now()}`,
         });
+        formData.append('pinataMetadata', metadata);
+
+        // Upload to Pinata
+        const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+          method: 'POST',
+          headers: {
+            'pinata_api_key': apiKey,
+            'pinata_secret_api_key': secretKey,
+            ...formData.getHeaders(),
+          },
+          body: formData as any,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Pinata upload failed');
+        }
+
+        const data = await response.json();
 
         return res.status(200).json({
           success: true,
           data: {
-            cid,
-            files: uploadFiles.map((f: any) => f.name),
-            url: `https://ipfs.io/ipfs/${cid}`,
+            cid: data.IpfsHash,
+            files: uploadedFiles,
+            url: `https://gateway.pinata.cloud/ipfs/${data.IpfsHash}`,
           },
         });
       } catch (uploadError: any) {

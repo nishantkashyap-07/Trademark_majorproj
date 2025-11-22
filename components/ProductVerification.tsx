@@ -67,6 +67,7 @@ export default function ProductVerification({
           createdAt: new Date('2024-01-15'),
           transactionHash: '0xabc123',
           verified: true,
+          verificationStatus: 'verified',
           language: 'English',
           usageContext: 'Product branding and marketing',
         },
