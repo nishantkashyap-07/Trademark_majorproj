@@ -103,17 +103,27 @@ export default function Navbar() {
                 <Link
                   href="/dashboard"
                   className="hidden lg:flex items-center justify-center w-10 h-10 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all"
+                  title="Dashboard"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </Link>
-                <div className="flex items-center space-x-2 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg hover:border-blue-500 transition-all cursor-pointer">
+                <div className="flex items-center space-x-2 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg">
                   <div className="w-6 h-6 bg-blue-600 rounded"></div>
                   <span className="text-sm font-mono text-white hidden sm:block">
                     {account?.slice(0, 6)}...{account?.slice(-4)}
                   </span>
                 </div>
+                <button
+                  onClick={disconnect}
+                  className="flex items-center justify-center w-10 h-10 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-all"
+                  title="Disconnect Wallet"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
               </>
             ) : (
               <button
@@ -154,6 +164,26 @@ export default function Navbar() {
                   {item.name}
                 </Link>
               ))}
+              {isConnected && (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className="block px-4 py-3 rounded-lg text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={() => {
+                      disconnect();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 rounded-lg text-base font-medium text-red-400 hover:text-red-300 hover:bg-gray-800 transition-all"
+                  >
+                    Disconnect Wallet
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}

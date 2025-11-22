@@ -89,7 +89,7 @@ export default function TrademarkDetail() {
 
       <Navbar />
 
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-gray-950">
         <div className="mx-auto max-w-6xl px-4 py-10">
           {/* Breadcrumb */}
           <div className="mb-6 flex items-center space-x-2 text-xs text-gray-500">

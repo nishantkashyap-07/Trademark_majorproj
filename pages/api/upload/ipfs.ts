@@ -38,13 +38,16 @@ export default async function handler(
 
     form.parse(req, async (err, fields, files) => {
       if (err) {
+        console.error('Form parse error:', err);
         return res.status(400).json({
           success: false,
-          error: 'Failed to parse form data',
+          error: `Failed to parse form data: ${err.message}`,
         });
       }
 
       try {
+        console.log('Files received:', files);
+        
         const formData = new FormData();
         const fileArray = Array.isArray(files.file) ? files.file : [files.file];
         const uploadedFiles: string[] = [];
@@ -52,6 +55,13 @@ export default async function handler(
         // Add files to form data
         for (const file of fileArray) {
           if (file) {
+            console.log('Processing file:', file.originalFilename, 'at', file.filepath);
+            
+            // Check if file exists
+            if (!fs.existsSync(file.filepath)) {
+              throw new Error(`File not found: ${file.filepath}`);
+            }
+            
             const fileStream = fs.createReadStream(file.filepath);
             formData.append('file', fileStream, file.originalFilename || 'file');
             uploadedFiles.push(file.originalFilename || 'file');
@@ -64,6 +74,8 @@ export default async function handler(
             error: 'No files provided',
           });
         }
+
+        console.log('Uploading', uploadedFiles.length, 'files to Pinata...');
 
         // Add metadata
         const metadata = JSON.stringify({
@@ -82,12 +94,23 @@ export default async function handler(
           body: formData as any,
         });
 
+        const responseText = await response.text();
+        console.log('Pinata response status:', response.status);
+        console.log('Pinata response:', responseText);
+
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Pinata upload failed');
+          let errorMessage = 'Pinata upload failed';
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            errorMessage = responseText || errorMessage;
+          }
+          throw new Error(errorMessage);
         }
 
-        const data = await response.json();
+        const data = JSON.parse(responseText);
+        console.log('Upload successful! IPFS Hash:', data.IpfsHash);
 
         return res.status(200).json({
           success: true,

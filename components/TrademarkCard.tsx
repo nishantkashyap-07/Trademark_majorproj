@@ -122,12 +122,12 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid' }:
           </div>
 
           {/* Slogan Text */}
-          <h3 className="text-lg font-display font-bold text-white mb-1 truncate group-hover:text-blue-400 transition-colors">
+          <h3 className="text-lg font-display font-bold text-white mb-2 line-clamp-2 min-h-[3.5rem] group-hover:text-blue-400 transition-colors">
             {trademark.sloganText}
           </h3>
 
           {/* Company Name */}
-          <p className="text-sm text-gray-400 mb-2 truncate">
+          <p className="text-sm text-gray-400 mb-3 line-clamp-1">
             by <span className="font-semibold text-gray-200">{trademark.companyName}</span>
           </p>
 

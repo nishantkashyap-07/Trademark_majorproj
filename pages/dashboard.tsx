@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useWeb3 } from '@/contexts/Web3Context';
 import { apiClient } from '@/lib/api-client';
 import { SloganMetadata } from '@/types';
+import Navbar from '@/components/Navbar';
 
 interface DashboardStats {
   totalTrademarks: number;
@@ -137,94 +138,13 @@ export default function Dashboard() {
         <title>Dashboard - TrademarkChain</title>
       </Head>
 
-      <div className="min-h-screen bg-[#202225]">
-        {/* Header */}
-        <header className="bg-[#2f3136] border-b border-[#3a3d42] sticky top-0 z-50">
-          <div className="max-w-[1920px] mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-8">
-                <Link href="/" className="text-2xl font-bold text-white">
-                  SloganChain
-                </Link>
-                
-                {/* Search Bar */}
-                <div className="hidden md:block">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search SloganChain"
-                      className="w-[400px] bg-[#202225] text-white placeholder-gray-500 px-4 py-2.5 pl-10 rounded-xl border border-[#3a3d42] focus:border-blue-500 focus:outline-none"
-                    />
-                    <svg className="absolute left-3 top-3 w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
+      <div className="min-h-screen bg-gray-900">
+        <Navbar />
 
-              <div className="flex items-center gap-4">
-                <button className="text-gray-400 hover:text-white transition-colors">
-                  <span className="text-sm font-medium">Connect Wallet</span>
-                </button>
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">
-                    {account?.slice(2, 4).toUpperCase()}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Navigation Tabs */}
-        <div className="bg-[#2f3136] border-b border-[#3a3d42]">
-          <div className="max-w-[1920px] mx-auto px-6">
-            <div className="flex items-center gap-1 overflow-x-auto">
-              {['All', 'Gaming', 'Art', 'PFPs', 'More'].map((tab, idx) => (
-                <button
-                  key={tab}
-                  className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
-                    idx === 0 
-                      ? 'text-white border-b-2 border-blue-500' 
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-              
-              {/* Filter Icons */}
-              <div className="ml-auto flex items-center gap-2">
-                <button className="p-2 rounded-lg hover:bg-[#3a3d42] transition-colors">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                  </svg>
-                </button>
-                <button 
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-[#3a3d42]' : 'hover:bg-[#3a3d42]'}`}
-                >
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-                </button>
-                <button 
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-[#3a3d42]' : 'hover:bg-[#3a3d42]'}`}
-                >
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-[1920px] mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-4 py-8">
           {/* Real-time Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-6">
+            <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm text-gray-400 uppercase">Total Trademarks</h3>
                 <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">

@@ -134,7 +134,7 @@ html {
   }
   
   .badge-info {
-    @apply bg-blue-100 text-blue-800 border border-blue-300;
+    @apply bg-blue-500/20 text-blue-300 border border-blue-500/40;
   }
   
   .trademark-badge {
@@ -310,5 +310,33 @@ html {
   
   .bg-gray-100 {
     color: rgb(17 24 39) !important;
+  }
+}
+
+/* Force all white backgrounds to dark theme */
+@layer utilities {
+  .bg-white {
+    background-color: rgb(17 24 39) !important; /* gray-900 */
+  }
+  
+  .border-gray-200 {
+    border-color: rgb(55 65 81) !important; /* gray-700 */
+  }
+  
+  .border-gray-300 {
+    border-color: rgb(75 85 99) !important; /* gray-600 */
+  }
+  
+  /* Fix hover states */
+  .hover\:bg-gray-50:hover {
+    background-color: rgb(31 41 55) !important; /* gray-800 */
+  }
+  
+  .hover\:bg-gray-100:hover {
+    background-color: rgb(31 41 55) !important; /* gray-800 */
+  }
+  
+  .hover\:bg-white:hover {
+    background-color: rgb(31 41 55) !important; /* gray-800 */
   }
 }

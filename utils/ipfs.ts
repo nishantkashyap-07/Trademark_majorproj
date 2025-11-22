@@ -8,13 +8,16 @@ import { FILE_CONSTRAINTS, IPFS_CONFIG } from './constants';
  */
 export async function uploadFilesToIPFS(files: File[]): Promise<string> {
   try {
+    console.log('Starting IPFS upload for', files.length, 'files...');
+    
     // Validate files
     validateFiles(files);
     
     const formData = new FormData();
     
     // Add files to form data
-    files.forEach((file) => {
+    files.forEach((file, index) => {
+      console.log(`Adding file ${index + 1}:`, file.name, file.type, file.size, 'bytes');
       formData.append('file', file);
     });
     
@@ -24,22 +27,27 @@ export async function uploadFilesToIPFS(files: File[]): Promise<string> {
     });
     formData.append('pinataMetadata', metadata);
     
+    console.log('Sending upload request to API...');
     const response = await fetch('/api/upload/ipfs', {
       method: 'POST',
       body: formData,
     });
     
+    console.log('API response status:', response.status);
+    
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Upload failed');
+      console.error('API error response:', error);
+      throw new Error(error.error || `Upload failed with status ${response.status}`);
     }
     
     const data = await response.json();
-    console.log('Files uploaded to IPFS:', data.data.cid);
+    console.log('Files uploaded to IPFS successfully:', data.data.cid);
+    console.log('IPFS URL:', data.data.url);
     return data.data.cid;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading to IPFS:', error);
-    throw new Error('Failed to upload files to IPFS');
+    throw new Error(error.message || 'Failed to upload files to IPFS');
   }
 }
 

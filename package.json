@@ -12,7 +12,7 @@
     "test": "hardhat test",
     "deploy": "hardhat run scripts/deploy.js --network polygon",
     "check-env": "node scripts/check-env.js",
-    "seed": "ts-node scripts/seed-database.ts",
+    "seed": "node scripts/seed-database.js",
     "setup-demo": "npm run check-env && npm run seed"
   },
   "dependencies": {

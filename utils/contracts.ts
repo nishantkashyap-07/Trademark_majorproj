@@ -40,18 +40,42 @@ export function getContracts(signer?: ethers.Signer) {
     throw new Error('Contracts can only be accessed in browser environment');
   }
 
-  const provider = signer || new ethers.BrowserProvider(window.ethereum);
+  // Validate contract addresses are configured
+  if (!CONTRACT_ADDRESSES.TRADEMARK_NFT || !CONTRACT_ADDRESSES.MARKETPLACE) {
+    throw new Error(
+      'Smart contracts not deployed. Please deploy contracts first using "npm run deploy" and update .env.local with the contract addresses.'
+    );
+  }
+
+  // Validate contract addresses are valid Ethereum addresses
+  if (!ethers.isAddress(CONTRACT_ADDRESSES.TRADEMARK_NFT)) {
+    throw new Error('Invalid TrademarkNFT contract address');
+  }
+  
+  if (!ethers.isAddress(CONTRACT_ADDRESSES.MARKETPLACE)) {
+    throw new Error('Invalid Marketplace contract address');
+  }
+
+  // Use signer if provided, otherwise create a provider
+  let providerOrSigner: ethers.Provider | ethers.Signer;
+  
+  if (signer) {
+    providerOrSigner = signer;
+  } else {
+    // Create a provider for read-only operations
+    providerOrSigner = new ethers.BrowserProvider(window.ethereum);
+  }
   
   const trademarkNFT = new ethers.Contract(
     CONTRACT_ADDRESSES.TRADEMARK_NFT,
     TRADEMARK_NFT_ABI,
-    provider
+    providerOrSigner
   );
   
   const marketplace = new ethers.Contract(
     CONTRACT_ADDRESSES.MARKETPLACE,
     MARKETPLACE_ABI,
-    provider
+    providerOrSigner
   );
   
   return { trademarkNFT, marketplace };

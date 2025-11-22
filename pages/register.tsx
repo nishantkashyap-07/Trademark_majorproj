@@ -186,6 +186,7 @@ export default function RegisterTrademark() {
       // Step 1: Upload files to IPFS
       console.log('Uploading files to IPFS...');
       const assetsCID = await uploadFilesToIPFS(formData.files);
+      console.log('Files uploaded successfully. CID:', assetsCID);
       
       // Step 2: Create and upload metadata
       console.log('Creating metadata...');
@@ -203,28 +204,93 @@ export default function RegisterTrademark() {
       
       const metadataCID = await uploadMetadataToIPFS(metadata);
       const tokenURI = `ipfs://${metadataCID}/metadata.json`;
+      console.log('Metadata uploaded successfully. CID:', metadataCID);
       
-      // Step 3: Register slogan on blockchain
-      console.log('Registering slogan on blockchain...');
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
+      // Step 3: Check if contracts are deployed
+      const contractsDeployed = process.env.NEXT_PUBLIC_TRADEMARK_CONTRACT_ADDRESS && 
+                                process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS;
       
-      const result = await registerTrademark(signer, {
-        companyName: formData.companyName,
-        sloganText: formData.sloganText,
-        registrationNumber: formData.registrationNumber,
-        ipfsHash: assetsCID,
-        category: formData.category,
-        royaltyPercentage: formData.royaltyPercentage,
-        tokenURI,
-      });
-      
-      setSuccess(`${SUCCESS_MESSAGES.TRADEMARK_REGISTERED} Token ID: ${result.tokenId}`);
-      
-      // Redirect to dashboard after success
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 3000);
+      if (!contractsDeployed) {
+        // Store in database only (for demo/testing without blockchain)
+        console.log('Contracts not deployed. Storing in database only...');
+        
+        const response = await fetch('/api/trademarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tokenId: Date.now(), // Temporary ID
+            creatorAddress: account,
+            trademarkName: formData.sloganText,
+            companyName: formData.companyName,
+            registrationNumber: formData.registrationNumber,
+            ipfsHash: assetsCID,
+            category: formData.category,
+            description: formData.description,
+            royaltyPercentage: formData.royaltyPercentage,
+            tokenURI,
+            verified: false,
+            verificationStatus: 'pending',
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to save trademark to database');
+        }
+        
+        const data = await response.json();
+        setSuccess('Trademark registered successfully! (Database only - deploy contracts for blockchain registration)');
+        
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 3000);
+        
+      } else {
+        // Register on blockchain
+        console.log('Registering slogan on blockchain...');
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        
+        const result = await registerTrademark(signer, {
+          companyName: formData.companyName,
+          sloganText: formData.sloganText,
+          registrationNumber: formData.registrationNumber,
+          ipfsHash: assetsCID,
+          category: formData.category,
+          royaltyPercentage: formData.royaltyPercentage,
+          tokenURI,
+        });
+        
+        // Also save to database
+        await fetch('/api/trademarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tokenId: result.tokenId,
+            creatorAddress: account,
+            trademarkName: formData.sloganText,
+            companyName: formData.companyName,
+            registrationNumber: formData.registrationNumber,
+            ipfsHash: assetsCID,
+            category: formData.category,
+            description: formData.description,
+            royaltyPercentage: formData.royaltyPercentage,
+            tokenURI,
+            transactionHash: result.transactionHash,
+            verified: false,
+            verificationStatus: 'pending',
+          }),
+        });
+        
+        setSuccess(`${SUCCESS_MESSAGES.TRADEMARK_REGISTERED} Token ID: ${result.tokenId}`);
+        
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 3000);
+      }
       
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -249,7 +315,7 @@ export default function RegisterTrademark() {
             </p>
             <button
               onClick={connect}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-800 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 border border-slate-700"
             >
               <span>Connect MetaMask</span>
             </button>
@@ -270,9 +336,20 @@ export default function RegisterTrademark() {
         <header className="bg-gray-900 border-b border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-white">Trademark Registration</h1>
-                <p className="text-sm text-gray-400 mt-1">Secure your intellectual property on the blockchain</p>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => router.back()}
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                  title="Go back"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-white">Trademark Registration</h1>
+                  <p className="text-sm text-gray-400 mt-1">Secure your intellectual property on the blockchain</p>
+                </div>
               </div>
               <div className="bg-gray-800 px-4 py-2 rounded-xl border border-gray-700">
                 <div className="text-xs text-gray-400 mb-1">Connected Wallet</div>
