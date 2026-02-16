@@ -186,6 +186,7 @@ export default function RegisterTrademark() {
       // Step 1: Upload files to IPFS
       console.log('Uploading files to IPFS...');
       const assetsCID = await uploadFilesToIPFS(formData.files);
+      console.log('Files uploaded successfully. CID:', assetsCID);
       
       // Step 2: Create and upload metadata
       console.log('Creating metadata...');
@@ -203,28 +204,93 @@ export default function RegisterTrademark() {
       
       const metadataCID = await uploadMetadataToIPFS(metadata);
       const tokenURI = `ipfs://${metadataCID}/metadata.json`;
+      console.log('Metadata uploaded successfully. CID:', metadataCID);
       
-      // Step 3: Register slogan on blockchain
-      console.log('Registering slogan on blockchain...');
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
+      // Step 3: Check if contracts are deployed
+      const contractsDeployed = process.env.NEXT_PUBLIC_TRADEMARK_CONTRACT_ADDRESS && 
+                                process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS;
       
-      const result = await registerTrademark(signer, {
-        companyName: formData.companyName,
-        sloganText: formData.sloganText,
-        registrationNumber: formData.registrationNumber,
-        ipfsHash: assetsCID,
-        category: formData.category,
-        royaltyPercentage: formData.royaltyPercentage,
-        tokenURI,
-      });
-      
-      setSuccess(`${SUCCESS_MESSAGES.TRADEMARK_REGISTERED} Token ID: ${result.tokenId}`);
-      
-      // Redirect to dashboard after success
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 3000);
+      if (!contractsDeployed) {
+        // Store in database only (for demo/testing without blockchain)
+        console.log('Contracts not deployed. Storing in database only...');
+        
+        const response = await fetch('/api/trademarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tokenId: Date.now(), // Temporary ID
+            creatorAddress: account,
+            trademarkName: formData.sloganText,
+            companyName: formData.companyName,
+            registrationNumber: formData.registrationNumber,
+            ipfsHash: assetsCID,
+            category: formData.category,
+            description: formData.description,
+            royaltyPercentage: formData.royaltyPercentage,
+            tokenURI,
+            verified: false,
+            verificationStatus: 'pending',
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to save trademark to database');
+        }
+        
+        const data = await response.json();
+        setSuccess('Trademark registered successfully! (Database only - deploy contracts for blockchain registration)');
+        
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 3000);
+        
+      } else {
+        // Register on blockchain
+        console.log('Registering slogan on blockchain...');
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        
+        const result = await registerTrademark(signer, {
+          companyName: formData.companyName,
+          sloganText: formData.sloganText,
+          registrationNumber: formData.registrationNumber,
+          ipfsHash: assetsCID,
+          category: formData.category,
+          royaltyPercentage: formData.royaltyPercentage,
+          tokenURI,
+        });
+        
+        // Also save to database
+        await fetch('/api/trademarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tokenId: result.tokenId,
+            creatorAddress: account,
+            trademarkName: formData.sloganText,
+            companyName: formData.companyName,
+            registrationNumber: formData.registrationNumber,
+            ipfsHash: assetsCID,
+            category: formData.category,
+            description: formData.description,
+            royaltyPercentage: formData.royaltyPercentage,
+            tokenURI,
+            transactionHash: result.transactionHash,
+            verified: false,
+            verificationStatus: 'pending',
+          }),
+        });
+        
+        setSuccess(`${SUCCESS_MESSAGES.TRADEMARK_REGISTERED} Token ID: ${result.tokenId}`);
+        
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 3000);
+      }
       
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -249,7 +315,7 @@ export default function RegisterTrademark() {
             </p>
             <button
               onClick={connect}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-800 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 border border-slate-700"
             >
               <span>Connect MetaMask</span>
             </button>
@@ -265,18 +331,29 @@ export default function RegisterTrademark() {
         <title>Register Trademark - TrademarkChain</title>
       </Head>
 
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-950">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
+        <header className="bg-gray-900 border-b border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Trademark Registration</h1>
-                <p className="text-sm text-gray-600 mt-1">Secure your intellectual property on the blockchain</p>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => router.back()}
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                  title="Go back"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-white">Trademark Registration</h1>
+                  <p className="text-sm text-gray-400 mt-1">Secure your intellectual property on the blockchain</p>
+                </div>
               </div>
-              <div className="bg-gray-50 px-4 py-2 rounded-xl border border-gray-200">
-                <div className="text-xs text-gray-500 mb-1">Connected Wallet</div>
-                <div className="text-sm font-mono text-gray-900">
+              <div className="bg-gray-800 px-4 py-2 rounded-xl border border-gray-700">
+                <div className="text-xs text-gray-400 mb-1">Connected Wallet</div>
+                <div className="text-sm font-mono text-white">
                   {account?.slice(0, 6)}...{account?.slice(-4)}
                 </div>
               </div>
@@ -285,42 +362,6 @@ export default function RegisterTrademark() {
         </header>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Information Banner */}
-          <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
-            <div className="flex items-start">
-              <svg className="w-6 h-6 text-blue-600 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Registration Process</h3>
-                <p className="text-gray-700 mb-3">
-                  Your trademark will be minted as an ERC-721 NFT on Polygon blockchain with metadata stored on IPFS. 
-                  This ensures permanent, immutable ownership records and decentralized asset storage.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div className="flex items-center">
-                    <svg className="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-gray-700">Blockchain Secured</span>
-                  </div>
-                  <div className="flex items-center">
-                    <svg className="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-gray-700">IPFS Storage</span>
-                  </div>
-                  <div className="flex items-center">
-                    <svg className="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-gray-700">Instant Verification</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Progress Steps */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
@@ -358,11 +399,11 @@ export default function RegisterTrademark() {
           </div>
 
           {/* Form Content */}
-          <div className="bg-white rounded-lg shadow-md p-8">
+          <div className="bg-gray-900 rounded-lg border border-gray-800 p-8">
             {/* Step 1: Company Info */}
             {currentStep === 1 && (
               <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Company Information</h2>
+                <h2 className="text-xl font-semibold text-white mb-6">Company Information</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -544,8 +585,8 @@ export default function RegisterTrademark() {
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Review & Submit</h2>
                 
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="font-medium text-gray-900 mb-4">Trademark Information</h3>
+                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                  <h3 className="font-medium text-white mb-4">Trademark Information</h3>
                   <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <dt className="text-sm font-medium text-gray-500">Company Name</dt>

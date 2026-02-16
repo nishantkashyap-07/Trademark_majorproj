@@ -4,8 +4,8 @@ pragma solidity ^0.8.19;
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "./TrademarkNFT.sol";
 
 /**
  * @title TrademarkMarketplace
@@ -17,7 +17,8 @@ contract TrademarkMarketplace is ReentrancyGuard, Ownable {
     Counters.Counter private _listingIdCounter;
     
     // Reference to the TrademarkNFT contract
-    TrademarkNFT public immutable trademarkNFT;
+    IERC721 public immutable trademarkNFT;
+    IERC2981 public immutable royaltyContract;
     
     // Marketplace fee (in basis points, 100 = 1%)
     uint96 public marketplaceFee = 250; // 2.5%
@@ -89,7 +90,8 @@ contract TrademarkMarketplace is ReentrancyGuard, Ownable {
     
     constructor(address _trademarkNFT) {
         require(_trademarkNFT != address(0), "Invalid TrademarkNFT address");
-        trademarkNFT = TrademarkNFT(_trademarkNFT);
+        trademarkNFT = IERC721(_trademarkNFT);
+        royaltyContract = IERC2981(_trademarkNFT);
     }
     
     /**
@@ -153,7 +155,7 @@ contract TrademarkMarketplace is ReentrancyGuard, Ownable {
         require(msg.sender != listing.seller, "Cannot buy your own listing");
         
         // Get royalty information
-        (address royaltyReceiver, uint256 royaltyAmount) = trademarkNFT.royaltyInfo(listing.tokenId, listing.price);
+        (address royaltyReceiver, uint256 royaltyAmount) = royaltyContract.royaltyInfo(listing.tokenId, listing.price);
         
         // Calculate fees
         uint256 marketplaceFeeAmount = (listing.price * marketplaceFee) / 10000;

@@ -67,6 +67,7 @@ export default function ProductVerification({
           createdAt: new Date('2024-01-15'),
           transactionHash: '0xabc123',
           verified: true,
+          verificationStatus: 'verified',
           language: 'English',
           usageContext: 'Product branding and marketing',
         },
@@ -92,7 +93,7 @@ export default function ProductVerification({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 max-w-md">
+    <div className="bg-gray-900 rounded-lg shadow-md p-6 max-w-md border border-gray-800">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Product Verification</h3>
         {verificationResult && (

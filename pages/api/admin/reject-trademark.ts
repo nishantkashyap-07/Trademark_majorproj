@@ -37,9 +37,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       rejectedBy: adminAddress,
       rejectionReason: reason || 'No reason provided',
       verified: false,
+      verificationStatus: 'rejected',
     });
 
-    // Log the rejection
+    // Create admin log
+    await dbService.createAdminLog({
+      adminAddress,
+      action: 'reject',
+      targetType: 'trademark',
+      targetId: trademarkId,
+      reason: reason || 'No reason provided',
+    });
+
+    // Log the rejection (keep for backward compatibility)
     await dbService.createActivityLog({
       type: 'trademark_rejected',
       trademarkId,

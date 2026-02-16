@@ -30,7 +30,7 @@ export default function LicenseCard({ license, trademarkName, showTrademark = tr
     : null;
 
   return (
-    <div className={`bg-white rounded-xl border-2 p-6 transition-all ${
+    <div className={`bg-gray-900 rounded-xl border-2 p-6 transition-all ${
       isExpired ? 'border-gray-200 opacity-60' : 'border-blue-200 hover:border-blue-400'
     }`}>
       <div className="flex items-start justify-between mb-4">

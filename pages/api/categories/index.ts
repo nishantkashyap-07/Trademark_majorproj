@@ -1,50 +1,32 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { TRADEMARK_CATEGORIES } from '@/utils/constants';
+import { dbService } from '@/lib/db-service';
 import { withApi, withMethods } from '@/lib/api-middleware';
 
+/**
+ * Endpoint for fetching categories
+ */
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== 'GET') {
+  try {
+    if (req.method === 'GET') {
+      const result = await dbService.getCategories();
+
+      if (!result.success) {
+        return res.status(500).json(result);
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: result.data,
+        count: result.data?.length || 0,
+      });
+    }
+
     return res.status(405).json({
       success: false,
       error: 'Method not allowed',
-    });
-  }
-
-  try {
-    // Get all trademarks to calculate category counts
-    const trademarksSnapshot = await getDocs(collection(db, 'trademarks'));
-    const trademarks = trademarksSnapshot.docs.map(doc => doc.data());
-
-    // Calculate counts for each category
-    const categoryCounts: { [key: string]: number } = {};
-    trademarks.forEach((tm: any) => {
-      if (tm.category) {
-        categoryCounts[tm.category] = (categoryCounts[tm.category] || 0) + 1;
-      }
-    });
-
-    // Build category list with counts
-    const categories = TRADEMARK_CATEGORIES.map(category => ({
-      name: category,
-      count: categoryCounts[category] || 0,
-      verified: trademarks.filter((tm: any) => tm.category === category && tm.verified).length,
-    }));
-
-    // Sort by count descending
-    categories.sort((a, b) => b.count - a.count);
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        categories,
-        total: categories.length,
-        totalTrademarks: trademarks.length,
-      },
     });
   } catch (error: any) {
     console.error('Categories API Error:', error);

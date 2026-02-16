@@ -387,6 +387,447 @@ export class DatabaseService {
       return { success: false, error: error.message };
     }
   }
+
+  // Rating methods
+  async createRating(data: any) {
+    try {
+      const ratingRef = doc(collection(db, 'ratings'));
+      await setDoc(ratingRef, {
+        ...data,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+      return { success: true, id: ratingRef.id };
+    } catch (error: any) {
+      console.error('Create Rating Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getRatingsByCreator(creatorAddress: string) {
+    try {
+      const q = query(
+        collection(db, 'ratings'),
+        where('creatorAddress', '==', creatorAddress.toLowerCase()),
+        orderBy('createdAt', 'desc')
+      );
+
+      const snapshot = await getDocs(q);
+      const ratings = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return { success: true, data: ratings };
+    } catch (error: any) {
+      console.error('Get Ratings By Creator Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getAverageRating(creatorAddress: string) {
+    try {
+      const result = await this.getRatingsByCreator(creatorAddress);
+      if (!result.success || !result.data || result.data.length === 0) {
+        return { success: true, data: { average: 0, count: 0 } };
+      }
+
+      const ratings = result.data;
+      const sum = ratings.reduce((acc: number, r: any) => acc + r.rating, 0);
+      const average = sum / ratings.length;
+
+      return {
+        success: true,
+        data: {
+          average: Math.round(average * 10) / 10,
+          count: ratings.length,
+        },
+      };
+    } catch (error: any) {
+      console.error('Get Average Rating Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Notification methods
+  async createNotification(data: any) {
+    try {
+      const notificationRef = doc(collection(db, 'notifications'));
+      await setDoc(notificationRef, {
+        ...data,
+        read: false,
+        createdAt: Timestamp.now(),
+      });
+      return { success: true, id: notificationRef.id };
+    } catch (error: any) {
+      console.error('Create Notification Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getUserNotifications(userId: string, unreadOnly: boolean = false) {
+    try {
+      let q = query(
+        collection(db, 'notifications'),
+        where('userId', '==', userId.toLowerCase()),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      );
+
+      if (unreadOnly) {
+        q = query(q, where('read', '==', false));
+      }
+
+      const snapshot = await getDocs(q);
+      const notifications = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return { success: true, data: notifications };
+    } catch (error: any) {
+      console.error('Get User Notifications Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async markNotificationAsRead(notificationId: string) {
+    try {
+      const notificationRef = doc(db, 'notifications', notificationId);
+      await updateDoc(notificationRef, {
+        read: true,
+        readAt: Timestamp.now(),
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error('Mark Notification As Read Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Report methods
+  async createReport(data: any) {
+    try {
+      const reportRef = doc(collection(db, 'reports'));
+      await setDoc(reportRef, {
+        ...data,
+        status: 'pending',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+      return { success: true, id: reportRef.id };
+    } catch (error: any) {
+      console.error('Create Report Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getReports(status?: string) {
+    try {
+      let q = query(
+        collection(db, 'reports'),
+        orderBy('createdAt', 'desc'),
+        limit(100)
+      );
+
+      if (status) {
+        q = query(q, where('status', '==', status));
+      }
+
+      const snapshot = await getDocs(q);
+      const reports = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return { success: true, data: reports };
+    } catch (error: any) {
+      console.error('Get Reports Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async updateReport(reportId: string, data: any) {
+    try {
+      const reportRef = doc(db, 'reports', reportId);
+      await updateDoc(reportRef, {
+        ...data,
+        updatedAt: Timestamp.now(),
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error('Update Report Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Admin Log methods
+  async createAdminLog(data: any) {
+    try {
+      const logRef = doc(collection(db, 'admin_logs'));
+      await setDoc(logRef, {
+        ...data,
+        timestamp: Timestamp.now(),
+      });
+      return { success: true, id: logRef.id };
+    } catch (error: any) {
+      console.error('Create Admin Log Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getAdminLogs(limitCount: number = 100) {
+    try {
+      const q = query(
+        collection(db, 'admin_logs'),
+        orderBy('timestamp', 'desc'),
+        limit(limitCount)
+      );
+
+      const snapshot = await getDocs(q);
+      const logs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return { success: true, data: logs };
+    } catch (error: any) {
+      console.error('Get Admin Logs Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Category methods
+  async getCategories() {
+    try {
+      const q = query(
+        collection(db, 'categories'),
+        orderBy('name', 'asc')
+      );
+
+      const snapshot = await getDocs(q);
+      const categories = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return { success: true, data: categories };
+    } catch (error: any) {
+      console.error('Get Categories Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async updateCategory(categoryId: string, data: any) {
+    try {
+      const categoryRef = doc(db, 'categories', categoryId);
+      await updateDoc(categoryRef, {
+        ...data,
+        updatedAt: Timestamp.now(),
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error('Update Category Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async incrementCategoryCount(categoryName: string) {
+    try {
+      const q = query(
+        collection(db, 'categories'),
+        where('name', '==', categoryName),
+        limit(1)
+      );
+
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        const categoryRef = snapshot.docs[0].ref;
+        const currentCount = snapshot.docs[0].data().trademarkCount || 0;
+        await updateDoc(categoryRef, {
+          trademarkCount: currentCount + 1,
+          updatedAt: Timestamp.now(),
+        });
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Increment Category Count Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // User suspension methods
+  async suspendUser(address: string, reason: string, adminAddress: string) {
+    try {
+      const userRef = doc(db, 'users', address.toLowerCase());
+      await updateDoc(userRef, {
+        suspended: true,
+        suspensionReason: reason,
+        suspendedAt: Timestamp.now(),
+        suspendedBy: adminAddress,
+        updatedAt: Timestamp.now(),
+      });
+
+      // Create admin log
+      await this.createAdminLog({
+        adminAddress,
+        action: 'suspend_user',
+        targetType: 'user',
+        targetId: address.toLowerCase(),
+        reason,
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Suspend User Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async unsuspendUser(address: string, adminAddress: string) {
+    try {
+      const userRef = doc(db, 'users', address.toLowerCase());
+      await updateDoc(userRef, {
+        suspended: false,
+        suspensionReason: null,
+        unsuspendedAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Unsuspend User Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Listing suspension methods
+  async suspendListing(listingId: string, reason: string, adminAddress: string) {
+    try {
+      const listingRef = doc(db, 'listings', listingId);
+      await updateDoc(listingRef, {
+        suspended: true,
+        suspensionReason: reason,
+        status: 'suspended',
+        suspendedAt: Timestamp.now(),
+        suspendedBy: adminAddress,
+        updatedAt: Timestamp.now(),
+      });
+
+      // Create admin log
+      await this.createAdminLog({
+        adminAddress,
+        action: 'suspend_listing',
+        targetType: 'listing',
+        targetId: listingId,
+        reason,
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Suspend Listing Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Trademark verification methods
+  async verifyTrademark(tokenId: number, adminAddress: string) {
+    try {
+      const q = query(
+        collection(db, 'trademarks'),
+        where('tokenId', '==', tokenId),
+        limit(1)
+      );
+
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        const trademarkRef = snapshot.docs[0].ref;
+        await updateDoc(trademarkRef, {
+          verified: true,
+          verificationStatus: 'verified',
+          verifiedBy: adminAddress,
+          verifiedAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+
+        // Create admin log
+        await this.createAdminLog({
+          adminAddress,
+          action: 'verify',
+          targetType: 'trademark',
+          targetId: tokenId.toString(),
+        });
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Verify Trademark Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async rejectTrademark(tokenId: number, reason: string, adminAddress: string) {
+    try {
+      const q = query(
+        collection(db, 'trademarks'),
+        where('tokenId', '==', tokenId),
+        limit(1)
+      );
+
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        const trademarkRef = snapshot.docs[0].ref;
+        await updateDoc(trademarkRef, {
+          verified: false,
+          verificationStatus: 'rejected',
+          rejectionReason: reason,
+          verifiedBy: adminAddress,
+          verifiedAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+
+        // Create admin log
+        await this.createAdminLog({
+          adminAddress,
+          action: 'reject',
+          targetType: 'trademark',
+          targetId: tokenId.toString(),
+          reason,
+        });
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Reject Trademark Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Statistics methods
+  async getStats() {
+    try {
+      const [trademarksSnap, usersSnap, listingsSnap, transactionsSnap] = await Promise.all([
+        getDocs(collection(db, 'trademarks')),
+        getDocs(collection(db, 'users')),
+        getDocs(query(collection(db, 'listings'), where('active', '==', true))),
+        getDocs(collection(db, 'transactions')),
+      ]);
+
+      return {
+        success: true,
+        data: {
+          totalTrademarks: trademarksSnap.size,
+          totalUsers: usersSnap.size,
+          activeListings: listingsSnap.size,
+          totalTransactions: transactionsSnap.size,
+        },
+      };
+    } catch (error: any) {
+      console.error('Get Stats Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 // Export singleton instance

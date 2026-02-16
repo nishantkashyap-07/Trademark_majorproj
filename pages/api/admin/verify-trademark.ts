@@ -95,10 +95,24 @@ async function handler(
     // Update database
     await updateDoc(trademarkRef, {
       verified: true,
+      verificationStatus: 'verified',
       verifiedAt: Timestamp.now(),
       verifiedBy: adminAddress,
       verificationTxHash: blockchainTxHash,
       updatedAt: Timestamp.now(),
+    });
+
+    // Create admin log
+    const { dbService } = await import('@/lib/db-service');
+    await dbService.createAdminLog({
+      adminAddress,
+      action: 'verify',
+      targetType: 'trademark',
+      targetId: tokenId.toString(),
+      metadata: {
+        trademarkId,
+        blockchainTxHash,
+      },
     });
 
     return res.status(200).json({

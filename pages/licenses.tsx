@@ -98,7 +98,7 @@ export default function LicensesPage() {
 
       <Navbar />
 
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-gray-950">
         {/* Hero Section */}
         <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

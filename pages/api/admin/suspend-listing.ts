@@ -51,26 +51,26 @@ async function handler(
       });
     }
 
-    // Update listing
-    await updateDoc(listingRef, {
-      suspended,
-      suspendedAt: suspended ? Timestamp.now() : null,
-      suspendedBy: suspended ? adminAddress : null,
-      suspensionReason: suspended ? reason || 'No reason provided' : null,
-      unsuspendedAt: !suspended ? Timestamp.now() : null,
-      active: !suspended, // Deactivate listing when suspended
-      updatedAt: Timestamp.now(),
-    });
-
-    // Log the action
-    const logRef = doc(db, 'admin_logs', `${Date.now()}_${listingId}`);
-    await setDoc(logRef, {
-      action: suspended ? 'listing_suspended' : 'listing_unsuspended',
-      targetListing: listingId,
-      adminAddress,
-      reason: reason || 'No reason provided',
-      timestamp: Timestamp.now(),
-    });
+    // Use dbService method
+    const { dbService } = await import('@/lib/db-service');
+    
+    if (suspended) {
+      await dbService.suspendListing(
+        listingId,
+        reason || 'No reason provided',
+        adminAddress
+      );
+    } else {
+      // For unsuspending, update directly
+      await updateDoc(listingRef, {
+        suspended: false,
+        suspensionReason: null,
+        unsuspendedAt: Timestamp.now(),
+        active: true,
+        status: 'active',
+        updatedAt: Timestamp.now(),
+      });
+    }
 
     return res.status(200).json({
       success: true,

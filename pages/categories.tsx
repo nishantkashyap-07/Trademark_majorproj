@@ -123,9 +123,9 @@ export default function Categories() {
 
       <Navbar />
 
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-gray-950">
         {/* Header */}
-        <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-16">
+        <div className="bg-gradient-to-br from-gray-900 via-gray-950 to-black py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -147,7 +147,7 @@ export default function Categories() {
                 href={`/marketplace?category=${encodeURIComponent(category.name)}`}
                 className="group"
               >
-                <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 hover:border-blue-500 hover:shadow-xl transition-all duration-300">
+                <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-8 hover:border-blue-500 hover:shadow-xl transition-all duration-300">
                   {/* Icon */}
                   <div className={`w-20 h-20 bg-gradient-to-br ${category.gradient} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
                     <span className="text-4xl">{category.icon}</span>
@@ -177,7 +177,7 @@ export default function Categories() {
         </div>
 
         {/* Industry Insights */}
-        <div className="bg-gray-50 py-20">
+        <div className="bg-gray-900 py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold text-gray-900 mb-4">Platform Statistics</h2>
@@ -185,43 +185,43 @@ export default function Categories() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
-              <div className="bg-white rounded-2xl p-8 text-center shadow-md border border-gray-200">
-                <div className="text-5xl font-bold text-blue-600 mb-3">
+              <div className="bg-gray-950/50 rounded-2xl p-8 text-center border border-gray-800">
+                <div className="text-5xl font-bold text-blue-400 mb-3">
                   {categories.length}
                 </div>
-                <div className="text-sm text-gray-600 font-medium">Industry Categories</div>
+                <div className="text-sm text-gray-400 font-medium">Industry Categories</div>
               </div>
-              <div className="bg-white rounded-2xl p-8 text-center shadow-md border border-gray-200">
-                <div className="text-5xl font-bold text-green-600 mb-3">
+              <div className="bg-gray-950/50 rounded-2xl p-8 text-center border border-gray-800">
+                <div className="text-5xl font-bold text-green-400 mb-3">
                   {totalTrademarks.toLocaleString()}
                 </div>
-                <div className="text-sm text-gray-600 font-medium">Registered Trademarks</div>
+                <div className="text-sm text-gray-400 font-medium">Registered Trademarks</div>
               </div>
-              <div className="bg-white rounded-2xl p-8 text-center shadow-md border border-gray-200">
-                <div className="text-5xl font-bold text-purple-600 mb-3">
+              <div className="bg-gray-950/50 rounded-2xl p-8 text-center border border-gray-800">
+                <div className="text-5xl font-bold text-purple-400 mb-3">
                   5,000+
                 </div>
-                <div className="text-sm text-gray-600 font-medium">Active Companies</div>
+                <div className="text-sm text-gray-400 font-medium">Active Companies</div>
               </div>
-              <div className="bg-white rounded-2xl p-8 text-center shadow-md border border-gray-200">
-                <div className="text-5xl font-bold text-orange-600 mb-3">
+              <div className="bg-gray-950/50 rounded-2xl p-8 text-center border border-gray-800">
+                <div className="text-5xl font-bold text-orange-400 mb-3">
                   100%
                 </div>
-                <div className="text-sm text-gray-600 font-medium">Blockchain Verified</div>
+                <div className="text-sm text-gray-400 font-medium">Blockchain Verified</div>
               </div>
             </div>
 
             {/* Top Categories */}
-            <div className="bg-white rounded-2xl p-10 shadow-lg border border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900 mb-8">Most Active Categories</h3>
+            <div className="bg-gray-950/50 rounded-2xl p-10 border border-gray-800">
+              <h3 className="text-2xl font-bold text-white mb-8">Most Active Categories</h3>
               <div className="space-y-4">
                 {categories
                   .sort((a, b) => b.count - a.count)
                   .slice(0, 5)
                   .map((category, index) => (
-                    <div key={category.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <div key={category.name} className="flex items-center justify-between p-4 bg-gray-900/50 rounded-xl border border-gray-800">
                       <div className="flex items-center">
-                        <div className="w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center mr-4">
+                        <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center mr-4">
                           <span className="text-2xl">{category.icon}</span>
                         </div>
                         <div>

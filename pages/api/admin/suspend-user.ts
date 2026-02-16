@@ -40,42 +40,21 @@ async function handler(
       });
     }
 
-    // Update or create user document
-    const userRef = doc(db, 'users', userAddress.toLowerCase());
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-      // Create user document if it doesn't exist
-      await setDoc(userRef, {
-        address: userAddress.toLowerCase(),
-        suspended,
-        suspendedAt: suspended ? Timestamp.now() : null,
-        suspendedBy: suspended ? adminAddress : null,
-        suspensionReason: suspended ? reason || 'No reason provided' : null,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      });
+    // Use dbService methods
+    const { dbService } = await import('@/lib/db-service');
+    
+    if (suspended) {
+      await dbService.suspendUser(
+        userAddress.toLowerCase(),
+        reason || 'No reason provided',
+        adminAddress
+      );
     } else {
-      // Update existing user
-      await updateDoc(userRef, {
-        suspended,
-        suspendedAt: suspended ? Timestamp.now() : null,
-        suspendedBy: suspended ? adminAddress : null,
-        suspensionReason: suspended ? reason || 'No reason provided' : null,
-        unsuspendedAt: !suspended ? Timestamp.now() : null,
-        updatedAt: Timestamp.now(),
-      });
+      await dbService.unsuspendUser(
+        userAddress.toLowerCase(),
+        adminAddress
+      );
     }
-
-    // Log the action
-    const logRef = doc(db, 'admin_logs', `${Date.now()}_${userAddress}`);
-    await setDoc(logRef, {
-      action: suspended ? 'user_suspended' : 'user_unsuspended',
-      targetUser: userAddress.toLowerCase(),
-      adminAddress,
-      reason: reason || 'No reason provided',
-      timestamp: Timestamp.now(),
-    });
 
     return res.status(200).json({
       success: true,

@@ -71,8 +71,8 @@ export const ROYALTY_CONSTRAINTS = {
 // IPFS Configuration
 export const IPFS_CONFIG = {
   GATEWAY_URLS: [
-    'https://ipfs.io/ipfs/',
     'https://gateway.pinata.cloud/ipfs/',
+    'https://ipfs.io/ipfs/',
     'https://dweb.link/ipfs/',
   ],
   TIMEOUT: 10000, // 10 seconds

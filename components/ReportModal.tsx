@@ -72,7 +72,7 @@ export default function ReportModal({ targetId, targetType, onClose, onSuccess }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-gray-800" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Report {targetType}</h2>
           <button

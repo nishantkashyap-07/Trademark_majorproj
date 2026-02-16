@@ -10,12 +10,16 @@
     "lint": "next lint",
     "compile": "hardhat compile",
     "test": "hardhat test",
-    "deploy": "hardhat run scripts/deploy.js --network polygon"
+    "deploy": "hardhat run scripts/deploy.js --network polygon",
+    "check-env": "node scripts/check-env.js",
+    "seed": "node scripts/seed-database.js",
+    "setup-demo": "npm run check-env && npm run seed"
   },
   "dependencies": {
     "@tailwindcss/forms": "^0.5.6",
     "ethers": "^6.8.0",
     "firebase": "^10.5.0",
+    "form-data": "^4.0.5",
     "formidable": "^3.5.1",
     "next": "^14.0.0",
     "react": "^18.0.0",
@@ -32,6 +36,7 @@
     "@typechain/ethers-v6": "^0.4.3",
     "@typechain/hardhat": "^8.0.3",
     "@types/chai": "^4.3.20",
+    "@types/form-data": "^2.2.1",
     "@types/formidable": "^3.4.6",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.0.0",
