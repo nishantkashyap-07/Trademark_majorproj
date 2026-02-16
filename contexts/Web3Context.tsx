@@ -17,7 +17,11 @@ export function Web3Provider({ children }: Web3ProviderProps) {
 
   // Check if wallet is already connected on page load
   useEffect(() => {
-    checkConnection();
+    // Only auto-connect if user hasn't manually disconnected
+    const hasDisconnected = localStorage.getItem('walletDisconnected');
+    if (!hasDisconnected) {
+      checkConnection();
+    }
     
     // Listen for account changes
     if (typeof window !== 'undefined' && window.ethereum) {
@@ -76,8 +80,28 @@ export function Web3Provider({ children }: Web3ProviderProps) {
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       
+      // Request wallet_requestPermissions to show account selector
+      // This allows users to switch accounts or connect a different wallet
+      try {
+        await window.ethereum.request({
+          method: 'wallet_requestPermissions',
+          params: [{ eth_accounts: {} }],
+        });
+      } catch (permError: any) {
+        // If user cancels permission request, throw error
+        if (permError.code === 4001) {
+          throw new Error(ERROR_MESSAGES.TRANSACTION_REJECTED);
+        }
+        // If wallet_requestPermissions not supported, fall back to eth_requestAccounts
+        console.log('wallet_requestPermissions not supported, continuing with eth_requestAccounts');
+      }
+      
       // Request account access
-      await provider.send('eth_requestAccounts', []);
+      const accounts = await provider.send('eth_requestAccounts', []);
+      
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No accounts found. Please unlock your wallet.');
+      }
       
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
@@ -86,6 +110,9 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       setAccount(address);
       setChainId(Number(network.chainId));
       setIsConnected(true);
+      
+      // Clear disconnect flag when user manually connects
+      localStorage.removeItem('walletDisconnected');
       
       // Check if on correct network
       if (Number(network.chainId) !== DEFAULT_CHAIN.chainId) {
@@ -98,7 +125,8 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       if (error.code === 4001) {
         throw new Error(ERROR_MESSAGES.TRANSACTION_REJECTED);
       }
-      throw new Error('Failed to connect wallet');
+      // Provide more specific error message
+      throw new Error(error.message || 'Failed to connect wallet');
     } finally {
       setIsLoading(false);
     }
@@ -108,6 +136,8 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     setAccount(null);
     setChainId(null);
     setIsConnected(false);
+    // Set flag to prevent auto-reconnect
+    localStorage.setItem('walletDisconnected', 'true');
   };
 
   const switchNetwork = async () => {
