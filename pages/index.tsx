@@ -1,16 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useWeb3 } from '@/contexts/Web3Context';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import TrademarkCard from '@/components/TrademarkCard';
-import { demoSlogans, demoStats } from '@/lib/demo-data';
+import SplineBackground from '@/components/SplineBackground';
+import { demoStats } from '@/lib/demo-data';
+import { SloganMetadata } from '@/types';
 
 export default function Home() {
   const { isConnected, connect } = useWeb3();
-  const [stats] = useState(demoStats);
-  const [featuredSlogans] = useState(demoSlogans.slice(0, 8));
+  const [stats, setStats] = useState(demoStats);
+  const [featuredSlogans, setFeaturedSlogans] = useState<SloganMetadata[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch real-time data on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch stats
+        const statsRes = await fetch('/api/stats');
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          if (statsData.success) {
+            setStats(statsData.data);
+          }
+        }
+
+        // Fetch recent trademarks (using limitCount parameter)
+        const trademarksRes = await fetch('/api/trademarks?limitCount=8&sortBy=createdAt&order=desc');
+        if (trademarksRes.ok) {
+          const trademarksData = await trademarksRes.json();
+          if (trademarksData.success) {
+            setFeaturedSlogans(trademarksData.data);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+    
+    // Refresh data every 30 seconds for real-time updates
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <>
@@ -23,37 +61,48 @@ export default function Home() {
         <Navbar />
 
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-950 to-black text-white py-24">
-          <div className="relative max-w-6xl mx-auto px-4">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              {/* Left Content */}
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-600/10 border border-blue-600/20 rounded-full text-xs text-blue-400 mb-6">
-                  <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+        <section className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-950 to-black text-white min-h-screen flex items-center">
+          {/* Spline 3D Background - Full Visibility */}
+          <SplineBackground 
+            opacity={100}
+            showGradient={true}
+            gradientDirection="right"
+            gradientOpacity={98}
+          />
+
+          {/* Content Overlay */}
+          <div className="relative z-10 max-w-7xl mx-auto px-4 py-20 w-full">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              {/* Left Content - More Prominent */}
+              <div className="space-y-8">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/20 border border-blue-500/30 rounded-full text-sm text-blue-300 backdrop-blur-md">
+                  <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
                   REAL-TIME IP PROTECTION ON POLYGON
                 </div>
 
-                <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold leading-tight">
                   Own your ideas.
                   <br />
-                  <span className="text-blue-400">Prove it on-chain.</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-500 to-cyan-400">
+                    Prove it on-chain.
+                  </span>
                 </h1>
 
-                <p className="text-lg text-gray-400 mb-8 leading-relaxed">
+                <p className="text-xl md:text-2xl text-gray-200 leading-relaxed max-w-2xl">
                   TrademarkChain turns your trademarks into verifiable on-chain assets. Register once, prove ownership anywhere, and unlock new revenue through a compliant IP marketplace.
                 </p>
 
                 {isConnected ? (
-                  <div className="flex gap-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
                     <Link
                       href="/register"
-                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition shadow-lg shadow-blue-600/20"
+                      className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-lg rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold transition shadow-2xl shadow-blue-600/30 backdrop-blur-sm"
                     >
                       Register Trademark
                     </Link>
                     <Link
                       href="/marketplace"
-                      className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 font-medium transition border border-gray-700"
+                      className="px-8 py-4 bg-white/10 backdrop-blur-md text-white text-lg rounded-xl hover:bg-white/20 font-semibold transition border border-white/20"
                     >
                       View Marketplace
                     </Link>
@@ -61,63 +110,82 @@ export default function Home() {
                 ) : (
                   <button
                     onClick={connect}
-                    className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition shadow-lg shadow-blue-600/20"
+                    className="px-10 py-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-lg rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold transition shadow-2xl shadow-blue-600/30 backdrop-blur-sm"
                   >
                     Connect Wallet to Get Started
                   </button>
                 )}
 
-                <div className="flex items-center gap-6 mt-8 text-xs text-gray-500">
+                <div className="flex items-center gap-8 text-sm text-gray-300">
                   <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                    <span className="w-2 h-2 bg-green-400 rounded-full" />
                     Audited smart contracts
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+                    <span className="w-2 h-2 bg-blue-400 rounded-full" />
                     IPFS + Polygon powered
                   </div>
                 </div>
               </div>
 
-              {/* Right Stats Card */}
-              <div className="bg-gray-900/50 backdrop-blur border border-gray-800 rounded-2xl p-8">
-                <div className="flex items-center justify-between mb-6">
+              {/* Right Stats Card - Larger and More Transparent */}
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-10 shadow-2xl">
+                <div className="flex items-center justify-between mb-8">
                   <div>
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Live Snapshot</p>
-                    <p className="text-xs text-gray-500 mt-1">Demo network metrics</p>
+                    <p className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Live Snapshot</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {loading ? 'Loading...' : 'Real-time network metrics'}
+                    </p>
                   </div>
-                  <span className="px-3 py-1 bg-green-600/10 border border-green-600/20 rounded-full text-xs text-green-400">
-                    Testnet
+                  <span className="px-4 py-2 bg-green-500/20 border border-green-500/30 rounded-full text-sm text-green-300 font-medium flex items-center gap-2">
+                    {!loading && <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />}
+                    Live
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gray-950/50 rounded-xl p-4">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Registered IP</p>
-                    <p className="text-3xl font-bold text-white">{stats.overview.totalSlogans}</p>
-                    <p className="text-xs text-gray-500 mt-1">Trademarks tokenized</p>
+                {loading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
                   </div>
-                  <div className="bg-gray-950/50 rounded-xl p-4">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Verified Assets</p>
-                    <p className="text-3xl font-bold text-white">{stats.overview.verifiedSlogans}</p>
-                    <p className="text-xs text-gray-500 mt-1">On-chain proofs</p>
-                  </div>
-                  <div className="bg-gray-950/50 rounded-xl p-4">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Active Users</p>
-                    <p className="text-3xl font-bold text-white">{stats.overview.totalUsers}</p>
-                    <p className="text-xs text-gray-500 mt-1">Creators & buyers</p>
-                  </div>
-                  <div className="bg-gray-950/50 rounded-xl p-4">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Verification Rate</p>
-                    <p className="text-3xl font-bold text-white">{stats.overview.verificationRate}%</p>
-                    <p className="text-xs text-gray-500 mt-1">Instant checks</p>
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                        <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Registered IP</p>
+                        <p className="text-5xl font-bold text-white mb-2">
+                          {stats.overview.totalTrademarks || stats.overview.totalSlogans || 0}
+                        </p>
+                        <p className="text-sm text-gray-400">Trademarks tokenized</p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                        <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Verified Assets</p>
+                        <p className="text-5xl font-bold text-white mb-2">
+                          {stats.overview.verifiedTrademarks || stats.overview.verifiedSlogans || 0}
+                        </p>
+                        <p className="text-sm text-gray-400">On-chain proofs</p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                        <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Active Users</p>
+                        <p className="text-5xl font-bold text-white mb-2">
+                          {stats.overview.totalUsers || 0}
+                        </p>
+                        <p className="text-sm text-gray-400">Creators & buyers</p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                        <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Verification Rate</p>
+                        <p className="text-5xl font-bold text-white mb-2">
+                          {stats.overview.verificationRate || '0'}%
+                        </p>
+                        <p className="text-sm text-gray-400">Instant checks</p>
+                      </div>
+                    </div>
 
-                <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-800 text-xs text-gray-500">
-                  <span>Academic project demo</span>
-                  <span>Polygon • IPFS • EIP-2981</span>
-                </div>
+                    <div className="flex items-center justify-between mt-8 pt-8 border-t border-white/10 text-sm text-gray-400">
+                      <span>Real-time data from Firebase</span>
+                      <span>Polygon • IPFS • EIP-2981</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -172,7 +240,12 @@ export default function Home() {
         <section className="py-20 bg-gray-900">
           <div className="max-w-6xl mx-auto px-4">
             <div className="flex justify-between items-center mb-10">
-              <h2 className="text-3xl font-bold text-white">Recent Trademarks</h2>
+              <div>
+                <h2 className="text-3xl font-bold text-white">Recent Trademarks</h2>
+                <p className="text-sm text-gray-400 mt-2">
+                  {loading ? 'Loading...' : `${featuredSlogans.length} trademarks available`}
+                </p>
+              </div>
               <Link
                 href="/marketplace"
                 className="text-blue-400 hover:text-blue-300 text-sm font-medium transition flex items-center gap-2"
@@ -184,11 +257,35 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredSlogans.map((slogan) => (
-                <TrademarkCard key={slogan.tokenId} trademark={slogan} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
+              </div>
+            ) : featuredSlogans.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {featuredSlogans.map((slogan) => (
+                  <TrademarkCard key={slogan.tokenId} trademark={slogan} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">No Trademarks Yet</h3>
+                <p className="text-gray-400 mb-6">Be the first to register a trademark on the blockchain!</p>
+                {isConnected && (
+                  <Link
+                    href="/register"
+                    className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  >
+                    Register First Trademark
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
         </section>
 

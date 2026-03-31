@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { ethers } from 'ethers';
 import { Web3ContextType } from '@/types';
 import { DEFAULT_CHAIN, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/utils/constants';
+import { getTrademarkNFTContract, getMarketplaceContract } from '@/utils/contracts';
 
 const Web3Context = createContext<Web3ContextType | undefined>(undefined);
 
@@ -14,16 +15,24 @@ export function Web3Provider({ children }: Web3ProviderProps) {
   const [chainId, setChainId] = useState<number | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [trademarkNFTContract, setTrademarkNFTContract] = useState<any | null>(null);
+  const [marketplaceContract, setMarketplaceContract] = useState<any | null>(null);
 
   // Check if wallet is already connected on page load
   useEffect(() => {
-    // Only auto-connect if user hasn't manually disconnected
-    const hasDisconnected = localStorage.getItem('walletDisconnected');
-    if (!hasDisconnected) {
-      checkConnection();
-    }
-    
-    // Listen for account changes
+    // Disable auto-connect to prevent RPC errors on page load
+    // User must manually click "Connect Wallet"
+    // const hasDisconnected = localStorage.getItem('walletDisconnected');
+    // if (!hasDisconnected) {
+    //   const timer = setTimeout(() => {
+    //     checkConnection();
+    //   }, 100);
+    //   return () => clearTimeout(timer);
+    // }
+  }, []);
+  
+  // Listen for account and chain changes
+  useEffect(() => {
     if (typeof window !== 'undefined' && window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('chainChanged', handleChainChanged);
@@ -48,6 +57,13 @@ export function Web3Provider({ children }: Web3ProviderProps) {
           setAccount(accounts[0].address);
           setChainId(Number(network.chainId));
           setIsConnected(true);
+          
+          // Initialize contracts
+          const signer = await provider.getSigner();
+          const nftContract = getTrademarkNFTContract(signer);
+          const marketplace = getMarketplaceContract(signer);
+          setTrademarkNFTContract(nftContract);
+          setMarketplaceContract(marketplace);
         }
       }
     } catch (error) {
@@ -80,23 +96,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       
-      // Request wallet_requestPermissions to show account selector
-      // This allows users to switch accounts or connect a different wallet
-      try {
-        await window.ethereum.request({
-          method: 'wallet_requestPermissions',
-          params: [{ eth_accounts: {} }],
-        });
-      } catch (permError: any) {
-        // If user cancels permission request, throw error
-        if (permError.code === 4001) {
-          throw new Error(ERROR_MESSAGES.TRANSACTION_REJECTED);
-        }
-        // If wallet_requestPermissions not supported, fall back to eth_requestAccounts
-        console.log('wallet_requestPermissions not supported, continuing with eth_requestAccounts');
-      }
-      
-      // Request account access
+      // Simple connection request - no permissions needed
       const accounts = await provider.send('eth_requestAccounts', []);
       
       if (!accounts || accounts.length === 0) {
@@ -105,28 +105,66 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
-      const network = await provider.getNetwork();
+      
+      // Try to get network, but don't fail if RPC is down
+      let networkChainId = null;
+      try {
+        const network = await provider.getNetwork();
+        networkChainId = Number(network.chainId);
+      } catch (networkError) {
+        console.warn('Could not fetch network info, using MetaMask chainId:', networkError);
+        // Get chainId directly from MetaMask
+        const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
+        networkChainId = parseInt(chainIdHex, 16);
+      }
       
       setAccount(address);
-      setChainId(Number(network.chainId));
+      setChainId(networkChainId);
       setIsConnected(true);
+      
+      // Initialize contracts
+      const nftContract = getTrademarkNFTContract(signer);
+      const marketplace = getMarketplaceContract(signer);
+      setTrademarkNFTContract(nftContract);
+      setMarketplaceContract(marketplace);
       
       // Clear disconnect flag when user manually connects
       localStorage.removeItem('walletDisconnected');
       
-      // Check if on correct network
-      if (Number(network.chainId) !== DEFAULT_CHAIN.chainId) {
-        await switchNetwork();
+      // Check if on correct network (skip if we couldn't get network info)
+      if (networkChainId && networkChainId !== DEFAULT_CHAIN.chainId) {
+        console.log(`Connected to chain ${networkChainId}, expected ${DEFAULT_CHAIN.chainId}`);
+        // Don't auto-switch, just log it
+        // await switchNetwork();
       }
       
       console.log(SUCCESS_MESSAGES.WALLET_CONNECTED);
     } catch (error: any) {
       console.error('Error connecting wallet:', error);
+      
+      // User rejected the request
       if (error.code === 4001) {
-        throw new Error(ERROR_MESSAGES.TRANSACTION_REJECTED);
+        console.log('User rejected connection');
+        return; // Don't throw, just exit silently
       }
-      // Provide more specific error message
-      throw new Error(error.message || 'Failed to connect wallet');
+      
+      // Already processing request
+      if (error.code === -32002) {
+        console.log('Connection request already pending');
+        return; // Don't throw, just exit silently
+      }
+      
+      // Log the full error for debugging
+      console.error('Full error:', {
+        code: error.code,
+        message: error.message,
+        data: error.data
+      });
+      
+      // Only throw for unexpected errors
+      if (error.code !== 4001 && error.code !== -32002) {
+        throw new Error(error.message || 'Failed to connect wallet');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -136,6 +174,8 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     setAccount(null);
     setChainId(null);
     setIsConnected(false);
+    setTrademarkNFTContract(null);
+    setMarketplaceContract(null);
     // Set flag to prevent auto-reconnect
     localStorage.setItem('walletDisconnected', 'true');
   };
@@ -185,6 +225,8 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     connect,
     disconnect,
     switchNetwork,
+    trademarkNFTContract,
+    marketplaceContract,
   };
 
   return (

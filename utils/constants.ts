@@ -1,9 +1,25 @@
 // Network Configuration
 export const SUPPORTED_CHAINS = {
+  LOCALHOST: {
+    chainId: 31337,
+    name: 'Localhost',
+    rpcUrl: process.env.NEXT_PUBLIC_POLYGON_RPC_URL || 'http://127.0.0.1:8545',
+    blockExplorer: 'http://localhost:8545',
+    nativeCurrency: {
+      name: 'ETH',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+  },
   POLYGON_MUMBAI: {
     chainId: 80001,
     name: 'Polygon Mumbai',
-    rpcUrl: 'https://rpc-mumbai.maticvigil.com',
+    rpcUrl: 'https://polygon-mumbai-bor-rpc.publicnode.com',
+    fallbackRpcUrls: [
+      'https://rpc.ankr.com/polygon_mumbai',
+      'https://polygon-mumbai.gateway.tenderly.co',
+      'https://rpc-mumbai.maticvigil.com',
+    ],
     blockExplorer: 'https://mumbai.polygonscan.com',
     nativeCurrency: {
       name: 'MATIC',
@@ -15,6 +31,10 @@ export const SUPPORTED_CHAINS = {
     chainId: 80002,
     name: 'Polygon Amoy',
     rpcUrl: 'https://rpc-amoy.polygon.technology',
+    fallbackRpcUrls: [
+      'https://polygon-amoy-bor-rpc.publicnode.com',
+      'https://rpc.ankr.com/polygon_amoy',
+    ],
     blockExplorer: 'https://amoy.polygonscan.com',
     nativeCurrency: {
       name: 'MATIC',
@@ -24,7 +44,11 @@ export const SUPPORTED_CHAINS = {
   },
 };
 
-export const DEFAULT_CHAIN = SUPPORTED_CHAINS.POLYGON_MUMBAI;
+// Use localhost if RPC URL is set to localhost, otherwise use Mumbai
+const isLocalhost = process.env.NEXT_PUBLIC_POLYGON_RPC_URL?.includes('127.0.0.1') || 
+                    process.env.NEXT_PUBLIC_POLYGON_RPC_URL?.includes('localhost');
+
+export const DEFAULT_CHAIN = isLocalhost ? SUPPORTED_CHAINS.LOCALHOST : SUPPORTED_CHAINS.POLYGON_MUMBAI;
 
 // Contract Addresses (to be updated after deployment)
 export const CONTRACT_ADDRESSES = {

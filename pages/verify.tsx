@@ -4,6 +4,8 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductVerification from '@/components/ProductVerification';
+import VerificationSystem from '@/components/VerificationSystem';
+import SplineBackground from '@/components/SplineBackground';
 import { ProductData } from '@/types';
 
 // Mock product data for demonstration
@@ -73,22 +75,33 @@ export default function VerifyPage() {
 
       <Navbar />
 
-      <main className="min-h-screen bg-slate-950">
-        <div className="mx-auto max-w-6xl px-4 py-10">
+      <main className="relative min-h-screen bg-slate-950">
+        {/* Spline 3D Background */}
+        <SplineBackground 
+          opacity={35}
+          gradientDirection="bottom"
+        />
+        
+        <div className="relative z-10 mx-auto max-w-6xl px-4 py-10">
 
           {/* Hero Section */}
-          <section className="mb-10 rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 px-6 py-8 text-center text-slate-50 shadow-[0_18px_60px_rgba(15,23,42,0.8)]">
+          <section className="mb-10 rounded-3xl border border-white/10 bg-slate-900/60 backdrop-blur-xl px-6 py-8 text-center text-slate-50 shadow-[0_18px_60px_rgba(15,23,42,0.8)]">
             <div className="mx-auto max-w-3xl space-y-4">
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">
-                Verification Demo
+                Blockchain Verification
               </p>
               <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">
-                Verify product authenticity against on-chain trademarks
+                Verify Trademark Authenticity
               </h1>
               <p className="text-sm text-slate-300">
-                Click any demo product to run a full verification flow backed by Polygon and IPFS data.
+                Lookup trademarks by registration number or token ID. Generate QR codes for instant verification.
               </p>
             </div>
+          </section>
+
+          {/* Verification System */}
+          <section className="mb-10">
+            <VerificationSystem />
           </section>
 
           {/* Verification Statistics */}

@@ -2,6 +2,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import SplineBackground from '@/components/SplineBackground';
 
 interface Category {
   name: string;
@@ -123,15 +124,21 @@ export default function Categories() {
 
       <Navbar />
 
-      <main className="min-h-screen bg-gray-950">
+      <main className="relative min-h-screen bg-gray-950">
+        {/* Spline 3D Background */}
+        <SplineBackground 
+          opacity={30}
+          gradientDirection="bottom"
+        />
+        
         {/* Header */}
-        <div className="bg-gradient-to-br from-gray-900 via-gray-950 to-black py-16">
+        <div className="relative z-10 bg-gradient-to-br from-gray-900/80 via-gray-950/80 to-black/80 backdrop-blur-sm py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
                 Browse by Category
               </h1>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              <p className="text-xl text-gray-300 max-w-3xl mx-auto">
                 Explore {totalTrademarks.toLocaleString()} verified trademarks across {categories.length} different industries
               </p>
             </div>
@@ -139,7 +146,7 @@ export default function Categories() {
         </div>
 
         {/* Categories Grid */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {categories.map((category) => (
               <Link

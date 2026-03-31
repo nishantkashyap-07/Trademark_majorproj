@@ -7,6 +7,7 @@ const TRADEMARK_NFT_ABI = [
   "function registerTrademark(string memory companyName, string memory trademarkName, string memory registrationNumber, string memory ipfsHash, string memory category, uint96 royaltyBps, string memory tokenURI) external returns (uint256)",
   "function getTrademarkInfo(uint256 tokenId) external view returns (tuple(uint256 tokenId, address creator, string companyName, string trademarkName, string registrationNumber, string ipfsHash, string category, uint96 royaltyBps, uint256 createdAt, bool verified))",
   "function getTrademarkByRegistration(string memory registrationNumber) external view returns (uint256)",
+  "function getTokenIdByRegistration(string memory registrationNumber) external view returns (uint256)",
   "function getOwnerTrademarks(address owner) external view returns (uint256[])",
   "function isRegistrationNumberUsed(string memory registrationNumber) external view returns (bool)",
   "function verifyTrademark(uint256 tokenId) external",
@@ -14,6 +15,10 @@ const TRADEMARK_NFT_ABI = [
   "function tokenURI(uint256 tokenId) external view returns (string)",
   "function royaltyInfo(uint256 tokenId, uint256 salePrice) external view returns (address, uint256)",
   "function getCurrentTokenId() external view returns (uint256)",
+  "function approve(address to, uint256 tokenId) external",
+  "function setApprovalForAll(address operator, bool approved) external",
+  "function getApproved(uint256 tokenId) external view returns (address)",
+  "function isApprovedForAll(address owner, address operator) external view returns (bool)",
   "event TrademarkRegistered(uint256 indexed tokenId, address indexed creator, string companyName, string trademarkName, string registrationNumber, string category, string ipfsHash)"
 ];
 
@@ -27,6 +32,7 @@ const MARKETPLACE_ABI = [
   "function hasActiveLicense(uint256 tokenId, address user) external view returns (bool)",
   "function listings(uint256 listingId) external view returns (tuple(uint256 listingId, uint256 tokenId, address seller, uint256 price, bool isLicense, bool active, uint256 createdAt, uint256 expiresAt))",
   "function getCurrentListingId() external view returns (uint256)",
+  "function trademarkNFT() external view returns (address)",
   "event ListingCreated(uint256 indexed listingId, uint256 indexed tokenId, address indexed seller, uint256 price, bool isLicense, uint256 expiresAt)",
   "event TrademarkSold(uint256 indexed listingId, uint256 indexed tokenId, address indexed buyer, address seller, uint256 price, uint256 royaltyAmount, uint256 marketplaceFeeAmount)",
   "event TrademarkLicensed(uint256 indexed listingId, uint256 indexed tokenId, address indexed licensee, address licensor, uint256 price, uint256 duration)"
@@ -79,6 +85,22 @@ export function getContracts(signer?: ethers.Signer) {
   );
   
   return { trademarkNFT, marketplace };
+}
+
+/**
+ * Get TrademarkNFT contract instance
+ */
+export function getTrademarkNFTContract(signer?: ethers.Signer) {
+  const { trademarkNFT } = getContracts(signer);
+  return trademarkNFT;
+}
+
+/**
+ * Get Marketplace contract instance
+ */
+export function getMarketplaceContract(signer?: ethers.Signer) {
+  const { marketplace } = getContracts(signer);
+  return marketplace;
 }
 
 /**
@@ -330,6 +352,12 @@ export async function licenseTrademark(
  */
 export async function getActiveListingsForToken(tokenId: number): Promise<number[]> {
   try {
+    // Check if contracts are deployed
+    if (!CONTRACT_ADDRESSES.MARKETPLACE || CONTRACT_ADDRESSES.MARKETPLACE === '0x0000000000000000000000000000000000000000') {
+      console.log('Marketplace contract not deployed yet');
+      return [];
+    }
+    
     const { marketplace } = getContracts();
     const listingIds = await marketplace.getActiveListingsForToken(tokenId);
     return listingIds.map((id: any) => Number(id));
@@ -384,6 +412,12 @@ export async function hasActiveLicense(tokenId: number, userAddress: string): Pr
  */
 export async function getLicensesForToken(tokenId: number): Promise<any[]> {
   try {
+    // Check if contracts are deployed
+    if (!CONTRACT_ADDRESSES.MARKETPLACE || CONTRACT_ADDRESSES.MARKETPLACE === '0x0000000000000000000000000000000000000000') {
+      console.log('Marketplace contract not deployed yet');
+      return [];
+    }
+    
     const { marketplace } = getContracts();
     const licenses = await marketplace.getLicensesForToken(tokenId);
     

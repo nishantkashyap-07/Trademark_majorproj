@@ -73,6 +73,26 @@ export class DatabaseService {
     }
   }
 
+  async getTrademarks() {
+    try {
+      const q = query(
+        collection(db, 'trademarks'),
+        orderBy('createdAt', 'desc')
+      );
+
+      const snapshot = await getDocs(q);
+      const trademarks = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return { success: true, data: trademarks };
+    } catch (error: any) {
+      console.error('Get Trademarks Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   async updateTrademark(id: string, data: any) {
     try {
       const trademarkRef = doc(db, 'trademarks', id);

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Checker</title>
+</head>
+<body>
+    <h1>MetaMask Network Checker</h1>
+    <button onclick="checkNetwork()">Check Current Network</button>
+    <div id="result" style="margin-top: 20px; padding: 20px; background: #f0f0f0;"></div>
+
+    <script>
+        async function checkNetwork() {
+            const resultDiv = document.getElementById('result');
+            
+            if (!window.ethereum) {
+                resultDiv.innerHTML = '<p style="color: red;">MetaMask not installed!</p>';
+                return;
+            }
+
+            try {
+                // Get current chain ID
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                const chainIdDecimal = parseInt(chainId, 16);
+                
+                // Get network name
+                let networkName = 'Unknown';
+                if (chainIdDecimal === 31337) networkName = 'Localhost';
+                else if (chainIdDecimal === 80001) networkName = 'Polygon Mumbai';
+                else if (chainIdDecimal === 80002) networkName = 'Polygon Amoy';
+                else if (chainIdDecimal === 1) networkName = 'Ethereum Mainnet';
+                
+                resultDiv.innerHTML = `
+                    <h2>Current Network:</h2>
+                    <p><strong>Network:</strong> ${networkName}</p>
+                    <p><strong>Chain ID:</strong> ${chainIdDecimal} (0x${chainId.slice(2)})</p>
+                    <p style="color: ${chainIdDecimal === 31337 ? 'green' : 'red'};">
+                        ${chainIdDecimal === 31337 ? '✓ Correct! You are on Localhost' : '✗ WRONG! You need to switch to Localhost (Chain ID 31337)'}
+                    </p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

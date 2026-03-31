@@ -45,33 +45,87 @@ export default function TrademarkDetail() {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [licenses, setLicenses] = useState<License[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [trademark, setTrademark] = useState<TrademarkMetadata | null>(null);
   const [ratingKey, setRatingKey] = useState(0);
 
-  const trademark = mockTrademark; // In real app, fetch based on id
-  const isOwner = account?.toLowerCase() === trademark.creatorAddress.toLowerCase();
+  const isOwner = account?.toLowerCase() === trademark?.creatorAddress.toLowerCase();
 
   useEffect(() => {
     if (id) {
-      loadListingsAndLicenses();
+      loadTrademark();
     }
   }, [id]);
 
-  const loadListingsAndLicenses = async () => {
+  const loadTrademark = async () => {
     setIsLoading(true);
     try {
-      // Load listings
-      const listingIds = await getActiveListingsForToken(trademark.tokenId);
-      // In production, fetch full listing details
-      console.log('Active listings:', listingIds);
+      console.log('Loading trademark with ID:', id);
       
-      // Load licenses
-      const licenseData = await getLicensesForToken(trademark.tokenId);
-      setLicenses(licenseData);
+      // First try to fetch by document ID
+      let response = await fetch(`/api/trademarks/${id}`);
+      let data = await response.json();
+      
+      console.log('Direct fetch result:', data);
+      
+      // If not found, try to search by tokenId
+      if (!data.success) {
+        console.log('Trying to fetch by tokenId...');
+        response = await fetch(`/api/trademarks?tokenId=${id}`);
+        data = await response.json();
+        
+        console.log('TokenId fetch result:', data);
+        
+        if (data.success && data.data && data.data.length > 0) {
+          data = { success: true, data: data.data[0] };
+        }
+      }
+      
+      if (data.success && data.data) {
+        console.log('Trademark found:', data.data);
+        
+        // Convert date strings to Date objects and map field names
+        const trademarkData = {
+          ...data.data,
+          sloganText: data.data.trademarkName || data.data.sloganText, // Map trademarkName to sloganText
+          createdAt: new Date(data.data.createdAt?.seconds ? data.data.createdAt.seconds * 1000 : data.data.createdAt),
+          updatedAt: data.data.updatedAt ? new Date(data.data.updatedAt?.seconds ? data.data.updatedAt.seconds * 1000 : data.data.updatedAt) : undefined,
+          verifiedAt: data.data.verifiedAt ? new Date(data.data.verifiedAt?.seconds ? data.data.verifiedAt.seconds * 1000 : data.data.verifiedAt) : undefined,
+        };
+        setTrademark(trademarkData);
+        loadListingsAndLicenses(trademarkData.tokenId);
+      } else {
+        console.error('Trademark not found, redirecting to dashboard');
+        setTimeout(() => router.push('/dashboard'), 2000);
+      }
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Error loading trademark:', error);
+      setTimeout(() => router.push('/dashboard'), 2000);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadListingsAndLicenses = async (tokenId: number) => {
+    try {
+      // Load listings - wrapped in try-catch to not block page
+      try {
+        const listingIds = await getActiveListingsForToken(tokenId);
+        console.log('Active listings:', listingIds);
+      } catch (err) {
+        console.log('Could not load listings (contracts may not be deployed):', err);
+      }
+      
+      // Load licenses - wrapped in try-catch to not block page
+      try {
+        const licenseData = await getLicensesForToken(tokenId);
+        setLicenses(licenseData);
+      } catch (err) {
+        console.log('Could not load licenses (contracts may not be deployed):', err);
+        setLicenses([]); // Set empty array so page still works
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
     }
   };
 
@@ -80,10 +134,28 @@ export default function TrademarkDetail() {
     setShowPurchaseModal(true);
   };
 
+  if (isLoading || !trademark) {
+    return (
+      <>
+        <Head>
+          <title>Loading... - TrademarkChain</title>
+        </Head>
+        <Navbar />
+        <main className="min-h-screen bg-gray-950 flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <p className="mt-4 text-gray-400">Loading trademark...</p>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
   return (
     <>
       <Head>
-        <title>{trademark.sloganText} - SloganChain</title>
+        <title>{trademark.sloganText} - TrademarkChain</title>
         <meta name="description" content={trademark.description} />
       </Head>
 
@@ -106,7 +178,21 @@ export default function TrademarkDetail() {
               <div className="overflow-hidden rounded-3xl border border-gray-200 bg-gradient-to-br from-neutral-50 via-neutral-100 to-neutral-50 shadow-sm">
                 <div className="relative flex aspect-square items-center justify-center p-10">
                   <div className="absolute inset-0 bg-gradient-brand opacity-10 blur-3xl" />
-                  <div className="relative flex h-40 w-40 items-center justify-center rounded-3xl border border-neutral-200 bg-white text-6xl font-display font-bold gradient-text shadow-xl">
+                  {(trademark.imageUrl || trademark.ipfsHash) ? (
+                    <img 
+                      src={trademark.imageUrl || `https://gateway.pinata.cloud/ipfs/${trademark.ipfsHash}`}
+                      alt={trademark.sloganText}
+                      className="relative w-full h-full object-contain rounded-2xl"
+                      onError={(e) => {
+                        // Fallback to letter if image fails to load
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const fallback = document.getElementById('detail-fallback');
+                        if (fallback) fallback.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <div className={`relative flex h-40 w-40 items-center justify-center rounded-3xl border border-neutral-200 bg-white text-6xl font-display font-bold gradient-text shadow-xl ${(trademark.imageUrl || trademark.ipfsHash) ? 'hidden' : ''}`} id="detail-fallback">
                     {trademark.sloganText.charAt(0)}
                   </div>
                   {trademark.verified && (
@@ -184,6 +270,7 @@ export default function TrademarkDetail() {
                         verified={trademark.verified}
                         trademarkId={trademark.tokenId}
                         companyName={trademark.companyName}
+                        transactionHash={trademark.transactionHash}
                       />
                     </div>
                     <h1 className="mb-1 line-clamp-2 text-2xl md:text-3xl font-semibold text-gray-900">
@@ -473,26 +560,49 @@ export default function TrademarkDetail() {
                   {/* Verification Tab */}
                   {activeTab === 'verification' && (
                     <div className="space-y-6">
-                      <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          <span className="font-semibold text-green-900">Blockchain Verified</span>
+                      {trademark.transactionHash ? (
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            <span className="font-semibold text-green-900">Blockchain Verified</span>
+                          </div>
+                          <p className="text-sm text-green-800">
+                            This trademark is registered on Polygon blockchain and verified by smart contract.
+                          </p>
                         </div>
-                        <p className="text-sm text-green-800">
-                          This trademark is registered on Polygon blockchain and verified by smart contract.
-                        </p>
-                      </div>
+                      ) : (
+                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            <span className="font-semibold text-yellow-900">Database Only</span>
+                          </div>
+                          <p className="text-sm text-yellow-800">
+                            This trademark is stored in the database but not yet registered on the blockchain. Deploy smart contracts to enable blockchain registration.
+                          </p>
+                        </div>
+                      )}
 
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 mb-3">Blockchain Details</h3>
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Contract Address</span>
-                            <a href="#" className="text-sm font-mono text-blue-600 hover:text-blue-700">
-                              0x1234...5678
-                            </a>
+                            {process.env.NEXT_PUBLIC_TRADEMARK_CONTRACT_ADDRESS ? (
+                              <a 
+                                href={`https://amoy.polygonscan.com/address/${process.env.NEXT_PUBLIC_TRADEMARK_CONTRACT_ADDRESS}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm font-mono text-blue-600 hover:text-blue-700"
+                              >
+                                {process.env.NEXT_PUBLIC_TRADEMARK_CONTRACT_ADDRESS.slice(0, 6)}...{process.env.NEXT_PUBLIC_TRADEMARK_CONTRACT_ADDRESS.slice(-4)}
+                              </a>
+                            ) : (
+                              <span className="text-sm text-gray-500">Not deployed</span>
+                            )}
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Token Standard</span>
@@ -500,19 +610,32 @@ export default function TrademarkDetail() {
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Blockchain</span>
-                            <span className="text-sm font-medium text-gray-900">Polygon</span>
+                            <span className="text-sm font-medium text-gray-900">Polygon Amoy</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Transaction Hash</span>
-                            <a href="#" className="text-sm font-mono text-blue-600 hover:text-blue-700">
-                              {trademark.transactionHash.slice(0, 10)}...
-                            </a>
+                            {trademark.transactionHash ? (
+                              <a 
+                                href={`https://amoy.polygonscan.com/tx/${trademark.transactionHash}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm font-mono text-blue-600 hover:text-blue-700"
+                              >
+                                {trademark.transactionHash.slice(0, 10)}...
+                              </a>
+                            ) : (
+                              <span className="text-sm text-gray-500">Not on-chain</span>
+                            )}
                           </div>
                         </div>
                       </div>
 
-                      <button className="w-full py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors">
-                        View on Polygonscan
+                      <button 
+                        onClick={() => trademark.transactionHash && window.open(`https://amoy.polygonscan.com/tx/${trademark.transactionHash}`, '_blank')}
+                        disabled={!trademark.transactionHash}
+                        className="w-full py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {trademark.transactionHash ? 'View on Polygonscan' : 'Not on Blockchain'}
                       </button>
                     </div>
                   )}

@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Toast from '@/components/Toast';
+import AdminVerificationPanel from '@/components/AdminVerificationPanel';
 import { apiClient } from '@/lib/api-client';
 
 interface PendingTrademark {
@@ -97,7 +98,7 @@ export default function AdminDashboard() {
 
       if (data.success) {
         setToast({ message: 'Trademark verified successfully!', type: 'success' });
-        loadTrademarks();
+        await loadTrademarks();
         setSelectedTrademark(null);
       } else {
         setToast({ message: data.error || 'Verification failed', type: 'error' });
@@ -108,19 +109,19 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleReject = async (trademarkId: string) => {
+  const handleReject = async (trademarkId: string, reason: string) => {
     try {
       const response = await fetch('/api/admin/reject-trademark', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trademarkId, adminAddress: account }),
+        body: JSON.stringify({ trademarkId, reason, adminAddress: account }),
       });
 
       const data = await response.json();
 
       if (data.success) {
         setToast({ message: 'Trademark rejected', type: 'info' });
-        loadTrademarks();
+        await loadTrademarks();
         setSelectedTrademark(null);
       } else {
         setToast({ message: data.error || 'Rejection failed', type: 'error' });
@@ -416,24 +417,8 @@ export default function AdminDashboard() {
                             onClick={() => setSelectedTrademark(trademark)}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                           >
-                            View Details
+                            Review & Verify
                           </button>
-                          {!trademark.verified && (
-                            <>
-                              <button
-                                onClick={() => handleVerify(trademark.id, trademark.tokenId)}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-                              >
-                                Verify
-                              </button>
-                              <button
-                                onClick={() => handleReject(trademark.id)}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
-                              >
-                                Reject
-                              </button>
-                            </>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -533,83 +518,18 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Detail Modal */}
+      {/* Verification Panel Modal */}
       {selectedTrademark && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedTrademark(null)}>
-          <div className="bg-white rounded-2xl p-8 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Trademark Details</h2>
-              <button
-                onClick={() => setSelectedTrademark(null)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Trademark Name</label>
-                <p className="text-lg font-semibold text-gray-900">{selectedTrademark.trademarkName}</p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-500">Company Name</label>
-                <p className="text-lg text-gray-900">{selectedTrademark.companyName}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Registration Number</label>
-                  <p className="text-lg font-mono text-gray-900">{selectedTrademark.registrationNumber}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Token ID</label>
-                  <p className="text-lg font-mono text-gray-900">#{selectedTrademark.tokenId}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-500">Category</label>
-                <p className="text-lg text-gray-900">{selectedTrademark.category}</p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-500">Owner Address</label>
-                <p className="text-sm font-mono text-gray-900 break-all">{selectedTrademark.creatorAddress}</p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-500">IPFS Hash</label>
-                <p className="text-sm font-mono text-gray-900 break-all">{selectedTrademark.ipfsHash}</p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-500">Created At</label>
-                <p className="text-lg text-gray-900">{new Date(selectedTrademark.createdAt).toLocaleString()}</p>
-              </div>
-
-              {!selectedTrademark.verified && (
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={() => handleVerify(selectedTrademark.id, selectedTrademark.tokenId)}
-                    className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold"
-                  >
-                    Verify Trademark
-                  </button>
-                  <button
-                    onClick={() => handleReject(selectedTrademark.id)}
-                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-semibold"
-                  >
-                    Reject
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <AdminVerificationPanel
+          trademark={selectedTrademark}
+          onVerify={async (tokenId) => {
+            await handleVerify(selectedTrademark.id, tokenId);
+          }}
+          onReject={async (id, reason) => {
+            await handleReject(id, reason);
+          }}
+          onClose={() => setSelectedTrademark(null)}
+        />
       )}
     </>
   );

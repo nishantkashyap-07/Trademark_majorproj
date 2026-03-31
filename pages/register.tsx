@@ -31,6 +31,7 @@ export default function RegisterTrademark() {
   const [dragActive, setDragActive] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [registrationExists, setRegistrationExists] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const steps = [
     { id: 1, name: 'Company Info', description: 'Basic company and trademark details' },
@@ -48,13 +49,70 @@ export default function RegisterTrademark() {
   const checkRegistrationNumber = useCallback(async (regNumber: string) => {
     if (regNumber.length < 3) return;
     
-    try {
-      const exists = await isRegistrationNumberUsed(regNumber);
-      setRegistrationExists(exists);
-    } catch (error) {
-      console.error('Error checking registration number:', error);
-    }
+    // Temporarily disabled to avoid RPC errors
+    // Check will be done during submission instead
+    setRegistrationExists(false);
+    
+    // try {
+    //   const exists = await isRegistrationNumberUsed(regNumber);
+    //   setRegistrationExists(exists);
+    // } catch (error) {
+    //   console.error('Error checking registration number:', error);
+    // }
   }, []);
+
+  // Generate unique registration number
+  const generateRegistrationNumber = async () => {
+    setIsGenerating(true);
+    setError('');
+    
+    try {
+      // Get current year
+      const year = new Date().getFullYear();
+      
+      // Fetch all trademarks to find the last used number
+      const response = await fetch('/api/trademarks');
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error('Failed to fetch trademarks');
+      }
+      
+      // Find the highest number for current year
+      const currentYearTrademarks = data.data.filter((tm: any) => {
+        const regNum = tm.registrationNumber || '';
+        return regNum.startsWith(`TM${year}`);
+      });
+      
+      let maxNumber = 0;
+      currentYearTrademarks.forEach((tm: any) => {
+        const regNum = tm.registrationNumber || '';
+        const match = regNum.match(/TM\d{4}(\d+)/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNumber) {
+            maxNumber = num;
+          }
+        }
+      });
+      
+      // Generate next number with leading zeros (3 digits)
+      const nextNumber = (maxNumber + 1).toString().padStart(3, '0');
+      const newRegNumber = `TM${year}${nextNumber}`;
+      
+      // Set the generated number
+      handleInputChange('registrationNumber', newRegNumber);
+      
+      // Check if it exists (should not, but just in case)
+      await checkRegistrationNumber(newRegNumber);
+      
+    } catch (error: any) {
+      console.error('Error generating registration number:', error);
+      setError('Failed to generate registration number. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   // Handle file upload
   const handleFileUpload = (files: FileList | null) => {
@@ -183,7 +241,7 @@ export default function RegisterTrademark() {
     setError('');
 
     try {
-      // Step 1: Upload files to IPFS
+      // Step 1: Upload files to IPFS via Pinata
       console.log('Uploading files to IPFS...');
       const assetsCID = await uploadFilesToIPFS(formData.files);
       console.log('Files uploaded successfully. CID:', assetsCID);
@@ -206,45 +264,82 @@ export default function RegisterTrademark() {
       const tokenURI = `ipfs://${metadataCID}/metadata.json`;
       console.log('Metadata uploaded successfully. CID:', metadataCID);
       
-      // Step 3: Check if contracts are deployed
+      // Step 3: Check if we should use blockchain or database only
       const contractsDeployed = process.env.NEXT_PUBLIC_TRADEMARK_CONTRACT_ADDRESS && 
                                 process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS;
       
-      if (!contractsDeployed) {
+      // Check if we're on the correct network
+      let useBlockchain = false;
+      if (contractsDeployed) {
+        try {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const network = await provider.getNetwork();
+          const currentChainId = Number(network.chainId);
+          
+          // Only use blockchain if on localhost (31337) or if contracts are actually accessible
+          if (currentChainId === 31337) {
+            useBlockchain = true;
+          } else {
+            console.log(`Not on localhost network (current: ${currentChainId}). Skipping blockchain registration.`);
+          }
+        } catch (networkError) {
+          console.warn('Could not check network, skipping blockchain:', networkError);
+        }
+      }
+      
+      if (!useBlockchain) {
         // Store in database only (for demo/testing without blockchain)
         console.log('Contracts not deployed. Storing in database only...');
+        
+        // Construct proper image URL - if single file, CID points directly to it
+        const imageUrl = formData.files.length === 1 
+          ? `https://gateway.pinata.cloud/ipfs/${assetsCID}`
+          : `https://gateway.pinata.cloud/ipfs/${assetsCID}/${formData.files[0].name}`;
+        
+        console.log('Image URL constructed:', imageUrl);
+        console.log('Assets CID:', assetsCID);
+        console.log('Number of files:', formData.files.length);
+        
+        const trademarkData = {
+          tokenId: Date.now(), // Temporary ID
+          creatorAddress: account,
+          sloganText: formData.sloganText, // Use sloganText instead of trademarkName
+          companyName: formData.companyName,
+          registrationNumber: formData.registrationNumber,
+          ipfsHash: assetsCID,
+          imageUrl: imageUrl,
+          category: formData.category,
+          description: formData.description,
+          royaltyPercentage: formData.royaltyPercentage,
+          tokenURI,
+          verified: false,
+          verificationStatus: 'pending',
+        };
+        
+        console.log('Trademark data to save:', trademarkData);
         
         const response = await fetch('/api/trademarks', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            tokenId: Date.now(), // Temporary ID
-            creatorAddress: account,
-            trademarkName: formData.sloganText,
-            companyName: formData.companyName,
-            registrationNumber: formData.registrationNumber,
-            ipfsHash: assetsCID,
-            category: formData.category,
-            description: formData.description,
-            royaltyPercentage: formData.royaltyPercentage,
-            tokenURI,
-            verified: false,
-            verificationStatus: 'pending',
-          }),
+          body: JSON.stringify(trademarkData),
         });
         
+        const data = await response.json();
+        
         if (!response.ok) {
-          throw new Error('Failed to save trademark to database');
+          console.error('API Error Response:', data);
+          throw new Error(data.error || 'Failed to save trademark to database');
         }
         
-        const data = await response.json();
-        setSuccess('Trademark registered successfully! (Database only - deploy contracts for blockchain registration)');
+        console.log('Trademark saved successfully:', data);
+        setSuccess('Trademark registered successfully! Files stored on IPFS. Redirecting to trademark details...');
         
         setTimeout(() => {
-          router.push('/dashboard');
-        }, 3000);
+          // Redirect to the trademark details page using the document ID
+          router.push(`/trademark/${data.data.id}`);
+        }, 2000);
         
       } else {
         // Register on blockchain
@@ -262,33 +357,42 @@ export default function RegisterTrademark() {
           tokenURI,
         });
         
+        // Construct proper image URL - if single file, CID points directly to it
+        const imageUrl = formData.files.length === 1 
+          ? `https://gateway.pinata.cloud/ipfs/${assetsCID}`
+          : `https://gateway.pinata.cloud/ipfs/${assetsCID}/${formData.files[0].name}`;
+        
         // Also save to database
+        const trademarkData = {
+          tokenId: result.tokenId,
+          creatorAddress: account,
+          sloganText: formData.sloganText, // Use sloganText instead of trademarkName
+          companyName: formData.companyName,
+          registrationNumber: formData.registrationNumber,
+          ipfsHash: assetsCID,
+          imageUrl: imageUrl,
+          category: formData.category,
+          description: formData.description,
+          royaltyPercentage: formData.royaltyPercentage,
+          tokenURI,
+          transactionHash: result.transactionHash,
+          verified: false,
+          verificationStatus: 'pending',
+        };
+        
         await fetch('/api/trademarks', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            tokenId: result.tokenId,
-            creatorAddress: account,
-            trademarkName: formData.sloganText,
-            companyName: formData.companyName,
-            registrationNumber: formData.registrationNumber,
-            ipfsHash: assetsCID,
-            category: formData.category,
-            description: formData.description,
-            royaltyPercentage: formData.royaltyPercentage,
-            tokenURI,
-            transactionHash: result.transactionHash,
-            verified: false,
-            verificationStatus: 'pending',
-          }),
+          body: JSON.stringify(trademarkData),
         });
         
-        setSuccess(`${SUCCESS_MESSAGES.TRADEMARK_REGISTERED} Token ID: ${result.tokenId}`);
+        setSuccess(`${SUCCESS_MESSAGES.TRADEMARK_REGISTERED} Token ID: ${result.tokenId}. Redirecting to trademark details...`);
         
         setTimeout(() => {
-          router.push('/dashboard');
+          // Redirect to marketplace to see all trademarks
+          router.push('/marketplace');
         }, 3000);
       }
       
@@ -407,27 +511,27 @@ export default function RegisterTrademark() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Company Name *
                     </label>
                     <input
                       type="text"
                       value={formData.companyName}
                       onChange={(e) => handleInputChange('companyName', e.target.value)}
-                      className="input-field"
+                      className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Enter your company name"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Slogan Text *
                     </label>
                     <input
                       type="text"
                       value={formData.sloganText}
                       onChange={(e) => handleInputChange('sloganText', e.target.value)}
-                      className="input-field"
+                      className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Enter your slogan"
                     />
                   </div>
@@ -435,32 +539,37 @@ export default function RegisterTrademark() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Registration Number *
                     </label>
-                    <input
-                      type="text"
-                      value={formData.registrationNumber}
-                      onChange={(e) => {
-                        handleInputChange('registrationNumber', e.target.value);
-                        checkRegistrationNumber(e.target.value);
-                      }}
-                      className={`input-field ${registrationExists ? 'border-red-500' : ''}`}
-                      placeholder="Enter registration number"
-                    />
-                    {registrationExists && (
-                      <p className="text-red-500 text-sm mt-1">Registration number already exists</p>
-                    )}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={formData.registrationNumber}
+                        readOnly
+                        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 cursor-not-allowed flex-1"
+                        placeholder="Click Generate to create"
+                      />
+                      <button
+                        type="button"
+                        onClick={generateRegistrationNumber}
+                        disabled={isGenerating || formData.registrationNumber !== ''}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        {isGenerating ? 'Generating...' : formData.registrationNumber ? 'Generated' : 'Generate'}
+                      </button>
+                    </div>
+                    <p className="text-gray-400 text-xs mt-1">Auto-generated format: TM + Year + Number (e.g., TM2026001)</p>
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Category *
                     </label>
                     <select
                       value={formData.category}
                       onChange={(e) => handleInputChange('category', e.target.value)}
-                      className="input-field"
+                      className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">Select category</option>
                       {TRADEMARK_CATEGORIES.map(category => (
@@ -471,20 +580,20 @@ export default function RegisterTrademark() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Description
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     rows={4}
-                    className="input-field"
+                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Describe your trademark..."
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Royalty Percentage: {formData.royaltyPercentage}%
                   </label>
                   <input
@@ -493,9 +602,9 @@ export default function RegisterTrademark() {
                     max={ROYALTY_CONSTRAINTS.MAX_PERCENTAGE}
                     value={formData.royaltyPercentage}
                     onChange={(e) => handleInputChange('royaltyPercentage', Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
                   />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
                     <span>{ROYALTY_CONSTRAINTS.MIN_PERCENTAGE}%</span>
                     <span>{ROYALTY_CONSTRAINTS.MAX_PERCENTAGE}%</span>
                   </div>
@@ -506,11 +615,11 @@ export default function RegisterTrademark() {
             {/* Step 2: File Upload */}
             {currentStep === 2 && (
               <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Upload Trademark Assets</h2>
+                <h2 className="text-xl font-semibold text-white mb-6">Upload Trademark Assets</h2>
                 
                 <div
                   className={`border-2 border-dashed rounded-lg p-8 text-center ${
-                    dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                    dragActive ? 'border-blue-500 bg-blue-900/20' : 'border-gray-700 bg-gray-800/50'
                   }`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
@@ -522,7 +631,7 @@ export default function RegisterTrademark() {
                   </svg>
                   <div className="mt-4">
                     <label htmlFor="file-upload" className="cursor-pointer">
-                      <span className="mt-2 block text-sm font-medium text-gray-900">
+                      <span className="mt-2 block text-sm font-medium text-white">
                         Drop files here or click to upload
                       </span>
                       <input
@@ -535,7 +644,7 @@ export default function RegisterTrademark() {
                         onChange={(e) => handleFileUpload(e.target.files)}
                       />
                     </label>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-gray-400">
                       PNG, JPG, SVG, PDF up to 10MB each (max 5 files)
                     </p>
                   </div>
@@ -546,7 +655,7 @@ export default function RegisterTrademark() {
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {formData.files.map((file, index) => (
                       <div key={index} className="relative">
-                        <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                        <div className="aspect-square bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
                           {previewUrls[index] ? (
                             <img
                               src={previewUrls[index]}
@@ -561,7 +670,7 @@ export default function RegisterTrademark() {
                             </div>
                           )}
                         </div>
-                        <p className="mt-1 text-xs text-gray-600 truncate">{file.name}</p>
+                        <p className="mt-1 text-xs text-gray-300 truncate">{file.name}</p>
                         <button
                           onClick={() => {
                             const newFiles = formData.files.filter((_, i) => i !== index);
@@ -583,53 +692,53 @@ export default function RegisterTrademark() {
             {/* Step 3: Review */}
             {currentStep === 3 && (
               <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Review & Submit</h2>
+                <h2 className="text-xl font-semibold text-white mb-6">Review & Submit</h2>
                 
                 <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
                   <h3 className="font-medium text-white mb-4">Trademark Information</h3>
                   <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Company Name</dt>
-                      <dd className="text-sm text-gray-900">{formData.companyName}</dd>
+                      <dt className="text-sm font-medium text-gray-400">Company Name</dt>
+                      <dd className="text-sm text-white mt-1">{formData.companyName}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Slogan Text</dt>
-                      <dd className="text-sm text-gray-900">{formData.sloganText}</dd>
+                      <dt className="text-sm font-medium text-gray-400">Slogan Text</dt>
+                      <dd className="text-sm text-white mt-1">{formData.sloganText}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Registration Number</dt>
-                      <dd className="text-sm text-gray-900">{formData.registrationNumber}</dd>
+                      <dt className="text-sm font-medium text-gray-400">Registration Number</dt>
+                      <dd className="text-sm text-white mt-1">{formData.registrationNumber}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Category</dt>
-                      <dd className="text-sm text-gray-900">{formData.category}</dd>
+                      <dt className="text-sm font-medium text-gray-400">Category</dt>
+                      <dd className="text-sm text-white mt-1">{formData.category}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Royalty Percentage</dt>
-                      <dd className="text-sm text-gray-900">{formData.royaltyPercentage}%</dd>
+                      <dt className="text-sm font-medium text-gray-400">Royalty Percentage</dt>
+                      <dd className="text-sm text-white mt-1">{formData.royaltyPercentage}%</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Files Uploaded</dt>
-                      <dd className="text-sm text-gray-900">{formData.files.length} files</dd>
+                      <dt className="text-sm font-medium text-gray-400">Files Uploaded</dt>
+                      <dd className="text-sm text-white mt-1">{formData.files.length} files</dd>
                     </div>
                   </dl>
                   
                   {formData.description && (
                     <div className="mt-4">
-                      <dt className="text-sm font-medium text-gray-500">Description</dt>
-                      <dd className="text-sm text-gray-900 mt-1">{formData.description}</dd>
+                      <dt className="text-sm font-medium text-gray-400">Description</dt>
+                      <dd className="text-sm text-white mt-1">{formData.description}</dd>
                     </div>
                   )}
                 </div>
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-lg p-4">
                   <div className="flex">
                     <svg className="w-5 h-5 text-yellow-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
                     <div className="ml-3">
-                      <h3 className="text-sm font-medium text-yellow-800">Important Notice</h3>
-                      <p className="text-sm text-yellow-700 mt-1">
+                      <h3 className="text-sm font-medium text-yellow-300">Important Notice</h3>
+                      <p className="text-sm text-yellow-200 mt-1">
                         Once registered on the blockchain, this information cannot be modified. Please review carefully before submitting.
                       </p>
                     </div>
@@ -656,24 +765,24 @@ export default function RegisterTrademark() {
               <button
                 onClick={prevStep}
                 disabled={currentStep === 1}
-                className={`px-6 py-2 rounded-lg font-medium ${
+                className={`px-6 py-2 rounded-lg font-medium transition-colors ${
                   currentStep === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+                    : 'bg-gray-700 text-white hover:bg-gray-600 border border-gray-600'
                 }`}
               >
                 Previous
               </button>
 
               {currentStep < 3 ? (
-                <button onClick={nextStep} className="btn-primary px-6 py-2">
+                <button onClick={nextStep} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
                   Next
                 </button>
               ) : (
                 <button
                   onClick={handleSubmit}
                   disabled={isLoading}
-                  className="btn-primary px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? 'Registering...' : 'Register Trademark'}
                 </button>

@@ -131,6 +131,11 @@ html {
     @apply block w-full px-4 py-3 text-base text-white bg-white/5 backdrop-blur-md border border-white/10 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent focus:bg-white/10 transition-all duration-200;
   }
   
+  /* Select dropdown options styling */
+  .input-field option {
+    @apply bg-gray-900 text-white;
+  }
+  
   .input-search {
     @apply block w-full px-4 py-3 pl-12 text-base text-white bg-white/5 backdrop-blur-md border border-white/10 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent focus:bg-white/10 transition-all duration-200;
   }

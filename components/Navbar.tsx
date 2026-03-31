@@ -16,6 +16,10 @@ export default function Navbar() {
     { name: 'Verify IP', href: '/verify' },
   ];
 
+  // Check if current user is admin
+  const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_ADDRESS?.toLowerCase();
+  const isAdmin = account && ADMIN_ADDRESS && account.toLowerCase() === ADMIN_ADDRESS;
+
   const handleBack = () => {
     router.back();
   };
@@ -60,14 +64,17 @@ export default function Navbar() {
 
             <Link href="/" className="flex items-center space-x-3 group">
               <div className="relative">
-                <div className="absolute inset-0 bg-cyan-400 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
-                <div className="relative w-11 h-11 bg-cyan-400 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                  <svg className="w-6 h-6 text-[#0a0e27]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                <div className="relative w-11 h-11 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
                   </svg>
                 </div>
               </div>
-              <span className="text-xl font-display font-bold text-white hidden sm:block">SloganChain</span>
+              <div className="hidden sm:flex flex-col">
+                <span className="text-xl font-display font-bold text-white leading-tight">TrademarkChain</span>
+                <span className="text-[10px] font-medium text-cyan-400 tracking-wider uppercase">IP Protection</span>
+              </div>
             </Link>
 
             {/* Desktop Navigation */}
@@ -85,6 +92,22 @@ export default function Navbar() {
                   {item.name}
                 </Link>
               ))}
+              {/* Admin Link - Only show if user is admin */}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 backdrop-blur-sm flex items-center gap-2 ${
+                    router.pathname === '/admin'
+                      ? 'text-amber-400 bg-amber-400/10 border border-amber-400/30'
+                      : 'text-gray-300 hover:text-amber-400 hover:bg-amber-400/5'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  Admin
+                </Link>
+              )}
             </div>
           </div>
 
@@ -200,6 +223,19 @@ export default function Navbar() {
                   {item.name}
                 </Link>
               ))}
+              {/* Admin Link - Mobile */}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-2 px-4 py-3 rounded-lg text-base font-semibold text-amber-400 hover:text-amber-300 hover:bg-amber-400/5 transition-all backdrop-blur-sm"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  Admin Dashboard
+                </Link>
+              )}
               {isConnected && (
                 <>
                   <Link

@@ -5,6 +5,7 @@ import { useWeb3 } from '@/contexts/Web3Context';
 import { apiClient } from '@/lib/api-client';
 import { SloganMetadata } from '@/types';
 import Navbar from '@/components/Navbar';
+import SplineBackground from '@/components/SplineBackground';
 
 interface DashboardStats {
   totalTrademarks: number;
@@ -40,15 +41,21 @@ export default function Dashboard() {
   useEffect(() => {
     loadDashboardData();
     
-    // Set up auto-refresh every 30 seconds
+    // Set up auto-refresh every 2 minutes (reduced from 30 seconds)
+    // Only refresh when page is visible
     const interval = setInterval(() => {
-      loadDashboardData(true);
-    }, 30000);
+      if (document.visibilityState === 'visible') {
+        loadDashboardData(true);
+      }
+    }, 120000); // 2 minutes instead of 30 seconds
     
     setRefreshInterval(interval);
     
+    // Cleanup interval on unmount
     return () => {
-      if (interval) clearInterval(interval);
+      if (interval) {
+        clearInterval(interval);
+      }
     };
   }, [account, isConnected]);
 
@@ -56,12 +63,41 @@ export default function Dashboard() {
     if (!silent) setIsLoading(true);
     
     try {
+      // Check if this is a manual page refresh (not a navigation)
+      const isPageRefresh = performance.navigation.type === 1 || 
+                           performance.getEntriesByType('navigation')[0]?.type === 'reload';
+      
+      // Check cache first (5 minute expiration) - but skip cache on manual refresh
+      const cacheKey = 'dashboard_data';
+      const cacheExpiry = 5 * 60 * 1000; // 5 minutes
+      const cached = localStorage.getItem(cacheKey);
+      const cacheTime = localStorage.getItem(`${cacheKey}_time`);
+      
+      if (cached && cacheTime && !silent && !isPageRefresh) {
+        const age = Date.now() - parseInt(cacheTime);
+        if (age < cacheExpiry) {
+          const cachedData = JSON.parse(cached);
+          setStats(cachedData.stats);
+          setAllTrademarks(cachedData.trademarks);
+          setFeaturedTrademarks(cachedData.featured);
+          setTrendingTrademarks(cachedData.trending);
+          if (account) {
+            const userTms = cachedData.trademarks.filter(
+              (t: SloganMetadata) => t.creatorAddress.toLowerCase() === account.toLowerCase()
+            );
+            setUserTrademarks(userTms);
+          }
+          setIsLoading(false);
+          return; // Use cached data
+        }
+      }
+      
       // Fetch real-time stats from API
       const statsRes = await fetch('/api/stats');
       const statsData = await statsRes.json();
       
       if (statsData.success) {
-        setStats({
+        const newStats = {
           totalTrademarks: statsData.data.overview.totalSlogans || 0,
           verifiedTrademarks: statsData.data.overview.verifiedSlogans || 0,
           pendingTrademarks: (statsData.data.overview.totalSlogans || 0) - (statsData.data.overview.verifiedSlogans || 0),
@@ -69,7 +105,8 @@ export default function Dashboard() {
           totalCategories: statsData.data.overview.totalCategories || 0,
           verificationRate: statsData.data.overview.verificationRate || '0',
           recentActivity: statsData.data.recentActivity || [],
-        });
+        };
+        setStats(newStats);
       }
 
       // Fetch all trademarks
@@ -77,12 +114,20 @@ export default function Dashboard() {
       const trademarksData = await trademarksRes.json();
       
       if (trademarksData.success && trademarksData.data) {
-        const trademarks = trademarksData.data as SloganMetadata[];
+        // Map field names from database to interface
+        const trademarks = trademarksData.data.map((tm: any) => ({
+          ...tm,
+          sloganText: tm.trademarkName || tm.sloganText,
+          createdAt: new Date(tm.createdAt?.seconds ? tm.createdAt.seconds * 1000 : tm.createdAt),
+          updatedAt: tm.updatedAt ? new Date(tm.updatedAt?.seconds ? tm.updatedAt.seconds * 1000 : tm.updatedAt) : undefined,
+        })) as SloganMetadata[];
+        
         setAllTrademarks(trademarks);
         
         // Filter verified trademarks for featured
         const verified = trademarks.filter(t => t.verified);
-        setFeaturedTrademarks(verified.slice(0, 1));
+        const featured = verified.slice(0, 1);
+        setFeaturedTrademarks(featured);
         
         // Sort by views or recent for trending
         const trending = [...trademarks]
@@ -97,6 +142,24 @@ export default function Dashboard() {
           );
           setUserTrademarks(userTms);
         }
+        
+        // Cache the data
+        const cacheData = {
+          stats: statsData.success ? {
+            totalTrademarks: statsData.data.overview.totalSlogans || 0,
+            verifiedTrademarks: statsData.data.overview.verifiedSlogans || 0,
+            pendingTrademarks: (statsData.data.overview.totalSlogans || 0) - (statsData.data.overview.verifiedSlogans || 0),
+            totalUsers: statsData.data.overview.totalUsers || 0,
+            totalCategories: statsData.data.overview.totalCategories || 0,
+            verificationRate: statsData.data.overview.verificationRate || '0',
+            recentActivity: statsData.data.recentActivity || [],
+          } : stats,
+          trademarks,
+          featured,
+          trending,
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
       }
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -138,10 +201,16 @@ export default function Dashboard() {
         <title>Dashboard - TrademarkChain</title>
       </Head>
 
-      <div className="min-h-screen bg-gray-900">
+      <div className="relative min-h-screen bg-gray-900">
+        {/* Spline 3D Background */}
+        <SplineBackground 
+          opacity={20}
+          showGradient={false}
+        />
+        
         <Navbar />
 
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
           {/* Real-time Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">

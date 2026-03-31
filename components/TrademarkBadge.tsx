@@ -4,6 +4,8 @@ interface TrademarkBadgeProps {
   verified: boolean;
   trademarkId?: number;
   companyName?: string;
+  onChain?: boolean; // New prop to indicate if it's on blockchain
+  transactionHash?: string; // To verify blockchain presence
   onClick?: () => void;
 }
 
@@ -11,9 +13,14 @@ export default function TrademarkBadge({
   verified, 
   trademarkId, 
   companyName,
+  onChain = false,
+  transactionHash,
   onClick 
 }: TrademarkBadgeProps) {
   const [isHovered, setIsHovered] = useState(false);
+
+  // Check if truly on blockchain
+  const isOnBlockchain = onChain || !!transactionHash;
 
   if (!verified) {
     return (
@@ -26,6 +33,35 @@ export default function TrademarkBadge({
     );
   }
 
+  // Database verified but not on blockchain
+  if (!isOnBlockchain) {
+    return (
+      <div className="relative">
+        <span
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 cursor-help"
+        >
+          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          </svg>
+          Verified (Database)
+        </span>
+
+        {isHovered && (
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap z-10">
+            <div className="text-center">
+              <div className="font-medium">Admin Verified</div>
+              <div className="text-gray-300">Not yet on blockchain</div>
+            </div>
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fully verified on blockchain
   return (
     <div className="relative">
       <button
@@ -37,7 +73,7 @@ export default function TrademarkBadge({
         <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
         </svg>
-        Verified Trademark
+        Verified on-chain
       </button>
 
       {/* Tooltip */}

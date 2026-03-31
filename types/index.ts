@@ -101,6 +101,7 @@ export interface SloganMetadata {
   category: string;
   description: string;
   ipfsHash: string;
+  imageUrl?: string; // Direct URL to the main image
   royaltyPercentage: number;
   createdAt: Date;
   updatedAt?: Date;
@@ -129,6 +130,8 @@ export interface Web3ContextType {
   connect: () => Promise<void>;
   disconnect: () => void;
   switchNetwork: () => Promise<void>;
+  trademarkNFTContract: any | null;
+  marketplaceContract: any | null;
 }
 
 // IPFS Types

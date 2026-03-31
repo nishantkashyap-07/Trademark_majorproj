@@ -8,26 +8,27 @@ import Footer from '@/components/Footer';
 import TrademarkCard from '@/components/TrademarkCard';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import SplineBackground from '@/components/SplineBackground';
 import { TrademarkMetadata } from '@/types';
 import { TRADEMARK_CATEGORIES } from '@/utils/constants';
-
-import { demoTrademarks } from '@/lib/demo-data';
-
-// Use demo data for presentation
-const mockTrademarks = demoTrademarks;
 
 export default function Marketplace() {
   const router = useRouter();
   const { isConnected, connect } = useWeb3();
   
-  const [trademarks, setTrademarks] = useState<TrademarkMetadata[]>(mockTrademarks);
-  const [filteredTrademarks, setFilteredTrademarks] = useState<TrademarkMetadata[]>(mockTrademarks);
+  const [trademarks, setTrademarks] = useState<TrademarkMetadata[]>([]);
+  const [filteredTrademarks, setFilteredTrademarks] = useState<TrademarkMetadata[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  // Load trademarks from API
+  useEffect(() => {
+    loadTrademarks();
+  }, []);
 
   // Get search query from URL
   useEffect(() => {
@@ -38,6 +39,30 @@ export default function Marketplace() {
       setSelectedCategory(router.query.category as string);
     }
   }, [router.query]);
+
+  const loadTrademarks = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/trademarks?limitCount=100');
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        // Convert Firestore timestamps to Date objects and map field names
+        const trademarksData = data.data.map((tm: any) => ({
+          ...tm,
+          sloganText: tm.trademarkName || tm.sloganText, // Map trademarkName to sloganText
+          createdAt: new Date(tm.createdAt?.seconds ? tm.createdAt.seconds * 1000 : tm.createdAt),
+          updatedAt: tm.updatedAt ? new Date(tm.updatedAt?.seconds ? tm.updatedAt.seconds * 1000 : tm.updatedAt) : undefined,
+          verifiedAt: tm.verifiedAt ? new Date(tm.verifiedAt?.seconds ? tm.verifiedAt.seconds * 1000 : tm.verifiedAt) : undefined,
+        }));
+        setTrademarks(trademarksData);
+      }
+    } catch (error) {
+      console.error('Error loading trademarks:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Filter and sort trademarks
   useEffect(() => {
@@ -89,7 +114,7 @@ export default function Marketplace() {
   return (
     <>
       <Head>
-        <title>Marketplace - SloganChain</title>
+        <title>Marketplace - TrademarkChain</title>
         <meta
           name="description"
           content="Browse and verify blockchain-registered trademarks secured on Polygon with IPFS-backed assets."
@@ -101,11 +126,12 @@ export default function Marketplace() {
         <main className="min-h-screen bg-gray-950">
           {/* Hero Section */}
           <section className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-950 to-black text-white py-12">
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute -top-32 -right-32 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-500/40 via-purple-500/20 to-transparent blur-3xl" />
-              <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gradient-to-tr from-blue-500/30 via-cyan-400/10 to-transparent blur-3xl" />
-            </div>
-
+            {/* Spline 3D Background */}
+            <SplineBackground 
+              opacity={40}
+              gradientDirection="bottom"
+            />
+            
             <div className="relative z-10 mx-auto max-w-6xl px-4">
               <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
                 <div>
@@ -116,21 +142,21 @@ export default function Marketplace() {
                     Explore on-chain trademarks
                   </h1>
                   <p className="max-w-xl text-sm md:text-base text-gray-300">
-                    Discover IP assets registered on SloganChain. Every listing is backed by verifiable Polygon
+                    Discover IP assets registered on TrademarkChain. Every listing is backed by verifiable Polygon
                     ownership and IPFS-stored content.
                   </p>
                 </div>
 
                 <div className="flex flex-col items-start gap-3 text-xs text-gray-300 md:items-end">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 backdrop-blur-sm">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                     Live demo data - no gas required
                   </div>
                   <div className="flex flex-wrap gap-3 md:justify-end">
-                    <span className="rounded-full bg-white/5 px-3 py-1 text-[11px] text-gray-200">
+                    <span className="rounded-full bg-white/5 px-3 py-1 text-[11px] text-gray-200 backdrop-blur-sm">
                       Polygon • ERC-721 • EIP-2981
                     </span>
-                    <span className="rounded-full bg-white/5 px-3 py-1 text-[11px] text-gray-200">
+                    <span className="rounded-full bg-white/5 px-3 py-1 text-[11px] text-gray-200 backdrop-blur-sm">
                       IPFS-backed assets
                     </span>
                   </div>
@@ -148,7 +174,7 @@ export default function Marketplace() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
               {/* Search */}
               <div className="lg:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Search Trademarks
                 </label>
                 <div className="relative">
@@ -167,7 +193,7 @@ export default function Marketplace() {
 
               {/* Category Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Category
                 </label>
                 <select
@@ -184,7 +210,7 @@ export default function Marketplace() {
 
               {/* Sort */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Sort By
                 </label>
                 <select
@@ -208,24 +234,24 @@ export default function Marketplace() {
                     type="checkbox"
                     checked={showVerifiedOnly}
                     onChange={(e) => setShowVerifiedOnly(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-600 bg-gray-800 text-cyan-500 focus:ring-cyan-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Show verified only</span>
+                  <span className="ml-2 text-sm text-gray-300">Show verified only</span>
                 </label>
                 
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-400">
                   Showing {filteredTrademarks.length} of {trademarks.length} trademarks
                 </div>
               </div>
 
               {/* View Mode Toggle */}
-              <div className="inline-flex items-center gap-1 rounded-full bg-gray-100 p-1 text-xs">
+              <div className="inline-flex items-center gap-1 rounded-full bg-gray-800 p-1 text-xs">
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`flex items-center gap-1 rounded-full px-3 py-1.5 transition-all ${
                     viewMode === 'grid'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-cyan-500 text-white shadow-sm'
+                      : 'text-gray-400 hover:text-gray-200'
                   }`}
                   aria-label="Grid view"
                 >
@@ -237,8 +263,8 @@ export default function Marketplace() {
                   onClick={() => setViewMode('list')}
                   className={`flex items-center gap-1 rounded-full px-3 py-1.5 transition-all ${
                     viewMode === 'list'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-cyan-500 text-white shadow-sm'
+                      : 'text-gray-400 hover:text-gray-200'
                   }`}
                   aria-label="List view"
                 >
@@ -259,7 +285,7 @@ export default function Marketplace() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.562M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               <h3 className="mt-2 text-sm font-medium text-white">No trademarks found</h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-400">
                 Try adjusting your search criteria or filters.
               </p>
             </div>
@@ -278,10 +304,10 @@ export default function Marketplace() {
           <section className="mt-14 rounded-2xl border border-gray-800 bg-gray-900/50 px-6 py-6 text-sm text-gray-300">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-medium uppercase tracking-[0.22em] text-gray-500">
+                <p className="text-xs font-medium uppercase tracking-[0.22em] text-gray-400">
                   Marketplace Snapshot
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-300">
                   High-level metrics from the current demo dataset.
                 </p>
               </div>
@@ -289,19 +315,19 @@ export default function Marketplace() {
 
             <div className="grid gap-4 md:grid-cols-4">
               <div className="rounded-xl border border-gray-800 bg-gray-950/50 px-4 py-3">
-                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500 mb-1">Total Trademarks</p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-400 mb-1">Total Trademarks</p>
                 <p className="text-xl font-semibold text-white">{trademarks.length}</p>
               </div>
               <div className="rounded-xl border border-gray-800 bg-gray-950/50 px-4 py-3">
-                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500 mb-1">Verified</p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-400 mb-1">Verified</p>
                 <p className="text-xl font-semibold text-white">{trademarks.filter(tm => tm.verified).length}</p>
               </div>
               <div className="rounded-xl border border-gray-800 bg-gray-950/50 px-4 py-3">
-                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500 mb-1">Categories</p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-400 mb-1">Categories</p>
                 <p className="text-xl font-semibold text-white">{new Set(trademarks.map(tm => tm.category)).size}</p>
               </div>
               <div className="rounded-xl border border-gray-800 bg-gray-950/50 px-4 py-3">
-                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500 mb-1">Unique Owners</p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-400 mb-1">Unique Owners</p>
                 <p className="text-xl font-semibold text-white">{new Set(trademarks.map(tm => tm.creatorAddress)).size}</p>
               </div>
             </div>

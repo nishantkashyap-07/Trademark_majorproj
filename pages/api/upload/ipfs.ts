@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import formidable from 'formidable';
 import FormData from 'form-data';
 import fs from 'fs';
+import axios from 'axios';
 
 export const config = {
   api: {
@@ -83,33 +84,35 @@ export default async function handler(
         });
         formData.append('pinataMetadata', metadata);
 
-        // Upload to Pinata
-        const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
-          method: 'POST',
-          headers: {
-            'pinata_api_key': apiKey,
-            'pinata_secret_api_key': secretKey,
-            ...formData.getHeaders(),
-          },
-          body: formData as any,
+        // Add options
+        const options = JSON.stringify({
+          cidVersion: 1,
         });
+        formData.append('pinataOptions', options);
 
-        const responseText = await response.text();
-        console.log('Pinata response status:', response.status);
-        console.log('Pinata response:', responseText);
-
-        if (!response.ok) {
-          let errorMessage = 'Pinata upload failed';
-          try {
-            const errorData = JSON.parse(responseText);
-            errorMessage = errorData.error || errorData.message || errorMessage;
-          } catch {
-            errorMessage = responseText || errorMessage;
+        // Upload to Pinata using axios
+        const response = await axios.post(
+          'https://api.pinata.cloud/pinning/pinFileToIPFS',
+          formData,
+          {
+            headers: {
+              'Content-Type': `multipart/form-data; boundary=${formData.getBoundary()}`,
+              'pinata_api_key': apiKey,
+              'pinata_secret_api_key': secretKey,
+            },
+            maxBodyLength: Infinity,
+            maxContentLength: Infinity,
           }
-          throw new Error(errorMessage);
+        );
+
+        console.log('Pinata response status:', response.status);
+        console.log('Pinata response:', response.data);
+
+        if (response.status !== 200) {
+          throw new Error(response.data?.error || response.data?.message || 'Pinata upload failed');
         }
 
-        const data = JSON.parse(responseText);
+        const data = response.data;
         console.log('Upload successful! IPFS Hash:', data.IpfsHash);
 
         return res.status(200).json({

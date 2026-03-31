@@ -42,6 +42,31 @@ export default function LicenseModal({ isOpen, onClose, tokenId, trademarkName, 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
 
+      // Step 1: Verify the NFT exists and user owns it
+      const { trademarkNFT, marketplace } = await import('@/utils/contracts').then(m => m.getContracts(signer));
+      
+      try {
+        const owner = await trademarkNFT.ownerOf(tokenId);
+        if (owner.toLowerCase() !== account.toLowerCase()) {
+          throw new Error('You do not own this trademark NFT');
+        }
+      } catch (err: any) {
+        if (err.message.includes('invalid token ID') || err.message.includes('nonexistent token')) {
+          throw new Error('This trademark has not been minted as an NFT yet. Please mint it on the blockchain first from the registration page.');
+        }
+        throw err;
+      }
+
+      // Step 2: Check if marketplace is approved
+      const isApproved = await trademarkNFT.isApprovedForAll(account, await marketplace.getAddress());
+      
+      if (!isApproved) {
+        setError('Approving marketplace to manage your NFTs...');
+        const approveTx = await trademarkNFT.setApprovalForAll(await marketplace.getAddress(), true);
+        await approveTx.wait();
+      }
+
+      // Step 3: Create the listing
       const expiresAt = listingExpiry > 0 
         ? Math.floor(Date.now() / 1000) + (listingExpiry * 24 * 60 * 60)
         : 0;
