@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useWeb3 } from '@/contexts/Web3Context';
 import LoadingSpinner from './LoadingSpinner';
 import Toast from './Toast';
+import SimilarityWarning from './SimilarityWarning';
 import QRCode from 'qrcode';
 
 interface TrademarkForVerification {
@@ -277,6 +278,22 @@ export default function AdminVerificationPanel({
                       </svg>
                     </a>
                   </div>
+                </div>
+
+                {/* Automatic Similarity Check */}
+                <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    Automatic Similarity Check
+                  </h3>
+                  
+                  <SimilarityWarning
+                    trademarkName={trademark.trademarkName}
+                    companyName={trademark.companyName}
+                    ipfsHash={trademark.ipfsHash}
+                  />
                 </div>
               </div>
 

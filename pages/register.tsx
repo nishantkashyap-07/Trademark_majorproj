@@ -264,6 +264,38 @@ export default function RegisterTrademark() {
       const tokenURI = `ipfs://${metadataCID}/metadata.json`;
       console.log('Metadata uploaded successfully. CID:', metadataCID);
       
+      // Step 2.5: Automatic similarity check
+      console.log('Checking for similar trademarks...');
+      const similarityCheck = await fetch('/api/check-similarity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ipfsHash: assetsCID,
+          trademarkName: formData.sloganText,
+          companyName: formData.companyName,
+        }),
+      });
+      
+      const similarityResult = await similarityCheck.json();
+      console.log('Similarity check result:', similarityResult);
+      
+      // If exact duplicate found, block registration
+      if (similarityResult.isDuplicate) {
+        setError(`❌ Duplicate detected: ${similarityResult.message}`);
+        setIsLoading(false);
+        return;
+      }
+      
+      // If similarities found, show warning but allow to continue
+      if (similarityResult.warnings && similarityResult.warnings.length > 0) {
+        const warningMsg = `⚠️ Similarity Warning:\n${similarityResult.warnings.join('\n')}\n\nThis will require manual admin review.`;
+        console.warn(warningMsg);
+        // Show warning but continue with registration
+        setError(warningMsg);
+        // Clear error after 5 seconds
+        setTimeout(() => setError(''), 5000);
+      }
+      
       // Step 3: Check if we should use blockchain or database only
       const contractsDeployed = process.env.NEXT_PUBLIC_TRADEMARK_CONTRACT_ADDRESS && 
                                 process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS;
