@@ -1,18 +1,7 @@
 import { Suspense } from 'react';
-import dynamic from 'next/dynamic';
 
-// Dynamically import Spline with no SSR
-const Spline = dynamic(() => import('@splinetool/react-spline'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
-        <p className="text-gray-400 text-sm">Loading 3D Experience...</p>
-      </div>
-    </div>
-  ),
-});
+// Spline disabled for production build - can be re-enabled later
+const Spline = ({ scene, style }: any) => null;
 
 interface SplineBackgroundProps {
   /** Spline scene URL */
@@ -51,30 +40,14 @@ export default function SplineBackground({
 
   return (
     <>
-      {/* Spline 3D Background */}
+      {/* Spline 3D Background - Disabled */}
       <div 
-        className={`absolute inset-0 ${className}`}
+        className={`absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 ${className}`}
         style={{ 
           zIndex,
           opacity: opacity / 100 
         }}
-      >
-        <Suspense
-          fallback={
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
-                <p className="text-gray-400 text-sm">Loading 3D Experience...</p>
-              </div>
-            </div>
-          }
-        >
-          <Spline
-            scene={scene}
-            style={{ width: '100%', height: '100%' }}
-          />
-        </Suspense>
-      </div>
+      />
 
       {/* Gradient Overlay */}
       {showGradient && gradientDirection !== 'none' && (

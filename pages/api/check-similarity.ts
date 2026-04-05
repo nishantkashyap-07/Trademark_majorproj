@@ -26,8 +26,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         companyName: doc.data().companyName,
       }));
 
-    const warnings = [];
-    const similarTrademarks = [];
+    const warnings: string[] = [];
+    const similarTrademarks: any[] = [];
 
     // CHECK 1: Exact IPFS hash match (100% duplicate)
     const exactDuplicates = existingTrademarks.filter(
