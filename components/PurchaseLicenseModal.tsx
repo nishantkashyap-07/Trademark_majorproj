@@ -26,122 +26,77 @@ export default function PurchaseLicenseModal({
   if (!isOpen) return null;
 
   const formatDuration = (seconds: number) => {
-    if (seconds === 0) return 'Perpetual';
+    if (seconds === 0) return 'Perpetual Access';
     const days = Math.floor(seconds / (24 * 60 * 60));
-    if (days >= 365) return `${Math.floor(days / 365)} Year${days >= 730 ? 's' : ''}`;
-    if (days >= 30) return `${Math.floor(days / 30)} Month${days >= 60 ? 's' : ''}`;
-    return `${days} Day${days > 1 ? 's' : ''}`;
+    if (days >= 365) return `${Math.floor(days / 365)} Year License`;
+    if (days >= 30) return `${Math.floor(days / 30)} Month License`;
+    return `${days} Day License`;
   };
 
   const handlePurchase = async () => {
     setError('');
     setIsLoading(true);
-
     try {
-      if (!account) {
-        throw new Error('Wallet not connected');
-      }
-
+      if (!account) throw new Error('Wallet not connected');
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-
-      await licenseTrademark(
-        signer,
-        listing.listingId,
-        listing.duration || 0,
-        listing.price
-      );
-
+      await licenseTrademark(signer, listing.listingId, listing.duration || 0, listing.price);
       onSuccess?.();
       onClose();
     } catch (err: any) {
-      console.error('Error purchasing license:', err);
-      setError(err.message || 'Failed to purchase license');
+      setError(err.message || 'Transaction failed');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-2xl max-w-md w-full p-6 border border-gray-800">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Purchase License</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-in">
+      <div className="glass-card max-w-md w-full !p-8 relative overflow-hidden animate-scale-in">
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-cyan-500/10 blur-[60px] rounded-full pointer-events-none" />
+        
+        <div className="flex items-center justify-between mb-8 relative z-10">
+          <h2 className="text-2xl font-black text-white">License Acquisition</h2>
+          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl text-slate-400 transition-colors">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
 
-        <div className="space-y-6">
-          <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-            <h3 className="font-semibold text-gray-900 mb-2">{trademarkName}</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">License Duration:</span>
-                <span className="font-medium text-gray-900">{formatDuration(listing.duration || 0)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Price:</span>
-                <span className="font-bold text-blue-600">{listing.price} ETH</span>
-              </div>
-            </div>
+        <div className="space-y-6 relative z-10">
+          <div className="p-6 bg-white/[0.02] rounded-3xl border border-white/5">
+             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 text-center">Intellectual Property Asset</p>
+             <h3 className="text-xl font-black text-white text-center mb-6">{trademarkName}</h3>
+             <div className="flex items-center justify-between py-4 border-y border-white/5">
+                <span className="text-xs font-bold text-slate-400">Duration</span>
+                <span className="text-xs font-black text-indigo-400 uppercase tracking-widest">{formatDuration(listing.duration || 0)}</span>
+             </div>
+             <div className="flex items-center justify-between pt-4">
+                <span className="text-xs font-bold text-slate-400">Total Capital Flux</span>
+                <span className="text-xl font-black text-white">{listing.price} ETH</span>
+             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex">
-              <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-              <div className="ml-3">
-                <h4 className="text-sm font-medium text-blue-900 mb-1">What you get:</h4>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Legal right to use this trademark</li>
-                  <li>• Blockchain-verified license record</li>
-                  <li>• {listing.duration === 0 ? 'Lifetime access' : `Access for ${formatDuration(listing.duration || 0)}`}</li>
-                  <li>• Transferable license rights</li>
-                </ul>
-              </div>
-            </div>
+          <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-2xl p-4">
+             <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3">Protocol Entitlements</h4>
+             <ul className="space-y-2">
+                {['Legal IP Usage Rights', 'Immutable Blockchain Record', 'Encrypted Asset Access'].map((t, i) => (
+                  <li key={i} className="flex items-center gap-3 text-[11px] font-bold text-slate-300">
+                    <svg className="w-4 h-4 text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
+                    {t}
+                  </li>
+                ))}
+             </ul>
           </div>
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex">
-              <svg className="w-5 h-5 text-yellow-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              <div className="ml-3">
-                <p className="text-sm text-yellow-800">
-                  This transaction cannot be reversed. Make sure you understand the license terms.
-                </p>
-              </div>
-            </div>
-          </div>
+          {error && <p className="text-xs font-bold text-red-400 bg-red-500/10 p-3 rounded-xl border border-red-500/20">{error}</p>}
 
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          )}
-
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          <div className="flex gap-4 pt-4">
+            <button onClick={onClose} className="flex-1 btn-glass !py-4 font-black text-xs uppercase tracking-widest">Abort</button>
+            <button 
+              onClick={handlePurchase} disabled={isLoading}
+              className="flex-1 btn-premium !py-4 font-black text-xs uppercase tracking-widest"
             >
-              Cancel
-            </button>
-            <button
-              onClick={handlePurchase}
-              disabled={isLoading}
-              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Processing...' : `Purchase for ${listing.price} ETH`}
+              {isLoading ? 'Executing...' : 'Confirm Acquisition'}
             </button>
           </div>
         </div>

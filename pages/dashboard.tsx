@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useWeb3 } from '@/contexts/Web3Context';
-import { apiClient } from '@/lib/api-client';
 import { SloganMetadata } from '@/types';
 import Navbar from '@/components/Navbar';
-import SplineBackground from '@/components/SplineBackground';
+import Footer from '@/components/Footer';
 
 interface DashboardStats {
   totalTrademarks: number;
@@ -22,10 +21,7 @@ export default function Dashboard() {
   
   const [allTrademarks, setAllTrademarks] = useState<SloganMetadata[]>([]);
   const [userTrademarks, setUserTrademarks] = useState<SloganMetadata[]>([]);
-  const [featuredTrademarks, setFeaturedTrademarks] = useState<SloganMetadata[]>([]);
-  const [trendingTrademarks, setTrendingTrademarks] = useState<SloganMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [stats, setStats] = useState<DashboardStats>({
     totalTrademarks: 0,
     verifiedTrademarks: 0,
@@ -35,69 +31,24 @@ export default function Dashboard() {
     verificationRate: '0',
     recentActivity: [],
   });
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
-  // Load dashboard data on mount and when account changes
   useEffect(() => {
     loadDashboardData();
-    
-    // Set up auto-refresh every 2 minutes (reduced from 30 seconds)
-    // Only refresh when page is visible
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        loadDashboardData(true);
-      }
-    }, 120000); // 2 minutes instead of 30 seconds
-    
-    setRefreshInterval(interval);
-    
-    // Cleanup interval on unmount
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
   }, [account, isConnected]);
 
   const loadDashboardData = async (silent = false) => {
     if (!silent) setIsLoading(true);
-    
     try {
-      // Check if this is a manual page refresh (not a navigation)
-      const isPageRefresh = performance.navigation.type === 1 || 
-                           performance.getEntriesByType('navigation')[0]?.type === 'reload';
+      const [statsRes, trademarksRes] = await Promise.all([
+        fetch('/api/stats'),
+        fetch('/api/trademarks')
+      ]);
       
-      // Check cache first (5 minute expiration) - but skip cache on manual refresh
-      const cacheKey = 'dashboard_data';
-      const cacheExpiry = 5 * 60 * 1000; // 5 minutes
-      const cached = localStorage.getItem(cacheKey);
-      const cacheTime = localStorage.getItem(`${cacheKey}_time`);
-      
-      if (cached && cacheTime && !silent && !isPageRefresh) {
-        const age = Date.now() - parseInt(cacheTime);
-        if (age < cacheExpiry) {
-          const cachedData = JSON.parse(cached);
-          setStats(cachedData.stats);
-          setAllTrademarks(cachedData.trademarks);
-          setFeaturedTrademarks(cachedData.featured);
-          setTrendingTrademarks(cachedData.trending);
-          if (account) {
-            const userTms = cachedData.trademarks.filter(
-              (t: SloganMetadata) => t.creatorAddress.toLowerCase() === account.toLowerCase()
-            );
-            setUserTrademarks(userTms);
-          }
-          setIsLoading(false);
-          return; // Use cached data
-        }
-      }
-      
-      // Fetch real-time stats from API
-      const statsRes = await fetch('/api/stats');
       const statsData = await statsRes.json();
+      const trademarksData = await trademarksRes.json();
       
       if (statsData.success) {
-        const newStats = {
+        setStats({
           totalTrademarks: statsData.data.overview.totalSlogans || 0,
           verifiedTrademarks: statsData.data.overview.verifiedSlogans || 0,
           pendingTrademarks: (statsData.data.overview.totalSlogans || 0) - (statsData.data.overview.verifiedSlogans || 0),
@@ -105,475 +56,196 @@ export default function Dashboard() {
           totalCategories: statsData.data.overview.totalCategories || 0,
           verificationRate: statsData.data.overview.verificationRate || '0',
           recentActivity: statsData.data.recentActivity || [],
-        };
-        setStats(newStats);
+        });
       }
 
-      // Fetch all trademarks
-      const trademarksRes = await fetch('/api/trademarks');
-      const trademarksData = await trademarksRes.json();
-      
       if (trademarksData.success && trademarksData.data) {
-        // Map field names from database to interface
         const trademarks = trademarksData.data.map((tm: any) => ({
           ...tm,
           sloganText: tm.trademarkName || tm.sloganText,
           createdAt: new Date(tm.createdAt?.seconds ? tm.createdAt.seconds * 1000 : tm.createdAt),
-          updatedAt: tm.updatedAt ? new Date(tm.updatedAt?.seconds ? tm.updatedAt.seconds * 1000 : tm.updatedAt) : undefined,
         })) as SloganMetadata[];
         
         setAllTrademarks(trademarks);
-        
-        // Filter verified trademarks for featured
-        const verified = trademarks.filter(t => t.verified);
-        const featured = verified.slice(0, 1);
-        setFeaturedTrademarks(featured);
-        
-        // Sort by views or recent for trending
-        const trending = [...trademarks]
-          .sort((a, b) => (b.views || 0) - (a.views || 0))
-          .slice(0, 6);
-        setTrendingTrademarks(trending);
-        
-        // Filter user's trademarks if connected
         if (account) {
-          const userTms = trademarks.filter(
-            t => t.creatorAddress.toLowerCase() === account.toLowerCase()
-          );
-          setUserTrademarks(userTms);
+          setUserTrademarks(trademarks.filter(t => t.creatorAddress.toLowerCase() === account.toLowerCase()));
         }
-        
-        // Cache the data
-        const cacheData = {
-          stats: statsData.success ? {
-            totalTrademarks: statsData.data.overview.totalSlogans || 0,
-            verifiedTrademarks: statsData.data.overview.verifiedSlogans || 0,
-            pendingTrademarks: (statsData.data.overview.totalSlogans || 0) - (statsData.data.overview.verifiedSlogans || 0),
-            totalUsers: statsData.data.overview.totalUsers || 0,
-            totalCategories: statsData.data.overview.totalCategories || 0,
-            verificationRate: statsData.data.overview.verificationRate || '0',
-            recentActivity: statsData.data.recentActivity || [],
-          } : stats,
-          trademarks,
-          featured,
-          trending,
-        };
-        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-        localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
       }
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
-      if (!silent) setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
   if (!isConnected) {
     return (
-      <>
-        <Head>
-          <title>Dashboard - TrademarkChain</title>
-        </Head>
-        
-        <div className="min-h-screen bg-[#202225] flex items-center justify-center">
-          <div className="max-w-md w-full bg-[#2f3136] rounded-2xl border border-[#3a3d42] p-10 text-center">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-white mb-3">Connect Your Wallet</h1>
-            <p className="text-gray-400 mb-8">
-              Access your dashboard and manage your trademarks
-            </p>
-            <button onClick={connect} className="w-full px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all">
-              Connect Wallet
-            </button>
+      <div className="min-h-screen bg-[#05070a] flex items-center justify-center p-4">
+        <div className="glass-card max-w-md w-full text-center p-12">
+          <div className="w-20 h-20 bg-indigo-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8">
+            <svg className="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
           </div>
+          <h1 className="text-3xl font-black mb-4">Command Center</h1>
+          <p className="text-slate-400 mb-10">Access your portfolio and real-time protocol metrics by connecting your wallet.</p>
+          <button onClick={connect} className="btn-premium w-full !py-4">Authorize Connection</button>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-[#05070a] text-white">
       <Head>
-        <title>Dashboard - TrademarkChain</title>
+        <title>Dashboard | TrademarkChain</title>
       </Head>
 
-      <div className="relative min-h-screen bg-gray-900">
-        {/* Spline 3D Background */}
-        <SplineBackground 
-          opacity={20}
-          showGradient={false}
-        />
+      <Navbar />
+
+      <main className="pt-32 pb-20 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/5 blur-[120px] rounded-full pointer-events-none" />
         
-        <Navbar />
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
-          {/* Real-time Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-gray-400 uppercase">Total Trademarks</h3>
-                <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
+        <div className="container-custom relative z-10">
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/[0.03] border border-white/5 rounded-full text-[10px] font-black text-slate-500 mb-4 tracking-widest uppercase">
+                Active Node: {account?.slice(0, 10)}...
               </div>
-              <p className="text-3xl font-bold text-white mb-1">{stats.totalTrademarks}</p>
-              <p className="text-xs text-green-500">+{stats.pendingTrademarks} pending</p>
+              <h1 className="text-4xl md:text-5xl font-black mb-2">Command Center</h1>
+              <p className="text-slate-400">Manage your digital assets and monitor global protocol growth.</p>
             </div>
-
-            <div className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-gray-400 uppercase">Verified</h3>
-                <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-white mb-1">{stats.verifiedTrademarks}</p>
-              <p className="text-xs text-gray-400">{stats.verificationRate}% rate</p>
-            </div>
-
-            <div className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-gray-400 uppercase">Active Users</h3>
-                <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-white mb-1">{stats.totalUsers}</p>
-              <p className="text-xs text-gray-400">Registered creators</p>
-            </div>
-
-            <div className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-gray-400 uppercase">Categories</h3>
-                <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-white mb-1">{stats.totalCategories}</p>
-              <p className="text-xs text-gray-400">Industry sectors</p>
+            <div className="flex gap-4">
+               <button onClick={() => loadDashboardData()} className="btn-glass flex items-center gap-2">
+                 <svg className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                 Sync Data
+               </button>
+               <Link href="/register" className="btn-premium">Register New Asset</Link>
             </div>
           </div>
 
-          {/* User's Trademarks Section (if connected) */}
-          {isConnected && account && userTrademarks.length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-white">Your Trademarks</h2>
-                <Link href="/register" className="text-blue-500 hover:text-blue-400 text-sm font-medium">
-                  Register New →
-                </Link>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {userTrademarks.slice(0, 3).map((trademark) => (
-                  <Link
-                    key={trademark.tokenId}
-                    href={`/trademark/${trademark.tokenId}`}
-                    className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-4 hover:border-blue-500 transition-all"
-                  >
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                        <span className="text-white text-lg font-bold">
-                          {trademark.sloganText?.charAt(0) || '?'}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-white font-semibold truncate">{trademark.sloganText}</h3>
-                        <p className="text-sm text-gray-400 truncate">{trademark.companyName}</p>
-                      </div>
-                      {trademark.verified ? (
-                        <span className="px-2 py-1 bg-green-500/10 text-green-500 text-xs rounded">Verified</span>
-                      ) : (
-                        <span className="px-2 py-1 bg-yellow-500/10 text-yellow-500 text-xs rounded">Pending</span>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-gray-400">
-                      <span>Token #{trademark.tokenId}</span>
-                      <span>{trademark.category}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex gap-8">
-            {/* Main Content */}
-            <div className="flex-1">
-              {/* Featured Collection */}
-              {featuredTrademarks.length > 0 && (
-                <div className="mb-8">
-                  {featuredTrademarks.map((trademark) => (
-                    <div key={trademark.tokenId} className="relative bg-[#2f3136] rounded-2xl overflow-hidden border border-[#3a3d42] hover:border-[#4a4d52] transition-all">
-                      <div className="flex flex-col lg:flex-row">
-                        {/* Image Section */}
-                        <div className="lg:w-1/2 aspect-[4/3] lg:aspect-auto bg-gradient-to-br from-gray-700 to-gray-900 relative">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-32 h-32 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center">
-                              <span className="text-6xl font-bold text-white">
-                                {trademark.sloganText?.charAt(0) || '?'}
-                              </span>
-                            </div>
-                          </div>
-                          {/* Overlay gradient */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#2f3136] via-transparent to-transparent"></div>
-                        </div>
-
-                        {/* Info Section */}
-                        <div className="lg:w-1/2 p-8">
-                          <div className="flex items-center gap-2 mb-4">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                              <span className="text-white text-sm font-bold">
-                                {trademark.companyName?.charAt(0) || '?'}
-                              </span>
-                            </div>
-                            <div>
-                              <h2 className="text-2xl font-bold text-white">{trademark.sloganText}</h2>
-                              <p className="text-sm text-gray-400">By {trademark.companyName}</p>
-                            </div>
-                            {trademark.verified && (
-                              <svg className="w-6 h-6 text-blue-500 ml-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-4 gap-4 mb-6">
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">Token ID</p>
-                              <p className="text-white font-bold">#{trademark.tokenId}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">Royalty</p>
-                              <p className="text-white font-bold">{trademark.royaltyPercentage}%</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">Views</p>
-                              <p className="text-white font-bold">{trademark.views || 0}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">Category</p>
-                              <p className="text-white font-bold">{trademark.category}</p>
-                            </div>
-                          </div>
-
-                          <p className="text-gray-400 text-sm mb-6 line-clamp-3">
-                            {trademark.description || 'Blockchain-verified trademark with immutable ownership records and decentralized asset storage.'}
-                          </p>
-
-                          <Link
-                            href={`/trademark/${trademark.tokenId}`}
-                            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all"
-                          >
-                            View Collection
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Trending Tokens Section */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">Trending Tokens</h2>
-                    <p className="text-sm text-gray-400 mt-1">Most viewed in the past 24 hours</p>
+          {/* Core Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+            {[
+              { label: 'Network Assets', value: stats.totalTrademarks, sub: `+${stats.pendingTrademarks} Pending`, icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', color: 'blue' },
+              { label: 'Validated IP', value: stats.verifiedTrademarks, sub: `${stats.verificationRate}% Rate`, icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'green' },
+              { label: 'Protocol Nodes', value: stats.totalUsers, sub: 'Global Creators', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', color: 'purple' },
+              { label: 'Market Vectors', value: stats.totalCategories, sub: 'Industry Sectors', icon: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z', color: 'orange' }
+            ].map((s, i) => (
+              <div key={i} className="glass-card animate-slide-up" style={{ animationDelay: `${i * 100}ms` }}>
+                <div className="flex justify-between items-start mb-4">
+                  <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{s.label}</p>
+                  <div className={`w-10 h-10 rounded-xl bg-${s.color}-500/10 flex items-center justify-center text-${s.color}-400`}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={s.icon}/></svg>
                   </div>
-                  <button
-                    onClick={() => loadDashboardData()}
-                    disabled={isLoading}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#3a3d42] text-white rounded-lg hover:bg-[#4a4d52] transition-all disabled:opacity-50"
-                  >
-                    <svg className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    <span className="text-sm">Refresh</span>
-                  </button>
                 </div>
+                <h3 className="text-4xl font-black mb-1">{s.value}</h3>
+                <p className={`text-xs font-bold text-${s.color}-500/70`}>{s.sub}</p>
+              </div>
+            ))}
+          </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {isLoading ? (
-                    <div className="col-span-full text-center py-12">
-                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                      <p className="text-gray-400 mt-4">Loading real-time data...</p>
-                    </div>
-                  ) : trendingTrademarks.length === 0 ? (
-                    <div className="col-span-full text-center py-12">
-                      <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                      </svg>
-                      <p className="text-gray-400">No trademarks available yet</p>
-                      <Link href="/register" className="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
-                        Register First Trademark
-                      </Link>
+          <div className="grid lg:grid-cols-[1fr_350px] gap-12">
+            {/* Left: User Assets */}
+            <div className="space-y-12">
+               <section>
+                  <div className="flex items-center justify-between mb-8">
+                     <h2 className="text-2xl font-black">Your Portfolio</h2>
+                     <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{userTrademarks.length} Assets Found</span>
+                  </div>
+                  
+                  {userTrademarks.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {userTrademarks.map((tm, idx) => (
+                        <Link key={tm.tokenId} href={`/trademark/${tm.tokenId}`} className="glass-card group hover:!border-indigo-500/50 transition-all duration-300">
+                           <div className="flex gap-6">
+                              <div className="w-24 h-24 bg-gradient-to-br from-indigo-600 to-cyan-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-500">
+                                 <span className="text-3xl font-black text-white">{tm.sloganText?.charAt(0)}</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                 <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="text-lg font-black truncate">{tm.sloganText}</h3>
+                                    {tm.verified && <svg className="w-4 h-4 text-indigo-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>}
+                                 </div>
+                                 <p className="text-xs font-bold text-slate-500 mb-4">{tm.companyName}</p>
+                                 <div className="flex items-center gap-3">
+                                    <span className="status-badge status-badge-purple !py-0 !px-2 text-[9px] uppercase tracking-tighter">{tm.category}</span>
+                                    <span className={`status-badge !py-0 !px-2 text-[9px] uppercase tracking-tighter ${tm.verified ? 'status-badge-blue' : 'status-badge-amber'}`}>
+                                       {tm.verified ? 'On-Chain Verified' : 'Auth Pending'}
+                                    </span>
+                                 </div>
+                              </div>
+                           </div>
+                        </Link>
+                      ))}
                     </div>
                   ) : (
-                    trendingTrademarks.map((trademark, idx) => (
-                      <Link
-                        key={trademark.tokenId}
-                        href={`/trademark/${trademark.tokenId}`}
-                        className="bg-[#2f3136] rounded-xl border border-[#3a3d42] p-4 hover:border-[#4a4d52] transition-all block group"
-                      >
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                            <span className="text-white text-lg font-bold">
-                              {trademark.sloganText?.charAt(0) || '?'}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-white font-semibold truncate">{trademark.companyName}</h3>
-                              {trademark.verified && (
-                                <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-400 truncate">{trademark.sloganText}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between text-sm">
-                          <div>
-                            <p className="text-gray-500 text-xs">Token ID</p>
-                            <p className="text-white font-semibold">#{trademark.tokenId}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500 text-xs">Views</p>
-                            <p className="text-white font-semibold">{trademark.views || 0}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500 text-xs">Category</p>
-                            <p className="text-white font-semibold text-xs truncate max-w-[80px]">{trademark.category}</p>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 pt-3 border-t border-[#3a3d42]">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-400">
-                              Registered {new Date(trademark.createdAt).toLocaleDateString()}
-                            </span>
-                            <span className={`px-2 py-1 rounded ${
-                              trademark.verificationStatus === 'verified' 
-                                ? 'bg-green-500/10 text-green-500' 
-                                : trademark.verificationStatus === 'pending'
-                                ? 'bg-yellow-500/10 text-yellow-500'
-                                : 'bg-red-500/10 text-red-500'
-                            }`}>
-                              {trademark.verificationStatus}
-                            </span>
-                          </div>
-                        </div>
-                      </Link>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Collections Sidebar */}
-              <div className="w-80 flex-shrink-0">
-                <div className="bg-[#2f3136] rounded-2xl border border-[#3a3d42] p-6 sticky top-24">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-bold text-white">Top Collections</h3>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-xs text-gray-400">Live</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {allTrademarks.slice(0, 8).map((trademark, idx) => (
-                      <Link
-                        key={trademark.tokenId}
-                        href={`/trademark/${trademark.tokenId}`}
-                        className="flex items-center gap-3 hover:bg-[#3a3d42] p-2 rounded-lg transition-colors group"
-                      >
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <span className="text-gray-500 text-sm font-medium w-6">{idx + 1}</span>
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                            <span className="text-white text-sm font-bold">
-                              {trademark.companyName?.charAt(0) || '?'}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1">
-                              <p className="text-white text-sm font-medium truncate">{trademark.companyName}</p>
-                              {trademark.verified && (
-                                <svg className="w-3 h-3 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                              )}
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs text-gray-400 truncate">{trademark.category}</p>
-                              <p className="text-xs text-gray-500">#{trademark.tokenId}</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-gray-400 text-base flex-shrink-0">
-                          {idx === 0 && '🔥'}
-                          {idx === 1 && '⚡'}
-                          {idx === 2 && '✨'}
-                          {idx === 3 && '💎'}
-                          {idx === 4 && '🚀'}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-
-                  {allTrademarks.length === 0 && !isLoading && (
-                    <div className="text-center py-8">
-                      <p className="text-gray-400 text-sm">No collections yet</p>
+                    <div className="glass-card py-20 text-center">
+                       <p className="text-slate-500 font-bold mb-6">No assets registered under this wallet address.</p>
+                       <Link href="/register" className="btn-premium">Register New IP</Link>
                     </div>
                   )}
+               </section>
 
-                  <div className="mt-6 space-y-2">
-                    <Link
-                      href="/marketplace"
-                      className="block w-full px-4 py-2 bg-blue-600 text-white text-center rounded-xl font-medium hover:bg-blue-700 transition-all"
-                    >
-                      Explore Marketplace
-                    </Link>
-                    <Link
-                      href="/categories"
-                      className="block w-full px-4 py-2 bg-[#3a3d42] text-white text-center rounded-xl font-medium hover:bg-[#4a4d52] transition-all"
-                    >
-                      Browse Categories
-                    </Link>
+               {/* Activity Log */}
+               <section>
+                  <h2 className="text-2xl font-black mb-8">Protocol Activity</h2>
+                  <div className="glass-card !p-0 overflow-hidden">
+                     <div className="divide-y divide-white/5">
+                        {stats.recentActivity.map((act, i) => (
+                           <div key={i} className="flex items-center gap-6 p-6 hover:bg-white/[0.02] transition-colors">
+                              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center flex-shrink-0 text-slate-400">
+                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                              </div>
+                              <div className="flex-1">
+                                 <p className="text-sm font-bold text-white mb-0.5">{act.details || 'System event recorded'}</p>
+                                 <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                    <span className="text-indigo-400">{act.type}</span>
+                                    <span>•</span>
+                                    <span>{new Date(act.timestamp?.seconds * 1000).toLocaleDateString()}</span>
+                                 </div>
+                              </div>
+                           </div>
+                        ))}
+                     </div>
                   </div>
-                </div>
-              </div>
+               </section>
+            </div>
+
+            {/* Right Sidebar: Market Stats */}
+            <div className="space-y-8 lg:order-2">
+               <div className="glass-card">
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6">Market Trends</h3>
+                  <div className="space-y-6">
+                     {allTrademarks.slice(0, 5).map((tm, idx) => (
+                        <Link key={tm.tokenId} href={`/trademark/${tm.tokenId}`} className="flex items-center gap-4 group">
+                           <div className="w-8 text-[10px] font-black text-slate-600">0{idx + 1}</div>
+                           <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold truncate group-hover:text-indigo-400 transition-colors">{tm.sloganText}</p>
+                              <p className="text-[10px] font-black uppercase text-slate-500 tracking-tighter">{tm.category}</p>
+                           </div>
+                           <div className="text-xs font-black text-slate-400">{tm.views || 0}V</div>
+                        </Link>
+                     ))}
+                  </div>
+                  <Link href="/marketplace" className="btn-glass w-full mt-10 !py-2 text-center text-xs">Explore All Assets</Link>
+               </div>
+
+               <div className="glass-card bg-indigo-600/5 !border-indigo-600/20">
+                  <h3 className="text-sm font-black text-indigo-400 uppercase tracking-widest mb-4">Security Status</h3>
+                  <div className="flex items-center gap-3 mb-6">
+                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                     <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Protocol Operational</p>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                     Your assets are protected by decentralized IPFS storage and immutably registered on the Polygon blockchain. Metadata is cryptographically signed.
+                  </p>
+               </div>
             </div>
           </div>
         </div>
+      </main>
 
-        {/* Footer */}
-        <footer className="bg-[#2f3136] border-t border-[#3a3d42] mt-16">
-          <div className="max-w-[1920px] mx-auto px-6 py-8">
-            <div className="flex items-center justify-between text-sm text-gray-400">
-              <p>© 2024 TrademarkChain. All rights reserved.</p>
-              <div className="flex gap-6">
-                <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
-                <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-                <Link href="/support" className="hover:text-white transition-colors">Support</Link>
-              </div>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </>
+      <Footer />
+    </div>
   );
 }

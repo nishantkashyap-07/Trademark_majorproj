@@ -11,46 +11,30 @@ export default function Breadcrumbs() {
   const pathSegments = router.pathname.split('/').filter(segment => segment);
 
   const breadcrumbs: BreadcrumbItem[] = [
-    { label: 'Home', href: '/' }
+    { label: 'Protocols', href: '/' }
   ];
 
   let currentPath = '';
-  pathSegments.forEach((segment, index) => {
+  pathSegments.forEach((segment) => {
     currentPath += `/${segment}`;
-    
-    // Skip dynamic routes like [id]
-    if (segment.startsWith('[')) {
-      return;
-    }
-
-    const label = segment
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-
-    breadcrumbs.push({
-      label,
-      href: currentPath
-    });
+    if (segment.startsWith('[')) return;
+    const label = segment.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    breadcrumbs.push({ label, href: currentPath });
   });
 
-  if (breadcrumbs.length <= 1) {
-    return null;
-  }
+  if (breadcrumbs.length <= 1) return null;
 
   return (
-    <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-6" aria-label="Breadcrumb">
+    <nav className="flex items-center gap-2 mb-10 overflow-x-auto whitespace-nowrap py-2" aria-label="Tracking">
       {breadcrumbs.map((crumb, index) => (
-        <div key={crumb.href} className="flex items-center">
+        <div key={crumb.href} className="flex items-center gap-2">
           {index > 0 && (
-            <svg className="w-4 h-4 mx-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <div className="w-1 h-1 bg-white/10 rounded-full mx-1" />
           )}
           {index === breadcrumbs.length - 1 ? (
-            <span className="font-medium text-gray-900">{crumb.label}</span>
+            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">{crumb.label}</span>
           ) : (
-            <Link href={crumb.href} className="hover:text-blue-600 transition-colors">
+            <Link href={crumb.href} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors px-2 py-1">
               {crumb.label}
             </Link>
           )}

@@ -4,7 +4,6 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import TrademarkBadge from '@/components/TrademarkBadge';
 import LicenseModal from '@/components/LicenseModal';
 import PurchaseLicenseModal from '@/components/PurchaseLicenseModal';
 import LicenseCard from '@/components/LicenseCard';
@@ -12,27 +11,7 @@ import RatingModal from '@/components/RatingModal';
 import RatingDisplay from '@/components/RatingDisplay';
 import { TrademarkMetadata, Listing, License } from '@/types';
 import { useWeb3 } from '@/contexts/Web3Context';
-import { getActiveListingsForToken, getLicensesForToken } from '@/utils/contracts';
-import { ethers } from 'ethers';
-
-// Mock slogan data
-const mockTrademark: TrademarkMetadata = {
-  tokenId: 1,
-  creatorAddress: '0x1234567890123456789012345678901234567890',
-  companyName: 'TechCorp Inc.',
-  sloganText: 'Innovation Beyond Imagination',
-  registrationNumber: 'SL001234',
-  category: 'Technology',
-  description: 'Inspiring slogan for technology company representing cutting-edge solutions in the digital space. This slogan encompasses our brand promise and innovation-first approach.',
-  ipfsHash: 'QmExample1',
-  royaltyPercentage: 10,
-  createdAt: new Date('2024-01-15'),
-  transactionHash: '0xabc123def456789',
-  verified: true,
-  verificationStatus: 'verified',
-  language: 'English',
-  usageContext: 'Brand marketing and advertising campaigns',
-};
+import { getLicensesForToken } from '@/utils/contracts';
 
 export default function TrademarkDetail() {
   const router = useRouter();
@@ -43,7 +22,6 @@ export default function TrademarkDetail() {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
-  const [listings, setListings] = useState<Listing[]>([]);
   const [licenses, setLicenses] = useState<License[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [trademark, setTrademark] = useState<TrademarkMetadata | null>(null);
@@ -52,595 +30,247 @@ export default function TrademarkDetail() {
   const isOwner = account?.toLowerCase() === trademark?.creatorAddress.toLowerCase();
 
   useEffect(() => {
-    if (id) {
-      loadTrademark();
-    }
+    if (id) loadTrademark();
   }, [id]);
 
   const loadTrademark = async () => {
     setIsLoading(true);
     try {
-      console.log('Loading trademark with ID:', id);
-      
-      // First try to fetch by document ID
       let response = await fetch(`/api/trademarks/${id}`);
       let data = await response.json();
       
-      console.log('Direct fetch result:', data);
-      
-      // If not found, try to search by tokenId
       if (!data.success) {
-        console.log('Trying to fetch by tokenId...');
         response = await fetch(`/api/trademarks?tokenId=${id}`);
         data = await response.json();
-        
-        console.log('TokenId fetch result:', data);
-        
-        if (data.success && data.data && data.data.length > 0) {
-          data = { success: true, data: data.data[0] };
-        }
+        if (data.success && data.data?.[0]) data = { success: true, data: data.data[0] };
       }
       
       if (data.success && data.data) {
-        console.log('Trademark found:', data.data);
-        
-        // Convert date strings to Date objects and map field names
         const trademarkData = {
           ...data.data,
-          sloganText: data.data.trademarkName || data.data.sloganText, // Map trademarkName to sloganText
+          sloganText: data.data.trademarkName || data.data.sloganText,
           createdAt: new Date(data.data.createdAt?.seconds ? data.data.createdAt.seconds * 1000 : data.data.createdAt),
-          updatedAt: data.data.updatedAt ? new Date(data.data.updatedAt?.seconds ? data.data.updatedAt.seconds * 1000 : data.data.updatedAt) : undefined,
-          verifiedAt: data.data.verifiedAt ? new Date(data.data.verifiedAt?.seconds ? data.data.verifiedAt.seconds * 1000 : data.data.verifiedAt) : undefined,
         };
         setTrademark(trademarkData);
-        loadListingsAndLicenses(trademarkData.tokenId);
-      } else {
-        console.error('Trademark not found, redirecting to dashboard');
-        setTimeout(() => router.push('/dashboard'), 2000);
+        loadLicenses(trademarkData.tokenId);
       }
     } catch (error) {
       console.error('Error loading trademark:', error);
-      setTimeout(() => router.push('/dashboard'), 2000);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const loadListingsAndLicenses = async (tokenId: number) => {
+  const loadLicenses = async (tokenId: number) => {
     try {
-      // Load listings - wrapped in try-catch to not block page
-      try {
-        const listingIds = await getActiveListingsForToken(tokenId);
-        console.log('Active listings:', listingIds);
-      } catch (err) {
-        console.log('Could not load listings (contracts may not be deployed):', err);
-      }
-      
-      // Load licenses - wrapped in try-catch to not block page
-      try {
-        const licenseData = await getLicensesForToken(tokenId);
-        setLicenses(licenseData);
-      } catch (err) {
-        console.log('Could not load licenses (contracts may not be deployed):', err);
-        setLicenses([]); // Set empty array so page still works
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
+      const licenseData = await getLicensesForToken(tokenId);
+      setLicenses(licenseData || []);
+    } catch (err) {
+      setLicenses([]);
     }
-  };
-
-  const handlePurchaseLicense = (listing: Listing) => {
-    setSelectedListing(listing);
-    setShowPurchaseModal(true);
   };
 
   if (isLoading || !trademark) {
     return (
-      <>
-        <Head>
-          <title>Loading... - TrademarkChain</title>
-        </Head>
-        <Navbar />
-        <main className="min-h-screen bg-gray-950 flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-            <p className="mt-4 text-gray-400">Loading trademark...</p>
-          </div>
-        </main>
-        <Footer />
-      </>
+      <div className="min-h-screen bg-[#05070a] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="bg-[#05070a] text-white selection:bg-indigo-500/30">
       <Head>
-        <title>{trademark.sloganText} - TrademarkChain</title>
-        <meta name="description" content={trademark.description} />
+        <title>{trademark.sloganText} | TrademarkChain</title>
       </Head>
 
       <Navbar />
 
-      <main className="min-h-screen bg-gray-950">
-        <div className="mx-auto max-w-6xl px-4 py-10">
-          {/* Breadcrumb */}
-          <div className="mb-6 flex items-center space-x-2 text-xs text-gray-500">
-            <Link href="/" className="hover:text-gray-900">Home</Link>
-            <span>/</span>
-            <Link href="/marketplace" className="hover:text-gray-900">Marketplace</Link>
-            <span>/</span>
-            <span className="text-gray-900 line-clamp-1">{trademark.sloganText}</span>
-          </div>
+      <main className="pt-32 pb-20 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-indigo-600/5 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-cyan-600/5 blur-[120px] rounded-full pointer-events-none" />
 
-          <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-            {/* Left Column - Asset Preview */}
-            <div className="space-y-4 lg:sticky lg:top-8">
-              <div className="overflow-hidden rounded-3xl border border-gray-200 bg-gradient-to-br from-neutral-50 via-neutral-100 to-neutral-50 shadow-sm">
-                <div className="relative flex aspect-square items-center justify-center p-10">
-                  <div className="absolute inset-0 bg-gradient-brand opacity-10 blur-3xl" />
-                  {(trademark.imageUrl || trademark.ipfsHash) ? (
-                    <img 
-                      src={trademark.imageUrl || `https://gateway.pinata.cloud/ipfs/${trademark.ipfsHash}`}
-                      alt={trademark.sloganText}
-                      className="relative w-full h-full object-contain rounded-2xl"
-                      onError={(e) => {
-                        // Fallback to letter if image fails to load
-                        const target = e.currentTarget;
-                        target.style.display = 'none';
-                        const fallback = document.getElementById('detail-fallback');
-                        if (fallback) fallback.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                  <div className={`relative flex h-40 w-40 items-center justify-center rounded-3xl border border-neutral-200 bg-white text-6xl font-display font-bold gradient-text shadow-xl ${(trademark.imageUrl || trademark.ipfsHash) ? 'hidden' : ''}`} id="detail-fallback">
-                    {trademark.sloganText.charAt(0)}
+        <div className="container-custom relative z-10">
+          <div className="grid lg:grid-cols-[1fr_450px] gap-12 items-start">
+            
+            {/* Left Column: Presentation */}
+            <div className="space-y-8 animate-slide-up">
+               <div className="glass-card !p-0 aspect-video relative group overflow-hidden bg-gradient-to-br from-white/[0.02] to-transparent">
+                  <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                  <div className="absolute inset-0 flex items-center justify-center p-12">
+                     <div className="text-center">
+                        <div className="w-32 h-32 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl border border-white/5 group-hover:scale-110 transition-transform duration-700">
+                           <span className="text-6xl font-black text-white">{trademark.sloganText?.charAt(0)}</span>
+                        </div>
+                        <h2 className="text-4xl font-black mb-4 tracking-tighter">{trademark.sloganText}</h2>
+                        <div className="flex items-center justify-center gap-4">
+                           <span className="status-badge status-badge-purple !px-4">{trademark.category}</span>
+                           {trademark.verified && (
+                             <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-widest">
+                               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
+                               Secured on Polygon
+                             </div>
+                           )}
+                        </div>
+                     </div>
                   </div>
-                  {trademark.verified && (
-                    <div className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-medium text-emerald-700 shadow-sm">
-                      <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      Verified on-chain
-                    </div>
-                  )}
-                </div>
-              </div>
+                  {/* Glass Reflection effect */}
+                  <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+               </div>
 
-              {/* Minimal key identifiers under asset */}
-              <div className="grid gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-xs text-gray-700 sm:grid-cols-2">
-                <div>
-                  <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-gray-500">Registration</p>
-                  <p className="mt-1 font-mono text-xs text-gray-900 break-all">{trademark.registrationNumber}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-gray-500">Token ID</p>
-                  <p className="mt-1 font-mono text-xs text-gray-900">#{trademark.tokenId}</p>
-                </div>
-              </div>
+               <div className="flex gap-4">
+                  <div className="glass-card flex-1">
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Protocol ID</p>
+                     <p className="text-lg font-black font-mono text-indigo-400">{trademark.registrationNumber}</p>
+                  </div>
+                  <div className="glass-card flex-1">
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Mint ID</p>
+                     <p className="text-lg font-black text-white">#{trademark.tokenId}</p>
+                  </div>
+                  <div className="glass-card flex-1">
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Royalty</p>
+                     <p className="text-lg font-black text-white">{trademark.royaltyPercentage}%</p>
+                  </div>
+               </div>
 
-              {/* Quick Actions */}
-              <div className="space-y-3">
-                {isOwner && (
-                  <button
-                    onClick={() => setShowLicenseModal(true)}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
-                  >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Create license listing
-                  </button>
-                )}
+               {/* Tabs Content */}
+               <div className="glass-card !p-0 overflow-hidden">
+                  <div className="flex border-b border-white/5">
+                     {['details', 'licenses', 'history', 'verification'].map((tab) => (
+                        <button 
+                          key={tab}
+                          onClick={() => setActiveTab(tab as any)}
+                          className={`flex-1 py-5 text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]'}`}
+                        >
+                          {tab}
+                        </button>
+                     ))}
+                  </div>
+                  <div className="p-8">
+                     {activeTab === 'details' && (
+                        <div className="space-y-8 animate-fade-in">
+                           <div>
+                              <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Intellectual Property Narrative</h3>
+                              <p className="text-slate-300 leading-relaxed text-lg">{trademark.description || 'No description provided by the creator.'}</p>
+                           </div>
+                           <div className="grid grid-cols-2 gap-8 pt-8 border-t border-white/5">
+                              <div>
+                                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Original Mint Date</h4>
+                                 <p className="font-bold text-white">{trademark.createdAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                              </div>
+                              <div>
+                                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Language Protocol</h4>
+                                 <p className="font-bold text-white">English (US)</p>
+                              </div>
+                           </div>
+                        </div>
+                     )}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <button className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-900 transition hover:border-gray-300 hover:bg-gray-50">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-                    Share
-                  </button>
-                  <button className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-900 transition hover:border-gray-300 hover:bg-gray-50">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    </svg>
-                    Save
-                  </button>
-                </div>
-              </div>
+                     {activeTab === 'licenses' && (
+                        <div className="space-y-6 animate-fade-in">
+                           <div className="flex items-center justify-between">
+                              <h3 className="text-sm font-black uppercase tracking-widest text-white">License Matrix</h3>
+                              {isOwner && <button onClick={() => setShowLicenseModal(true)} className="btn-premium !py-2 !px-4 !text-xs">Issue New License</button>}
+                           </div>
+                           {licenses.length > 0 ? (
+                              <div className="space-y-4">
+                                 {licenses.map(l => <LicenseCard key={l.licenseId} license={l} trademarkName={trademark.sloganText} showTrademark={false} />)}
+                              </div>
+                           ) : (
+                              <div className="py-12 text-center text-slate-500 font-bold border-2 border-dashed border-white/5 rounded-3xl">
+                                 No active license protocols available for this asset.
+                              </div>
+                           )}
+                        </div>
+                     )}
+
+                     {activeTab === 'verification' && (
+                        <div className="space-y-8 animate-fade-in">
+                           <div className="bg-indigo-600/5 border border-indigo-600/20 rounded-3xl p-8 flex gap-6 items-center">
+                              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                              </div>
+                              <div>
+                                 <p className="text-lg font-black mb-1">On-Chain Authenticity Report</p>
+                                 <p className="text-sm text-slate-400">This asset has been cryptographically signed and stored on the immutable ledger.</p>
+                              </div>
+                           </div>
+                           <div className="space-y-4">
+                              <div className="flex justify-between p-4 bg-white/[0.02] rounded-2xl border border-white/5">
+                                 <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Network</span>
+                                 <span className="text-xs font-black text-white uppercase tracking-widest">Polygon Mainnet</span>
+                              </div>
+                              <div className="flex justify-between p-4 bg-white/[0.02] rounded-2xl border border-white/5">
+                                 <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Transaction Hash</span>
+                                 <a href={`https://amoy.polygonscan.com/tx/${trademark.transactionHash}`} className="text-xs font-mono text-indigo-400 hover:text-indigo-300 truncate max-w-[200px]">{trademark.transactionHash || 'NOT_ON_CHAIN'}</a>
+                              </div>
+                              <div className="flex justify-between p-4 bg-white/[0.02] rounded-2xl border border-white/5">
+                                 <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Metadata Standard</span>
+                                 <span className="text-xs font-black text-white uppercase tracking-widest">ERC-721 / IPFS</span>
+                              </div>
+                           </div>
+                        </div>
+                     )}
+                  </div>
+               </div>
             </div>
 
-            {/* Right Column - Metadata & Tabs */}
-            <div className="space-y-6">
-              {/* Header & owner */}
-              <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                <div className="mb-4 flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-2 inline-flex items-center gap-2">
-                      <Link
-                        href={`/marketplace?category=${trademark.category}`}
-                        className="text-xs font-medium text-gray-600 hover:text-gray-900"
-                      >
-                        {trademark.category}
-                      </Link>
-                      <TrademarkBadge
-                        verified={trademark.verified}
-                        trademarkId={trademark.tokenId}
-                        companyName={trademark.companyName}
-                        transactionHash={trademark.transactionHash}
-                      />
-                    </div>
-                    <h1 className="mb-1 line-clamp-2 text-2xl md:text-3xl font-semibold text-gray-900">
-                      {trademark.sloganText}
-                    </h1>
-                    <p className="text-sm text-gray-600">
-                      by <span className="font-medium text-gray-900">{trademark.companyName}</span>
-                    </p>
+            {/* Right Column: Actions & Meta */}
+            <div className="space-y-8 animate-slide-in-right">
+               <div className="glass-card">
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest mb-8">Registered Creator</h3>
+                  <div className="flex items-center gap-4 mb-8">
+                     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-0.5">
+                        <div className="w-full h-full bg-[#05070a] rounded-full flex items-center justify-center">
+                           <span className="text-xl font-black text-white">{trademark.companyName?.charAt(0)}</span>
+                        </div>
+                     </div>
+                     <div className="flex-1 min-w-0">
+                        <p className="text-lg font-black truncate">{trademark.companyName}</p>
+                        <p className="text-xs font-mono text-slate-500 truncate">{trademark.creatorAddress}</p>
+                     </div>
                   </div>
-                </div>
-
-                {/* Creator Rating */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Creator Rating</p>
-                    <RatingDisplay 
-                      key={ratingKey}
-                      creatorAddress={trademark.creatorAddress} 
-                      size="medium"
-                      showCount={true}
-                    />
+                  <div className="flex items-center justify-between py-6 border-t border-white/5">
+                     <div>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Creator Trust Score</p>
+                        <RatingDisplay key={ratingKey} creatorAddress={trademark.creatorAddress} size="medium" showCount={true} />
+                     </div>
+                     {!isOwner && isConnected && (
+                        <button onClick={() => setShowRatingModal(true)} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all">
+                           <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        </button>
+                     )}
                   </div>
-                  {!isOwner && isConnected && (
-                    <button
-                      onClick={() => setShowRatingModal(true)}
-                      className="px-4 py-2 bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition-colors text-sm font-medium flex items-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      Rate Creator
-                    </button>
-                  )}
-                </div>
+               </div>
 
-                <div className="flex flex-wrap items-center gap-4 rounded-2xl bg-gray-50 px-4 py-3 text-xs text-gray-700">
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500" />
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.18em] text-gray-500">Owned by</p>
-                      <p className="font-mono text-xs font-semibold text-gray-900">
-                        {trademark.creatorAddress.slice(0, 10)}...{trademark.creatorAddress.slice(-8)}
-                      </p>
-                      <p className="mt-1 text-[11px] text-gray-500">
-                        Token #{trademark.tokenId}
-                      </p>
-                    </div>
+               <div className="space-y-4">
+                  {isOwner ? (
+                     <button onClick={() => setShowLicenseModal(true)} className="btn-premium w-full !py-4 flex items-center justify-center gap-3">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                        Deploy New License Listing
+                     </button>
+                  ) : (
+                    <button className="btn-premium w-full !py-4">Request Commercial License</button>
+                  )}
+                  <div className="grid grid-cols-2 gap-4">
+                     <button className="btn-glass !py-3 flex items-center justify-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                        Share
+                     </button>
+                     <button className="btn-glass !py-3 flex items-center justify-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                        Bookmark
+                     </button>
                   </div>
+               </div>
 
-                  <div className="h-6 w-px bg-gray-200 hidden sm:block" />
-
-                  <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-[11px] text-gray-700">
-                      Registered {trademark.createdAt.toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              </section>
-
-              {/* Tabs & content */}
-              <section className="rounded-3xl border border-gray-200 bg-white shadow-sm">
-                <div className="flex gap-1 border-b border-gray-100 px-4 pt-2 overflow-x-auto text-xs">
-                  <button
-                    onClick={() => setActiveTab('details')}
-                    className={`mb-1 rounded-full px-3 py-2 font-medium transition-colors ${
-                      activeTab === 'details'
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Details
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('licenses')}
-                    className={`mb-1 rounded-full px-3 py-2 font-medium transition-colors flex items-center gap-2 ${
-                      activeTab === 'licenses'
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Licenses
-                    {licenses.length > 0 && (
-                      <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[10px]">
-                        {licenses.length}
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('history')}
-                    className={`mb-1 rounded-full px-3 py-2 font-medium transition-colors ${
-                      activeTab === 'history'
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    History
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('verification')}
-                    className={`mb-1 rounded-full px-3 py-2 font-medium transition-colors ${
-                      activeTab === 'verification'
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Verification
-                  </button>
-                </div>
-
-                <div className="p-6">
-                  {/* Licenses Tab */}
-                  {activeTab === 'licenses' && (
-                    <div className="space-y-6">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          License Information
-                        </h3>
-                        {isOwner && (
-                          <button
-                            onClick={() => setShowLicenseModal(true)}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                          >
-                            Create License
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Active Licenses */}
-                      {licenses.length > 0 ? (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-3">
-                            Active Licenses ({licenses.filter(l => l.active).length})
-                          </h4>
-                          <div className="space-y-3">
-                            {licenses.filter(l => l.active).map((license) => (
-                              <LicenseCard 
-                                key={license.licenseId} 
-                                license={license}
-                                trademarkName={trademark.sloganText}
-                                showTrademark={false}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-12 bg-gray-50 rounded-xl">
-                          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          <h3 className="mt-2 text-sm font-medium text-gray-900">No licenses yet</h3>
-                          <p className="mt-1 text-sm text-gray-500">
-                            {isOwner 
-                              ? 'Create a license listing to allow others to use your trademark.'
-                              : 'This trademark is not currently available for licensing.'}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* License Benefits */}
-                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-                        <h4 className="font-semibold text-gray-900 mb-3">Why License?</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="flex items-start space-x-3">
-                            <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            <div>
-                              <div className="font-medium text-gray-900">Retain Ownership</div>
-                              <div className="text-sm text-gray-600">Keep your NFT while earning</div>
-                            </div>
-                          </div>
-                          <div className="flex items-start space-x-3">
-                            <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            <div>
-                              <div className="font-medium text-gray-900">Recurring Revenue</div>
-                              <div className="text-sm text-gray-600">Multiple licenses possible</div>
-                            </div>
-                          </div>
-                          <div className="flex items-start space-x-3">
-                            <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            <div>
-                              <div className="font-medium text-gray-900">Blockchain Verified</div>
-                              <div className="text-sm text-gray-600">Immutable license records</div>
-                            </div>
-                          </div>
-                          <div className="flex items-start space-x-3">
-                            <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            <div>
-                              <div className="font-medium text-gray-900">Flexible Terms</div>
-                              <div className="text-sm text-gray-600">Set duration and pricing</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Details Tab */}
-                  {activeTab === 'details' && (
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-2">Description</h3>
-                        <p className="text-gray-900">{trademark.description}</p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-2">Registration Number</h3>
-                          <p className="font-mono text-gray-900">{trademark.registrationNumber}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-2">Token ID</h3>
-                          <p className="font-mono text-gray-900">#{trademark.tokenId}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-2">Registered</h3>
-                          <p className="text-gray-900">{trademark.createdAt.toLocaleDateString()}</p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-2">IPFS Hash</h3>
-                        <div className="flex items-center space-x-2">
-                          <p className="font-mono text-sm text-gray-900 flex-1 truncate">{trademark.ipfsHash}</p>
-                          <a
-                            href={`https://ipfs.io/ipfs/${trademark.ipfsHash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-700"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* History Tab */}
-                  {activeTab === 'history' && (
-                    <div className="space-y-4">
-                      <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-xl">
-                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium text-gray-900">Trademark Registered</span>
-                            <span className="text-sm text-gray-500">{trademark.createdAt.toLocaleDateString()}</span>
-                          </div>
-                          <p className="text-sm text-gray-600">
-                            Registered by {trademark.creatorAddress.slice(0, 10)}...
-                          </p>
-                        </div>
-                      </div>
-
-                      {trademark.verified && (
-                        <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-xl">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-medium text-gray-900">Trademark Verified</span>
-                              <span className="text-sm text-gray-500">2 days ago</span>
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              Verified by TrademarkChain
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Verification Tab */}
-                  {activeTab === 'verification' && (
-                    <div className="space-y-6">
-                      {trademark.transactionHash ? (
-                        <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            <span className="font-semibold text-green-900">Blockchain Verified</span>
-                          </div>
-                          <p className="text-sm text-green-800">
-                            This trademark is registered on Polygon blockchain and verified by smart contract.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                            <span className="font-semibold text-yellow-900">Database Only</span>
-                          </div>
-                          <p className="text-sm text-yellow-800">
-                            This trademark is stored in the database but not yet registered on the blockchain. Deploy smart contracts to enable blockchain registration.
-                          </p>
-                        </div>
-                      )}
-
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-3">Blockchain Details</h3>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Contract Address</span>
-                            {process.env.NEXT_PUBLIC_TRADEMARK_CONTRACT_ADDRESS ? (
-                              <a 
-                                href={`https://amoy.polygonscan.com/address/${process.env.NEXT_PUBLIC_TRADEMARK_CONTRACT_ADDRESS}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm font-mono text-blue-600 hover:text-blue-700"
-                              >
-                                {process.env.NEXT_PUBLIC_TRADEMARK_CONTRACT_ADDRESS.slice(0, 6)}...{process.env.NEXT_PUBLIC_TRADEMARK_CONTRACT_ADDRESS.slice(-4)}
-                              </a>
-                            ) : (
-                              <span className="text-sm text-gray-500">Not deployed</span>
-                            )}
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Token Standard</span>
-                            <span className="text-sm font-medium text-gray-900">ERC-721</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Blockchain</span>
-                            <span className="text-sm font-medium text-gray-900">Polygon Amoy</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Transaction Hash</span>
-                            {trademark.transactionHash ? (
-                              <a 
-                                href={`https://amoy.polygonscan.com/tx/${trademark.transactionHash}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm font-mono text-blue-600 hover:text-blue-700"
-                              >
-                                {trademark.transactionHash.slice(0, 10)}...
-                              </a>
-                            ) : (
-                              <span className="text-sm text-gray-500">Not on-chain</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <button 
-                        onClick={() => trademark.transactionHash && window.open(`https://amoy.polygonscan.com/tx/${trademark.transactionHash}`, '_blank')}
-                        disabled={!trademark.transactionHash}
-                        className="w-full py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {trademark.transactionHash ? 'View on Polygonscan' : 'Not on Blockchain'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </section>
+               <div className="glass-card bg-amber-500/5 !border-amber-500/20">
+                  <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">Legal Disclaimer</h4>
+                  <p className="text-[11px] text-amber-600/70 leading-relaxed font-bold">
+                     Blockchain registration provides a proof-of-existence but does not replace national trademark filings. Verify local jurisdictional compliance before commercial deployment.
+                  </p>
+               </div>
             </div>
           </div>
         </div>
@@ -648,39 +278,32 @@ export default function TrademarkDetail() {
 
       <Footer />
 
-      {/* Modals */}
       <LicenseModal
         isOpen={showLicenseModal}
         onClose={() => setShowLicenseModal(false)}
         tokenId={trademark.tokenId}
         trademarkName={trademark.sloganText}
-        onSuccess={loadListingsAndLicenses}
+        onSuccess={() => loadLicenses(trademark.tokenId)}
       />
 
       {selectedListing && (
         <PurchaseLicenseModal
           isOpen={showPurchaseModal}
-          onClose={() => {
-            setShowPurchaseModal(false);
-            setSelectedListing(null);
-          }}
+          onClose={() => { setShowPurchaseModal(false); setSelectedListing(null); }}
           listing={selectedListing}
           trademarkName={trademark.sloganText}
-          onSuccess={loadListingsAndLicenses}
+          onSuccess={() => loadLicenses(trademark.tokenId)}
         />
       )}
 
-      {showRatingModal && (
-        <RatingModal
-          creatorAddress={trademark.creatorAddress}
-          trademarkId={trademark.tokenId.toString()}
-          trademarkName={trademark.sloganText}
-          onClose={() => setShowRatingModal(false)}
-          onSuccess={() => {
-            setRatingKey(prev => prev + 1); // Force refresh rating display
-          }}
-        />
-      )}
-    </>
+      <RatingModal
+        creatorAddress={trademark.creatorAddress}
+        trademarkId={trademark.tokenId.toString()}
+        trademarkName={trademark.sloganText}
+        isOpen={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        onSuccess={() => setRatingKey(prev => prev + 1)}
+      />
+    </div>
   );
 }

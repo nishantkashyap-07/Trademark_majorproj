@@ -6,15 +6,12 @@ import { useWeb3 } from '@/contexts/Web3Context';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import TrademarkCard from '@/components/TrademarkCard';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import SplineBackground from '@/components/SplineBackground';
 import { TrademarkMetadata } from '@/types';
 import { TRADEMARK_CATEGORIES } from '@/utils/constants';
 
 export default function Marketplace() {
   const router = useRouter();
-  const { isConnected, connect } = useWeb3();
+  const { isConnected } = useWeb3();
   
   const [trademarks, setTrademarks] = useState<TrademarkMetadata[]>([]);
   const [filteredTrademarks, setFilteredTrademarks] = useState<TrademarkMetadata[]>([]);
@@ -25,19 +22,13 @@ export default function Marketplace() {
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Load trademarks from API
   useEffect(() => {
     loadTrademarks();
   }, []);
 
-  // Get search query from URL
   useEffect(() => {
-    if (router.query.search) {
-      setSearchTerm(router.query.search as string);
-    }
-    if (router.query.category) {
-      setSelectedCategory(router.query.category as string);
-    }
+    if (router.query.search) setSearchTerm(router.query.search as string);
+    if (router.query.category) setSelectedCategory(router.query.category as string);
   }, [router.query]);
 
   const loadTrademarks = async () => {
@@ -45,15 +36,11 @@ export default function Marketplace() {
     try {
       const response = await fetch('/api/trademarks?limitCount=100');
       const data = await response.json();
-      
       if (data.success && data.data) {
-        // Convert Firestore timestamps to Date objects and map field names
         const trademarksData = data.data.map((tm: any) => ({
           ...tm,
-          sloganText: tm.trademarkName || tm.sloganText, // Map trademarkName to sloganText
+          sloganText: tm.trademarkName || tm.sloganText,
           createdAt: new Date(tm.createdAt?.seconds ? tm.createdAt.seconds * 1000 : tm.createdAt),
-          updatedAt: tm.updatedAt ? new Date(tm.updatedAt?.seconds ? tm.updatedAt.seconds * 1000 : tm.updatedAt) : undefined,
-          verifiedAt: tm.verifiedAt ? new Date(tm.verifiedAt?.seconds ? tm.verifiedAt.seconds * 1000 : tm.verifiedAt) : undefined,
         }));
         setTrademarks(trademarksData);
       }
@@ -64,278 +51,170 @@ export default function Marketplace() {
     }
   };
 
-  // Filter and sort trademarks
   useEffect(() => {
     let filtered = [...trademarks];
-
-    // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(tm =>
         tm.sloganText.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tm.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tm.description.toLowerCase().includes(searchTerm.toLowerCase())
+        tm.companyName.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
+    if (selectedCategory) filtered = filtered.filter(tm => tm.category === selectedCategory);
+    if (showVerifiedOnly) filtered = filtered.filter(tm => tm.verified);
 
-    // Apply category filter
-    if (selectedCategory) {
-      filtered = filtered.filter(tm => tm.category === selectedCategory);
-    }
-
-    // Apply verification filter
-    if (showVerifiedOnly) {
-      filtered = filtered.filter(tm => tm.verified);
-    }
-
-    // Apply sorting
     switch (sortBy) {
-      case 'newest':
-        filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-        break;
-      case 'oldest':
-        filtered.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-        break;
-      case 'name':
-        filtered.sort((a, b) => a.sloganText.localeCompare(b.sloganText));
-        break;
-      case 'company':
-        filtered.sort((a, b) => a.companyName.localeCompare(b.companyName));
-        break;
+      case 'newest': filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); break;
+      case 'oldest': filtered.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()); break;
+      case 'name': filtered.sort((a, b) => a.sloganText.localeCompare(b.sloganText)); break;
     }
-
     setFilteredTrademarks(filtered);
   }, [trademarks, searchTerm, selectedCategory, sortBy, showVerifiedOnly]);
 
-  const handleTrademarkClick = (tokenId: number) => {
-    // In a real app, this would show trademark details or verification info
-    console.log('Trademark clicked:', tokenId);
-  };
-
   return (
-    <>
+    <div className="bg-[#05070a] selection:bg-indigo-500/30">
       <Head>
-        <title>Marketplace - TrademarkChain</title>
-        <meta
-          name="description"
-          content="Browse and verify blockchain-registered trademarks secured on Polygon with IPFS-backed assets."
-        />
+        <title>Marketplace | TrademarkChain Protocol</title>
       </Head>
 
       <Navbar />
 
-        <main className="min-h-screen bg-gray-950">
-          {/* Hero Section */}
-          <section className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-950 to-black text-white py-12">
-            {/* Spline 3D Background */}
-            <SplineBackground 
-              opacity={40}
-              gradientDirection="bottom"
-            />
-            
-            <div className="relative z-10 mx-auto max-w-6xl px-4">
-              <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <p className="mb-2 text-xs font-medium uppercase tracking-[0.25em] text-gray-400">
-                    Marketplace
-                  </p>
-                  <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-white mb-3">
-                    Explore on-chain trademarks
-                  </h1>
-                  <p className="max-w-xl text-sm md:text-base text-gray-300">
-                    Discover IP assets registered on TrademarkChain. Every listing is backed by verifiable Polygon
-                    ownership and IPFS-stored content.
-                  </p>
-                </div>
+      <main className="min-h-screen pt-32 pb-20 overflow-hidden">
+        {/* Ambient Gradients */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/5 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-cyan-600/5 blur-[120px] rounded-full pointer-events-none" />
 
-                <div className="flex flex-col items-start gap-3 text-xs text-gray-300 md:items-end">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 backdrop-blur-sm">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    Live demo data - no gas required
-                  </div>
-                  <div className="flex flex-wrap gap-3 md:justify-end">
-                    <span className="rounded-full bg-white/5 px-3 py-1 text-[11px] text-gray-200 backdrop-blur-sm">
-                      Polygon • ERC-721 • EIP-2981
-                    </span>
-                    <span className="rounded-full bg-white/5 px-3 py-1 text-[11px] text-gray-200 backdrop-blur-sm">
-                      IPFS-backed assets
-                    </span>
-                  </div>
-                </div>
+        <div className="container-custom relative z-10">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[10px] font-black text-indigo-400 mb-4 tracking-widest uppercase">
+                Global Asset Discovery
               </div>
-            </div>
-          </section>
-
-          <div className="mx-auto max-w-6xl px-4 py-10">
-          
-          <Breadcrumbs />
-
-          {/* Filters and Search */}
-          <section className="mb-8 rounded-2xl border border-gray-800 bg-gray-900/50 p-6 backdrop-blur-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              {/* Search */}
-              <div className="lg:col-span-2">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Search Trademarks
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search by name, company, or description..."
-                    className="input-field pl-10"
-                  />
-                  <svg className="absolute left-3 top-3 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Category Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Category
-                </label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="input-field"
-                >
-                  <option value="">All Categories</option>
-                  {TRADEMARK_CATEGORIES.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Sort */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Sort By
-                </label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="input-field"
-                >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="name">Trademark Name</option>
-                  <option value="company">Company Name</option>
-                </select>
-              </div>
+              <h1 className="text-4xl md:text-6xl font-black text-white mb-4">IP Marketplace</h1>
+              <p className="text-slate-400 text-lg">Explore and verify authentic intellectual property assets registered on the universal ledger.</p>
             </div>
 
-            {/* Additional Filters and View Toggle */}
-            <div className="flex items-center justify-between">
-              <div className="flex flex-wrap items-center gap-4">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={showVerifiedOnly}
-                    onChange={(e) => setShowVerifiedOnly(e.target.checked)}
-                    className="rounded border-gray-600 bg-gray-800 text-cyan-500 focus:ring-cyan-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-300">Show verified only</span>
-                </label>
-                
-                <div className="text-xs text-gray-400">
-                  Showing {filteredTrademarks.length} of {trademarks.length} trademarks
-                </div>
-              </div>
-
-              {/* View Mode Toggle */}
-              <div className="inline-flex items-center gap-1 rounded-full bg-gray-800 p-1 text-xs">
-                <button
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="glass-card !p-2 flex items-center gap-1 rounded-2xl">
+                 <button 
                   onClick={() => setViewMode('grid')}
-                  className={`flex items-center gap-1 rounded-full px-3 py-1.5 transition-all ${
-                    viewMode === 'grid'
-                      ? 'bg-cyan-500 text-white shadow-sm'
-                      : 'text-gray-400 hover:text-gray-200'
-                  }`}
-                  aria-label="Grid view"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-                </button>
-                <button
+                  className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                 >
+                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                 </button>
+                 <button 
                   onClick={() => setViewMode('list')}
-                  className={`flex items-center gap-1 rounded-full px-3 py-1.5 transition-all ${
-                    viewMode === 'list'
-                      ? 'bg-cyan-500 text-white shadow-sm'
-                      : 'text-gray-400 hover:text-gray-200'
-                  }`}
-                  aria-label="List view"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
+                  className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                 >
+                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16"/></svg>
+                 </button>
               </div>
+              <Link href="/register" className="btn-premium flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4"/></svg>
+                Register Asset
+              </Link>
             </div>
-          </section>
+          </div>
 
-          {/* Trademark Grid/List */}
-          {isLoading ? (
-            <LoadingSpinner text="Loading trademarks..." />
-          ) : filteredTrademarks.length === 0 ? (
-            <div className="text-center py-12">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.562M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-white">No trademarks found</h3>
-              <p className="mt-1 text-sm text-gray-400">
-                Try adjusting your search criteria or filters.
-              </p>
-            </div>
-          ) : (
-            <div className={viewMode === 'grid' 
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
-              : "space-y-4"
-            }>
-              {filteredTrademarks.map((trademark) => (
-                <TrademarkCard key={trademark.tokenId} trademark={trademark} viewMode={viewMode} />
-              ))}
-            </div>
-          )}
+          <div className="grid lg:grid-cols-[1fr_300px] gap-12 items-start">
+             <div className="lg:order-2 space-y-8 animate-slide-in-right">
+                <div className="glass-card !p-6">
+                   <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6">Search Registry</h3>
+                   <div className="relative">
+                      <input 
+                        type="text" 
+                        className="premium-input !pl-12" 
+                        placeholder="Name, ID, Owner..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                      <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                   </div>
+                </div>
 
-          {/* Stats Section */}
-          <section className="mt-14 rounded-2xl border border-gray-800 bg-gray-900/50 px-6 py-6 text-sm text-gray-300">
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-[0.22em] text-gray-400">
-                  Marketplace Snapshot
-                </p>
-                <p className="text-sm text-gray-300">
-                  High-level metrics from the current demo dataset.
-                </p>
-              </div>
-            </div>
+                <div className="glass-card !p-6">
+                   <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6">Categories</h3>
+                   <div className="space-y-2">
+                      <button 
+                        onClick={() => setSelectedCategory('')}
+                        className={`w-full text-left px-4 py-2 rounded-xl text-sm font-bold transition-all ${selectedCategory === '' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-white/[0.03] hover:text-slate-200'}`}
+                      >
+                        All Assets
+                      </button>
+                      {TRADEMARK_CATEGORIES.map(cat => (
+                        <button 
+                          key={cat}
+                          onClick={() => setSelectedCategory(cat)}
+                          className={`w-full text-left px-4 py-2 rounded-xl text-sm font-bold transition-all ${selectedCategory === cat ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-white/[0.03] hover:text-slate-200'}`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                   </div>
+                </div>
 
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="rounded-xl border border-gray-800 bg-gray-950/50 px-4 py-3">
-                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-400 mb-1">Total Trademarks</p>
-                <p className="text-xl font-semibold text-white">{trademarks.length}</p>
-              </div>
-              <div className="rounded-xl border border-gray-800 bg-gray-950/50 px-4 py-3">
-                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-400 mb-1">Verified</p>
-                <p className="text-xl font-semibold text-white">{trademarks.filter(tm => tm.verified).length}</p>
-              </div>
-              <div className="rounded-xl border border-gray-800 bg-gray-950/50 px-4 py-3">
-                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-400 mb-1">Categories</p>
-                <p className="text-xl font-semibold text-white">{new Set(trademarks.map(tm => tm.category)).size}</p>
-              </div>
-              <div className="rounded-xl border border-gray-800 bg-gray-950/50 px-4 py-3">
-                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-400 mb-1">Unique Owners</p>
-                <p className="text-xl font-semibold text-white">{new Set(trademarks.map(tm => tm.creatorAddress)).size}</p>
-              </div>
-            </div>
-          </section>
+                <div className="glass-card !p-6">
+                   <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6">Verification</h3>
+                   <label className="flex items-center gap-3 cursor-pointer group">
+                      <div className="relative flex items-center">
+                         <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={showVerifiedOnly}
+                          onChange={(e) => setShowVerifiedOnly(e.target.checked)}
+                         />
+                         <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                      </div>
+                      <span className="text-sm font-bold text-slate-400 group-hover:text-slate-200 transition-colors">Verified Only</span>
+                   </label>
+                </div>
+             </div>
+
+             <div className="lg:order-1 animate-slide-up">
+                {isLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     {[1,2,3,4].map(i => (
+                       <div key={i} className="glass-card aspect-[4/3] animate-pulse bg-white/5" />
+                     ))}
+                  </div>
+                ) : filteredTrademarks.length > 0 ? (
+                  <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 gap-8" : "space-y-6"}>
+                    {filteredTrademarks.map((tm, i) => (
+                      <div key={tm.tokenId} className="animate-slide-up" style={{ animationDelay: `${i * 100}ms` }}>
+                        <TrademarkCard trademark={tm} viewMode={viewMode} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="glass-card py-32 text-center">
+                     <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg className="w-12 h-12 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                     </div>
+                     <h3 className="text-2xl font-black mb-2">No Assets Found</h3>
+                     <p className="text-slate-400 mb-8">Try adjusting your filters or search terms for the registry.</p>
+                     <button onClick={() => {setSearchTerm(''); setSelectedCategory(''); setShowVerifiedOnly(false);}} className="btn-glass">Clear All Filters</button>
+                  </div>
+                )}
+
+                <div className="mt-16 pt-8 border-t border-white/5 flex flex-wrap gap-12 opacity-50">
+                   <div>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Live Inventory</p>
+                      <p className="text-lg font-black text-white">{filteredTrademarks.length}</p>
+                   </div>
+                   <div>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Authenticated</p>
+                      <p className="text-lg font-black text-indigo-400">{filteredTrademarks.filter(tm => tm.verified).length}</p>
+                   </div>
+                   <div>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Registry Nodes</p>
+                      <p className="text-lg font-black text-white">POLYGON_MAINNET</p>
+                   </div>
+                </div>
+             </div>
+          </div>
         </div>
       </main>
 
       <Footer />
-    </>
+    </div>
   );
 }
