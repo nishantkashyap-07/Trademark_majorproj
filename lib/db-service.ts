@@ -525,6 +525,57 @@ export class DatabaseService {
     }
   }
 
+  async markAllNotificationsAsRead(userAddress: string) {
+    try {
+      const q = query(
+        collection(db, 'notifications'),
+        where('userId', '==', userAddress.toLowerCase()),
+        where('read', '==', false)
+      );
+
+      const snapshot = await getDocs(q);
+      const updatePromises = snapshot.docs.map(docSnap =>
+        updateDoc(docSnap.ref, {
+          read: true,
+          readAt: Timestamp.now(),
+        })
+      );
+
+      await Promise.all(updatePromises);
+      return { success: true, count: snapshot.size };
+    } catch (error: any) {
+      console.error('Mark All Notifications As Read Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getUnreadNotificationCount(userAddress: string) {
+    try {
+      const q = query(
+        collection(db, 'notifications'),
+        where('userId', '==', userAddress.toLowerCase()),
+        where('read', '==', false)
+      );
+
+      const snapshot = await getDocs(q);
+      return { success: true, count: snapshot.size };
+    } catch (error: any) {
+      console.error('Get Unread Notification Count Error:', error);
+      return { success: false, error: error.message, count: 0 };
+    }
+  }
+
+  async deleteNotification(notificationId: string) {
+    try {
+      const notificationRef = doc(db, 'notifications', notificationId);
+      await deleteDoc(notificationRef);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Delete Notification Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Report methods
   async createReport(data: any) {
     try {

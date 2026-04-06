@@ -152,6 +152,45 @@ class ApiClient {
       };
     }
   }
+
+  // Notifications API
+  async getNotifications(address: string, unreadOnly: boolean = false) {
+    const params = new URLSearchParams({ address });
+    if (unreadOnly) params.append('unreadOnly', 'true');
+    return this.request(`/notifications?${params.toString()}`);
+  }
+
+  async getUnreadCount(address: string) {
+    return this.request(`/notifications/unread-count?address=${address}`);
+  }
+
+  async markNotificationAsRead(notificationId: string) {
+    return this.request(`/notifications/${notificationId}`, {
+      method: 'PUT',
+    });
+  }
+
+  async markAllNotificationsAsRead(address: string) {
+    return this.request('/notifications/mark-all-read', {
+      method: 'PUT',
+      body: JSON.stringify({ address }),
+    });
+  }
+
+  async createNotification(data: {
+    userId: string;
+    type?: string;
+    title: string;
+    message: string;
+    relatedId?: string;
+    relatedType?: string;
+    link?: string;
+  }) {
+    return this.request('/notifications', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 // Export singleton instance
