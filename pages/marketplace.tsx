@@ -4,8 +4,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useWeb3 } from '@/contexts/Web3Context';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import TrademarkCard from '@/components/TrademarkCard';
+import AnimatedPage from '@/components/AnimatedPage';
+import AnimatedCard from '@/components/AnimatedCard';
+import AnimatedBadge from '@/components/AnimatedBadge';
+import HolographicCard from '@/components/HolographicCard';
+import ShimmerButton from '@/components/ShimmerButton';
+import ParticleField from '@/components/ParticleField';
+import GlowingOrb from '@/components/GlowingOrb';
+import GridBackground from '@/components/GridBackground';
 import { TrademarkMetadata } from '@/types';
 import { TRADEMARK_CATEGORIES } from '@/utils/constants';
 
@@ -71,24 +78,27 @@ export default function Marketplace() {
   }, [trademarks, searchTerm, selectedCategory, sortBy, showVerifiedOnly]);
 
   return (
-    <div className="bg-[#05070a] selection:bg-indigo-500/30">
-      <Head>
-        <title>Marketplace | TrademarkChain Protocol</title>
-      </Head>
+    <AnimatedPage>
+      <div className="bg-[#05070a] selection:bg-indigo-500/30">
+        <Head>
+          <title>Marketplace | TrademarkChain Protocol</title>
+        </Head>
 
-      <Navbar />
+        <Navbar />
 
       <main className="min-h-screen pt-32 pb-20 overflow-hidden">
         {/* Ambient Gradients */}
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/5 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-cyan-600/5 blur-[120px] rounded-full pointer-events-none" />
+        <GridBackground />
+        <ParticleField />
+        <GlowingOrb />
 
         <div className="container-custom relative z-10">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[10px] font-black text-indigo-400 mb-4 tracking-widest uppercase">
-                Global Asset Discovery
-              </div>
+              <AnimatedBadge text="Global Asset Discovery" color="blue" />
+              <div className="mt-4"></div>
               <h1 className="text-4xl md:text-6xl font-black text-white mb-4">IP Marketplace</h1>
               <p className="text-slate-400 text-lg">Explore and verify authentic intellectual property assets registered on the universal ledger.</p>
             </div>
@@ -117,7 +127,8 @@ export default function Marketplace() {
 
           <div className="grid lg:grid-cols-[1fr_300px] gap-12 items-start">
              <div className="lg:order-2 space-y-8 animate-slide-in-right">
-                <div className="glass-card !p-6">
+                <HolographicCard>
+                  <div className="glass-card !p-6">
                    <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6">Search Registry</h3>
                    <div className="relative">
                       <input 
@@ -130,8 +141,10 @@ export default function Marketplace() {
                       <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                    </div>
                 </div>
+                </HolographicCard>
 
-                <div className="glass-card !p-6">
+                <HolographicCard>
+                  <div className="glass-card !p-6">
                    <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6">Categories</h3>
                    <div className="space-y-2">
                       <button 
@@ -151,8 +164,10 @@ export default function Marketplace() {
                       ))}
                    </div>
                 </div>
+                </HolographicCard>
 
-                <div className="glass-card !p-6">
+                <HolographicCard>
+                  <div className="glass-card !p-6">
                    <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6">Verification</h3>
                    <label className="flex items-center gap-3 cursor-pointer group">
                       <div className="relative flex items-center">
@@ -167,6 +182,7 @@ export default function Marketplace() {
                       <span className="text-sm font-bold text-slate-400 group-hover:text-slate-200 transition-colors">Verified Only</span>
                    </label>
                 </div>
+                </HolographicCard>
              </div>
 
              <div className="lg:order-1 animate-slide-up">
@@ -179,9 +195,11 @@ export default function Marketplace() {
                 ) : filteredTrademarks.length > 0 ? (
                   <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 gap-8" : "space-y-6"}>
                     {filteredTrademarks.map((tm, i) => (
-                      <div key={tm.tokenId} className="animate-slide-up" style={{ animationDelay: `${i * 100}ms` }}>
-                        <TrademarkCard trademark={tm} viewMode={viewMode} />
-                      </div>
+                      <HolographicCard key={tm.tokenId}>
+                        <AnimatedCard delay={i * 0.05}>
+                          <TrademarkCard trademark={tm} viewMode={viewMode} />
+                        </AnimatedCard>
+                      </HolographicCard>
                     ))}
                   </div>
                 ) : (
@@ -213,8 +231,7 @@ export default function Marketplace() {
           </div>
         </div>
       </main>
-
-      <Footer />
-    </div>
+      </div>
+    </AnimatedPage>
   );
 }

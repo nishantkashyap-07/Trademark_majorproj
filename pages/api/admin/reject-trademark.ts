@@ -49,6 +49,25 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       reason: reason || 'No reason provided',
     });
 
+    // Log to verification history
+    const { db } = await import('@/lib/firebase');
+    const { addDoc, collection, Timestamp, getDoc, doc } = await import('firebase/firestore');
+    
+    const trademarkRef = doc(db, 'trademarks', trademarkId);
+    const trademarkSnap = await getDoc(trademarkRef);
+    const trademarkData = trademarkSnap.exists() ? trademarkSnap.data() : {};
+    
+    await addDoc(collection(db, 'verificationHistory'), {
+      adminAddress,
+      action: 'rejected',
+      trademarkId,
+      tokenId: trademarkData.tokenId || 0,
+      trademarkName: trademarkData.trademarkName || trademarkData.sloganText || 'Unknown',
+      companyName: trademarkData.companyName || 'Unknown',
+      reason: reason || 'No reason provided',
+      timestamp: Timestamp.now(),
+    });
+
     // Log the rejection (keep for backward compatibility)
     await dbService.createActivityLog({
       type: 'trademark_rejected',

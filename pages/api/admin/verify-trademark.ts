@@ -115,6 +115,20 @@ async function handler(
       },
     });
 
+    // Log to verification history
+    const trademarkData = trademarkSnap.data();
+    const { addDoc, collection: firestoreCollection } = await import('firebase/firestore');
+    await addDoc(firestoreCollection(db, 'verificationHistory'), {
+      adminAddress,
+      action: 'verified',
+      trademarkId,
+      tokenId,
+      trademarkName: trademarkData.trademarkName || trademarkData.sloganText,
+      companyName: trademarkData.companyName,
+      timestamp: Timestamp.now(),
+      blockchainTxHash,
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Trademark verified successfully',

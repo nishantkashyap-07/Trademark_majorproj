@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { useAuth } from '@/contexts/AuthContext';
 import { useWeb3 } from '@/contexts/Web3Context';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import { TrademarkFormData } from '@/types';
 import { TRADEMARK_CATEGORIES, ROYALTY_CONSTRAINTS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/utils/constants';
 import { uploadFilesToIPFS, uploadMetadataToIPFS, createTrademarkMetadata } from '@/utils/ipfs';
@@ -12,6 +12,7 @@ import { ethers } from 'ethers';
 
 export default function RegisterTrademark() {
   const router = useRouter();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const { account, isConnected, connect } = useWeb3();
   
   const [formData, setFormData] = useState<TrademarkFormData>({
@@ -33,6 +34,9 @@ export default function RegisterTrademark() {
   const [dragActive, setDragActive] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [showWalletPrompt, setShowWalletPrompt] = useState(false);
 
   const steps = [
     { id: 1, name: 'Identity', description: 'Brand details' },
@@ -40,9 +44,51 @@ export default function RegisterTrademark() {
     { id: 3, name: 'Finalize', description: 'Review & Mint' },
   ];
 
+  useEffect(() => {
+    // Redirect to login if not authenticated
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, authLoading, router]);
+
   const handleInputChange = (field: keyof TrademarkFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setError('');
+    // Clear validation error for this field
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateStep = (step: number): boolean => {
+    const errors: Record<string, string> = {};
+    
+    if (step === 1) {
+      if (!formData.companyName.trim()) errors.companyName = 'Company name is required';
+      if (!formData.sloganText.trim()) errors.sloganText = 'Trademark/Slogan is required';
+      if (!formData.registrationNumber.trim()) errors.registrationNumber = 'Registration number is required';
+      if (!formData.category) errors.category = 'Category is required';
+      if (!formData.description.trim()) errors.description = 'Description is required';
+    }
+    
+    if (step === 2) {
+      if (formData.files.length === 0) errors.files = 'At least one file is required';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(s => s + 1);
+    } else {
+      setError('Please fill in all required fields');
+    }
   };
 
   const generateRegistrationNumber = async () => {
@@ -84,22 +130,43 @@ export default function RegisterTrademark() {
       return;
     }
     
-    const validFiles = fileArray.filter(file => {
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'application/pdf'];
-      return file.size <= 10 * 1024 * 1024 && allowedTypes.includes(file.type);
-    });
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'application/pdf'];
+    const maxSize = 10 * 1024 * 1024;
+    
+    const invalidFiles = fileArray.filter(file => 
+      !allowedTypes.includes(file.type) || file.size > maxSize
+    );
+    
+    if (invalidFiles.length > 0) {
+      const invalidNames = invalidFiles.map(f => f.name).join(', ');
+      setError(`Invalid files: ${invalidNames}. Only JPG, PNG, SVG, PDF under 10MB allowed.`);
+      return;
+    }
+    
+    const validFiles = fileArray.filter(file => 
+      file.size <= maxSize && allowedTypes.includes(file.type)
+    );
     
     setFormData(prev => ({ ...prev, files: validFiles }));
     setPreviewUrls(validFiles.map(file => file.type.startsWith('image/') ? URL.createObjectURL(file) : ''));
+    setError('');
   };
 
   const handleSubmit = async () => {
-    if (!isConnected || !account) return;
+    // Check if wallet is connected for blockchain operations
+    if (!isConnected || !account) {
+      setShowWalletPrompt(true);
+      return;
+    }
+
     setIsLoading(true);
     setError('');
+    setUploadProgress(10);
 
     try {
+      setUploadProgress(20);
       const assetsCID = await uploadFilesToIPFS(formData.files);
+      setUploadProgress(50);
       const metadata = createTrademarkMetadata(
         {
           companyName: formData.companyName,
@@ -113,6 +180,7 @@ export default function RegisterTrademark() {
       );
       
       const metadataCID = await uploadMetadataToIPFS(metadata);
+      setUploadProgress(70);
       const tokenURI = `ipfs://${metadataCID}/metadata.json`;
       
       let useBlockchain = false;
@@ -165,7 +233,7 @@ export default function RegisterTrademark() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             tokenId: Date.now(),
-            creatorAddress: account,
+            creatorAddress: account || user?.email || 'unknown',
             sloganText: formData.sloganText,
             companyName: formData.companyName,
             registrationNumber: formData.registrationNumber,
@@ -183,28 +251,27 @@ export default function RegisterTrademark() {
         if (!response.ok) throw new Error(data.error);
       }
 
+      setUploadProgress(100);
       setSuccess('Asset registered successfully on-chain. Redirecting...');
-      setTimeout(() => router.push('/marketplace'), 2000);
+      setTimeout(() => router.push('/dashboard'), 2000);
     } catch (err: any) {
       setError(err.message || 'Minting failed. Check network status.');
+      setUploadProgress(0);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isConnected) {
+  if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#05070a] flex items-center justify-center p-4">
-        <div className="glass-card max-w-md w-full text-center p-12">
-          <div className="w-20 h-20 bg-indigo-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8">
-            <svg className="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-          </div>
-          <h1 className="text-3xl font-black mb-4">Authentication Required</h1>
-          <p className="text-slate-400 mb-10">Please connect your Web3 wallet to access the intellectual property registry.</p>
-          <button onClick={connect} className="btn-premium w-full !py-4">Connect Wallet</button>
-        </div>
+      <div className="min-h-screen bg-[#05070a] flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
       </div>
     );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Will redirect via useEffect
   }
 
   return (
@@ -216,10 +283,10 @@ export default function RegisterTrademark() {
       <Navbar />
 
       <main className="flex-1 pt-32 pb-20 relative">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-cyan-600/5 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none -z-10" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-cyan-600/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
-        <div className="container-custom relative z-10">
+        <div className="container-custom relative z-20">
           <div className="max-w-4xl mx-auto">
           <div className="mb-12 text-center">
              <h1 className="text-4xl md:text-5xl font-black mb-4">Register New Asset</h1>
@@ -248,39 +315,45 @@ export default function RegisterTrademark() {
             </div>
           </div>
 
-          <div className="glass-card !p-8 md:!p-12 animate-slide-up">
+          <div className="glass-card !p-8 md:!p-12 animate-slide-up relative z-30">
             {currentStep === 1 && (
               <div className="space-y-8">
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Company Entity</label>
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Company Entity *</label>
                     <input
                       type="text"
-                      className="premium-input"
+                      className={`premium-input ${validationErrors.companyName ? 'border-red-500' : ''}`}
                       placeholder="e.g. Acme Corporation"
                       value={formData.companyName}
                       onChange={(e) => handleInputChange('companyName', e.target.value)}
                     />
+                    {validationErrors.companyName && (
+                      <p className="text-xs text-red-400 ml-1">{validationErrors.companyName}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Trademark / Slogan</label>
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Trademark / Slogan *</label>
                     <input
                       type="text"
-                      className="premium-input"
+                      className={`premium-input ${validationErrors.sloganText ? 'border-red-500' : ''}`}
                       placeholder="e.g. Just Do It"
                       value={formData.sloganText}
                       onChange={(e) => handleInputChange('sloganText', e.target.value)}
                     />
+                    {validationErrors.sloganText && (
+                      <p className="text-xs text-red-400 ml-1">{validationErrors.sloganText}</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Registry ID</label>
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Registry ID *</label>
                     <div className="flex gap-3">
                       <input
                         type="text"
-                        className="premium-input bg-white/[0.01] cursor-not-allowed"
+                        className={`premium-input bg-white/[0.01] cursor-not-allowed ${validationErrors.registrationNumber ? 'border-red-500' : ''}`}
                         placeholder="Generate secure ID..."
                         value={formData.registrationNumber}
                         readOnly
@@ -293,52 +366,77 @@ export default function RegisterTrademark() {
                         {isGenerating ? '...' : 'Gen'}
                       </button>
                     </div>
+                    {validationErrors.registrationNumber && (
+                      <p className="text-xs text-red-400 ml-1">{validationErrors.registrationNumber}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Asset Category</label>
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Asset Category *</label>
                     <select
-                      className="premium-input appearance-none bg-indigo-500/5"
+                      className={`premium-input appearance-none bg-indigo-500/5 ${validationErrors.category ? 'border-red-500' : ''}`}
                       value={formData.category}
                       onChange={(e) => handleInputChange('category', e.target.value)}
                     >
                       <option value="" disabled className="bg-[#05070a]">Select Category</option>
                       {TRADEMARK_CATEGORIES.map(c => <option key={c} value={c} className="bg-[#05070a]">{c}</option>)}
                     </select>
+                    {validationErrors.category && (
+                      <p className="text-xs text-red-400 ml-1">{validationErrors.category}</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Asset Description</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Asset Description *</label>
                   <textarea
                     rows={4}
-                    className="premium-input resize-none"
+                    className={`premium-input resize-none ${validationErrors.description ? 'border-red-500' : ''}`}
                     placeholder="Describe the usage and value of this trademark..."
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                   />
+                  {validationErrors.description && (
+                    <p className="text-xs text-red-400 ml-1">{validationErrors.description}</p>
+                  )}
                 </div>
               </div>
             )}
 
             {currentStep === 2 && (
               <div className="space-y-8">
+                {validationErrors.files && (
+                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm font-bold">
+                    {validationErrors.files}
+                  </div>
+                )}
                 <div 
                   className={`relative border-2 border-dashed rounded-3xl p-16 text-center transition-all ${
-                    dragActive ? 'border-indigo-500 bg-indigo-500/5 scale-[0.99]' : 'border-white/10 hover:border-white/20'
+                    dragActive ? 'border-indigo-500 bg-indigo-500/5 scale-[0.99]' : validationErrors.files ? 'border-red-500/50' : 'border-white/10 hover:border-white/20'
                   }`}
                   onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
                   onDragLeave={() => setDragActive(false)}
                   onDrop={(e) => { e.preventDefault(); setDragActive(false); handleFileUpload(e.dataTransfer.files); }}
                 >
-                  <div className="w-20 h-20 bg-white/[0.03] rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <div className="w-20 h-20 bg-white/[0.03] rounded-2xl flex items-center justify-center mx-auto mb-6 pointer-events-none">
                     <svg className="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Upload Proof Documents</h3>
-                  <p className="text-slate-400 mb-8 max-w-sm mx-auto text-sm">Upload logos, legal documents, or usage evidence (MAX 10MB each).</p>
-                  <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e.target.files)} />
-                  <button className="px-8 py-3 bg-white/5 border border-white/10 rounded-2xl font-bold hover:bg-white/10 transition-all">Select Files</button>
+                  <h3 className="text-xl font-bold mb-2 pointer-events-none">Upload Proof Documents</h3>
+                  <p className="text-slate-400 mb-8 max-w-sm mx-auto text-sm pointer-events-none">Upload logos, legal documents, or usage evidence (MAX 10MB each).</p>
+                  <input 
+                    type="file" 
+                    multiple 
+                    id="file-upload"
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                    onChange={(e) => handleFileUpload(e.target.files)} 
+                  />
+                  <label 
+                    htmlFor="file-upload"
+                    className="inline-block px-8 py-3 bg-white/5 border border-white/10 rounded-2xl font-bold hover:bg-white/10 transition-all cursor-pointer relative z-20"
+                  >
+                    Select Files
+                  </label>
                 </div>
 
                 {formData.files.length > 0 && (
@@ -366,6 +464,41 @@ export default function RegisterTrademark() {
 
             {currentStep === 3 && (
               <div className="space-y-8">
+                {/* Wallet Connection Prompt */}
+                {showWalletPrompt && !isConnected && (
+                  <div className="bg-amber-500/10 rounded-2xl p-6 border border-amber-500/20 animate-fade-in">
+                    <div className="flex gap-4 mb-6">
+                      <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <svg className="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-lg font-bold text-amber-200 mb-2">Wallet Connection Required</p>
+                        <p className="text-sm text-amber-200/70 leading-relaxed mb-4">
+                          To mint your trademark as an NFT on the blockchain, you need to connect your MetaMask wallet. This enables secure ownership and immutable registration.
+                        </p>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await connect();
+                              setShowWalletPrompt(false);
+                            } catch (err) {
+                              setError('Failed to connect wallet. Please try again.');
+                            }
+                          }}
+                          className="btn-premium !py-3 flex items-center gap-2"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          Connect Wallet Now
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="bg-indigo-500/5 rounded-3xl p-8 border border-indigo-500/10 mb-8">
                   <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-6">Execution Summary</h3>
                   <div className="grid grid-cols-2 gap-y-6 gap-x-12">
@@ -404,6 +537,21 @@ export default function RegisterTrademark() {
 
             {error && <div className="mt-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm font-bold animate-shake">{error}</div>}
             {success && <div className="mt-8 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-sm font-bold animate-fade-in">{success}</div>}
+            
+            {isLoading && uploadProgress > 0 && (
+              <div className="mt-8">
+                <div className="flex justify-between text-xs font-bold text-slate-400 mb-2">
+                  <span>Upload Progress</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-indigo-600 to-cyan-500 transition-all duration-500"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="mt-12 flex justify-between items-center">
               <button
@@ -415,7 +563,7 @@ export default function RegisterTrademark() {
               
               {currentStep < 3 ? (
                 <button 
-                  onClick={() => setCurrentStep(s => s + 1)}
+                  onClick={handleNextStep}
                   className="btn-premium !px-10"
                 >
                   Continue
@@ -437,8 +585,6 @@ export default function RegisterTrademark() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

@@ -3,7 +3,6 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useWeb3 } from '@/contexts/Web3Context';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import LicenseCard from '@/components/LicenseCard';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -83,8 +82,6 @@ export default function LicensesPage() {
             </button>
           </div>
         </main>
-
-        <Footer />
       </>
     );
   }
@@ -334,8 +331,6 @@ export default function LicensesPage() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </>
   );
 }

@@ -131,6 +131,14 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       // Clear disconnect flag when user manually connects
       localStorage.removeItem('walletDisconnected');
       
+      // Show success notification
+      if (typeof window !== 'undefined') {
+        const event = new CustomEvent('wallet-connected', { 
+          detail: { address, chainId: networkChainId } 
+        });
+        window.dispatchEvent(event);
+      }
+      
       // Check if on correct network (skip if we couldn't get network info)
       if (networkChainId && networkChainId !== DEFAULT_CHAIN.chainId) {
         console.log(`Connected to chain ${networkChainId}, expected ${DEFAULT_CHAIN.chainId}`);
@@ -145,12 +153,25 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       // User rejected the request
       if (error.code === 4001) {
         console.log('User rejected connection');
+        // Dispatch rejection event for modal to handle
+        if (typeof window !== 'undefined') {
+          const event = new CustomEvent('wallet-connection-rejected', { 
+            detail: { message: 'Connection request was rejected' } 
+          });
+          window.dispatchEvent(event);
+        }
         return; // Don't throw, just exit silently
       }
       
       // Already processing request
       if (error.code === -32002) {
         console.log('Connection request already pending');
+        if (typeof window !== 'undefined') {
+          const event = new CustomEvent('wallet-connection-error', { 
+            detail: { message: 'Connection request already pending in MetaMask' } 
+          });
+          window.dispatchEvent(event);
+        }
         return; // Don't throw, just exit silently
       }
       
@@ -160,6 +181,14 @@ export function Web3Provider({ children }: Web3ProviderProps) {
         message: error.message,
         data: error.data
       });
+      
+      // Dispatch error event for other errors
+      if (typeof window !== 'undefined') {
+        const event = new CustomEvent('wallet-connection-error', { 
+          detail: { message: error.message || 'Failed to connect wallet' } 
+        });
+        window.dispatchEvent(event);
+      }
       
       // Only throw for unexpected errors
       if (error.code !== 4001 && error.code !== -32002) {
@@ -176,8 +205,19 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     setIsConnected(false);
     setTrademarkNFTContract(null);
     setMarketplaceContract(null);
+    
     // Set flag to prevent auto-reconnect
     localStorage.setItem('walletDisconnected', 'true');
+    
+    // Note: We cannot programmatically disconnect from MetaMask
+    // MetaMask maintains the connection permission until user manually revokes it
+    // This is standard Web3 behavior for security reasons
+    
+    // Show disconnect notification
+    if (typeof window !== 'undefined') {
+      const event = new CustomEvent('wallet-disconnected');
+      window.dispatchEvent(event);
+    }
   };
 
   const switchNetwork = async () => {

@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useAuth } from '@/contexts/AuthContext';
 import { useWeb3 } from '@/contexts/Web3Context';
+import WalletModal from './WalletModal';
 
 export default function Navbar() {
   const router = useRouter();
-  const { account, isConnected, connect, disconnect } = useWeb3();
+  const { isAuthenticated, user, logout } = useAuth();
+  const { account, isConnected, disconnect } = useWeb3();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [scrolled, setScrolled] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -20,6 +24,7 @@ export default function Navbar() {
     { name: 'Marketplace', href: '/marketplace' },
     { name: 'Register IP', href: '/register' },
     { name: 'Verify IP', href: '/verify' },
+    { name: 'Disputes', href: '/disputes' },
   ];
 
   const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_ADDRESS?.toLowerCase();
@@ -36,7 +41,7 @@ export default function Navbar() {
     <nav 
       className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${
         scrolled 
-          ? 'py-3 bg-[#05070a]/80 backdrop-blur-2xl border-b border-white/5 shadow-2xl shadow-indigo-500/5' 
+          ? 'py-3 liquid-glass border-b border-white/5 shadow-2xl shadow-indigo-500/5' 
           : 'py-6 bg-transparent'
       }`}
     >
@@ -99,26 +104,75 @@ export default function Navbar() {
                </Link>
             )}
             
-            {isConnected ? (
+            {isAuthenticated ? (
               <>
                 <Link href="/dashboard" className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-all">
                   <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                 </Link>
-                <div className="flex items-center gap-3 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
-                  <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" />
-                  <span className="text-xs font-black text-slate-200 font-mono hidden xl:inline">{account?.slice(0, 6)}...{account?.slice(-4)}</span>
-                  <button onClick={disconnect} className="p-1 text-slate-500 hover:text-red-400 transition-colors">
+                
+                {/* User Info */}
+                <div className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-xl group relative">
+                  <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                  <span className="text-xs font-black text-slate-200 hidden xl:inline">
+                    {user?.name || user?.email?.split('@')[0]}
+                  </span>
+                  <button 
+                    onClick={logout} 
+                    className="p-1 text-slate-500 hover:text-red-400 transition-colors"
+                    title="Logout"
+                  >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7" /></svg>
                   </button>
                 </div>
+
+                {/* Wallet Connection (Optional) */}
+                {isConnected ? (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
+                    <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    <span className="text-xs font-mono text-indigo-300 hidden xl:inline">{account?.slice(0, 4)}...{account?.slice(-4)}</span>
+                    <button 
+                      onClick={() => setShowWalletModal(true)} 
+                      className="p-1 text-indigo-400 hover:text-indigo-300 transition-colors"
+                      title="Switch wallet"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                      </svg>
+                    </button>
+                    <button 
+                      onClick={disconnect} 
+                      className="p-1 text-indigo-400 hover:text-red-400 transition-colors"
+                      title="Disconnect wallet"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setShowWalletModal(true)}
+                    className="px-4 py-2 text-xs font-bold text-indigo-400 border border-indigo-500/20 rounded-xl hover:bg-indigo-500/10 transition-all"
+                  >
+                    Connect Wallet
+                  </button>
+                )}
               </>
             ) : (
-              <button 
-                onClick={connect}
-                className="btn-premium !px-6 !py-2.5 !text-xs !rounded-xl"
-              >
-                Sync Wallet
-              </button>
+              <>
+                <Link 
+                  href="/login"
+                  className="px-6 py-2.5 text-xs font-black uppercase tracking-widest text-slate-300 hover:text-white transition-colors rounded-xl hover:bg-white/5"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="btn-premium !px-6 !py-2.5 !text-xs !rounded-xl"
+                >
+                  Get Started
+                </Link>
+              </>
             )}
 
             <button
@@ -154,6 +208,11 @@ export default function Navbar() {
           </div>
         )}
       </div>
+
+      <WalletModal 
+        isOpen={showWalletModal} 
+        onClose={() => setShowWalletModal(false)} 
+      />
     </nav>
   );
 }

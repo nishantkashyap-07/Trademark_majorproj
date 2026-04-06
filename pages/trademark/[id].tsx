@@ -3,7 +3,6 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import LicenseModal from '@/components/LicenseModal';
 import PurchaseLicenseModal from '@/components/PurchaseLicenseModal';
 import LicenseCard from '@/components/LicenseCard';
@@ -275,8 +274,6 @@ export default function TrademarkDetail() {
           </div>
         </div>
       </main>
-
-      <Footer />
 
       <LicenseModal
         isOpen={showLicenseModal}

@@ -1,7 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import SplineBackground from '@/components/SplineBackground';
 
 interface Category {
@@ -265,8 +264,6 @@ export default function Categories() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </>
   );
 }

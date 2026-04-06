@@ -3,7 +3,6 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useWeb3 } from '@/contexts/Web3Context';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Toast from '@/components/Toast';
 import AdminVerificationPanel from '@/components/AdminVerificationPanel';
@@ -29,10 +28,14 @@ export default function AdminDashboard() {
   const [verifiedTrademarks, setVerifiedTrademarks] = useState<PendingTrademark[]>([]);
   const [reports, setReports] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pending' | 'verified' | 'reports'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'verified' | 'reports' | 'history'>('pending');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [selectedTrademark, setSelectedTrademark] = useState<PendingTrademark | null>(null);
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
+  const [selectedTrademarks, setSelectedTrademarks] = useState<Set<string>>(new Set());
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [filterPriority, setFilterPriority] = useState<'all' | 'urgent' | 'normal' | 'low'>('all');
+  const [verificationHistory, setVerificationHistory] = useState<any[]>([]);
 
   // Admin addresses (in production, this should be in environment variables)
   const ADMIN_ADDRESSES = [
@@ -55,7 +58,88 @@ export default function AdminDashboard() {
 
     loadTrademarks();
     loadReports();
+    loadVerificationHistory();
   }, [isConnected, isAdmin, router]);
+
+  const loadVerificationHistory = async () => {
+    try {
+      const response = await fetch(`/api/admin/verification-history?adminAddress=${account}`);
+      const data = await response.json();
+      if (data.success) {
+        setVerificationHistory(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error loading verification history:', error);
+    }
+  };
+
+  const toggleTrademarkSelection = (id: string) => {
+    const newSelection = new Set(selectedTrademarks);
+    if (newSelection.has(id)) {
+      newSelection.delete(id);
+    } else {
+      newSelection.add(id);
+    }
+    setSelectedTrademarks(newSelection);
+    setShowBulkActions(newSelection.size > 0);
+  };
+
+  const selectAll = () => {
+    const allIds = new Set(pendingTrademarks.map(tm => tm.id));
+    setSelectedTrademarks(allIds);
+    setShowBulkActions(true);
+  };
+
+  const clearSelection = () => {
+    setSelectedTrademarks(new Set());
+    setShowBulkActions(false);
+  };
+
+  const handleBulkVerify = async () => {
+    if (selectedTrademarks.size === 0) return;
+    
+    setIsLoading(true);
+    try {
+      const promises = Array.from(selectedTrademarks).map(async (id) => {
+        const tm = pendingTrademarks.find(t => t.id === id);
+        if (tm) {
+          await handleVerify(id, tm.tokenId);
+        }
+      });
+      
+      await Promise.all(promises);
+      setToast({ message: `${selectedTrademarks.size} trademarks verified successfully!`, type: 'success' });
+      clearSelection();
+      await loadTrademarks();
+    } catch (error) {
+      setToast({ message: 'Bulk verification failed', type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (selectedTrademarks.size === 0) return;
+    
+    const reason = prompt('Enter rejection reason for all selected trademarks:');
+    if (!reason) return;
+    
+    setIsLoading(true);
+    try {
+      const promises = Array.from(selectedTrademarks).map(async (id) => {
+        await handleReject(id, reason);
+      });
+      
+      await Promise.all(promises);
+      setToast({ message: `${selectedTrademarks.size} trademarks rejected`, type: 'info' });
+      clearSelection();
+      await loadTrademarks();
+    } catch (error) {
+      setToast({ message: 'Bulk rejection failed', type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadTrademarks = async () => {
     setIsLoading(true);
@@ -187,8 +271,42 @@ export default function AdminDashboard() {
             <p className="text-gray-600">Manage trademark verifications and platform oversight</p>
           </div>
 
+          {/* Bulk Actions Bar */}
+          {showBulkActions && (
+            <div className="mb-8 bg-indigo-600 rounded-2xl p-4 shadow-lg animate-slide-down">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <span className="text-white font-bold">{selectedTrademarks.size} selected</span>
+                  <div className="h-6 w-px bg-white/20" />
+                  <button
+                    onClick={handleBulkVerify}
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
+                  >
+                    ✓ Approve All
+                  </button>
+                  <button
+                    onClick={handleBulkReject}
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
+                  >
+                    ✗ Reject All
+                  </button>
+                </div>
+                <button
+                  onClick={clearSelection}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
             <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
@@ -244,48 +362,144 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Today's Actions</p>
+                  <p className="text-3xl font-bold text-purple-600">{verificationHistory.filter(h => {
+                    const today = new Date().toDateString();
+                    const historyDate = new Date(h.timestamp?.seconds * 1000).toDateString();
+                    return today === historyDate;
+                  }).length}</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Tabs */}
           <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
             <div className="border-b border-gray-200">
-              <div className="flex">
-                <button
-                  onClick={() => setActiveTab('pending')}
-                  className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${
-                    activeTab === 'pending'
-                      ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  Pending Review ({pendingTrademarks.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab('verified')}
-                  className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${
-                    activeTab === 'verified'
-                      ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  Verified ({verifiedTrademarks.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab('reports')}
-                  className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${
-                    activeTab === 'reports'
-                      ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  Reports ({reports.length})
-                </button>
+              <div className="flex items-center justify-between px-6 py-3 bg-gray-50">
+                <div className="flex">
+                  <button
+                    onClick={() => setActiveTab('pending')}
+                    className={`px-6 py-3 text-sm font-semibold transition-colors ${
+                      activeTab === 'pending'
+                        ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Pending Review ({pendingTrademarks.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('verified')}
+                    className={`px-6 py-3 text-sm font-semibold transition-colors ${
+                      activeTab === 'verified'
+                        ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Verified ({verifiedTrademarks.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('reports')}
+                    className={`px-6 py-3 text-sm font-semibold transition-colors ${
+                      activeTab === 'reports'
+                        ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Reports ({reports.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('history')}
+                    className={`px-6 py-3 text-sm font-semibold transition-colors ${
+                      activeTab === 'history'
+                        ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    History ({verificationHistory.length})
+                  </button>
+                </div>
+                
+                {activeTab === 'pending' && pendingTrademarks.length > 0 && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={selectAll}
+                      className="px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      Select All
+                    </button>
+                    {selectedTrademarks.size > 0 && (
+                      <button
+                        onClick={clearSelection}
+                        className="px-3 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="p-6">
               {isLoading ? (
                 <LoadingSpinner text="Loading data..." />
+              ) : activeTab === 'history' ? (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Verification History</h3>
+                  {verificationHistory.length > 0 ? (
+                    <div className="space-y-3">
+                      {verificationHistory.map((history, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
+                        >
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            history.action === 'verified' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                          }`}>
+                            {history.action === 'verified' ? (
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900">
+                              {history.action === 'verified' ? 'Approved' : 'Rejected'} - {history.trademarkName}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Token ID: #{history.tokenId} • {new Date(history.timestamp?.seconds * 1000).toLocaleString()}
+                            </p>
+                            {history.reason && (
+                              <p className="text-xs text-gray-500 mt-1">Reason: {history.reason}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">No history yet</h3>
+                      <p className="mt-1 text-sm text-gray-500">Verification actions will appear here</p>
+                    </div>
+                  )}
+                </div>
               ) : activeTab === 'reports' ? (
                 <div className="space-y-4">
                   {reports.map((report) => (
@@ -364,61 +578,80 @@ export default function AdminDashboard() {
                   {(activeTab === 'pending' ? pendingTrademarks : verifiedTrademarks).map((trademark) => (
                     <div
                       key={trademark.id}
-                      className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-blue-300 transition-all"
+                      className={`bg-gray-50 rounded-xl p-6 border transition-all ${
+                        selectedTrademarks.has(trademark.id)
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
                     >
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4">
+                        {activeTab === 'pending' && (
+                          <input
+                            type="checkbox"
+                            checked={selectedTrademarks.has(trademark.id)}
+                            onChange={() => toggleTrademarkSelection(trademark.id)}
+                            className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                        )}
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <h3 className="text-xl font-bold text-gray-900">{trademark.trademarkName}</h3>
-                            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                              {trademark.category}
-                            </span>
-                            {trademark.verified && (
-                              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                Verified
-                              </span>
-                            )}
-                          </div>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-3">
+                                <h3 className="text-xl font-bold text-gray-900">{trademark.trademarkName}</h3>
+                                <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                                  {trademark.category}
+                                </span>
+                                {trademark.verified && (
+                                  <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                    </svg>
+                                    Verified
+                                  </span>
+                                )}
+                                <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                                  Normal Priority
+                                </span>
+                              </div>
 
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <span className="text-gray-500">Company:</span>
-                              <p className="font-semibold text-gray-900">{trademark.companyName}</p>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div>
+                                  <span className="text-gray-500">Company:</span>
+                                  <p className="font-semibold text-gray-900">{trademark.companyName}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Registration #:</span>
+                                  <p className="font-mono text-gray-900">{trademark.registrationNumber}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Token ID:</span>
+                                  <p className="font-mono text-gray-900">#{trademark.tokenId}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Created:</span>
+                                  <p className="text-gray-900">
+                                    {new Date(trademark.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="mt-3">
+                                <span className="text-gray-500 text-sm">Owner:</span>
+                                <p className="font-mono text-sm text-gray-900">
+                                  {trademark.creatorAddress.slice(0, 10)}...{trademark.creatorAddress.slice(-8)}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <span className="text-gray-500">Registration #:</span>
-                              <p className="font-mono text-gray-900">{trademark.registrationNumber}</p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Token ID:</span>
-                              <p className="font-mono text-gray-900">#{trademark.tokenId}</p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Created:</span>
-                              <p className="text-gray-900">
-                                {new Date(trademark.createdAt).toLocaleDateString()}
-                              </p>
+
+                            <div className="flex gap-2 ml-4">
+                              <button
+                                onClick={() => setSelectedTrademark(trademark)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                              >
+                                Review & Verify
+                              </button>
                             </div>
                           </div>
-
-                          <div className="mt-3">
-                            <span className="text-gray-500 text-sm">Owner:</span>
-                            <p className="font-mono text-sm text-gray-900">
-                              {trademark.creatorAddress.slice(0, 10)}...{trademark.creatorAddress.slice(-8)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2 ml-4">
-                          <button
-                            onClick={() => setSelectedTrademark(trademark)}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                          >
-                            Review & Verify
-                          </button>
                         </div>
                       </div>
                     </div>
@@ -440,8 +673,6 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-
-        <Footer />
       </div>
 
       {/* Report Review Modal */}

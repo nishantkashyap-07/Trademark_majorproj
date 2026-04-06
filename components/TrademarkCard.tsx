@@ -76,12 +76,12 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid', s
   return (
     <Link href={`/trademark/${linkId}`}>
       <div
-        className="glass-card !p-0 group cursor-pointer border-transparent hover:border-indigo-500/30 overflow-hidden"
+        className="liquid-glass rounded-3xl overflow-hidden group cursor-pointer card-hover"
         onClick={onClick}
       >
         <div className="relative aspect-[4/3] overflow-hidden">
           {/* Backdrop Glow */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#05070a] via-transparent to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#05070a] via-transparent to-transparent z-10 pointer-events-none" />
           
           {(trademark.imageUrl || trademark.ipfsHash) ? (
             <img 
@@ -153,4 +153,4 @@ export default function TrademarkCard({ trademark, onClick, viewMode = 'grid', s
       </div>
     </Link>
   );
-}
+}

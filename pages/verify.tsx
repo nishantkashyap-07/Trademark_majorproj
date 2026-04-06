@@ -2,7 +2,6 @@ import { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import ProductVerification from '@/components/ProductVerification';
 import VerificationSystem from '@/components/VerificationSystem';
 import { ProductData } from '@/types';
@@ -342,8 +341,6 @@ export default function VerifyPage() {
           </section>
         </div>
       </main>
-
-      <Footer />
     </>
   );
 }
