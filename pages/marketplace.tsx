@@ -1,33 +1,41 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useWeb3 } from '@/contexts/Web3Context';
-import Navbar from '@/components/Navbar';
-import TrademarkCard from '@/components/TrademarkCard';
-import AnimatedPage from '@/components/AnimatedPage';
-import AnimatedCard from '@/components/AnimatedCard';
-import AnimatedBadge from '@/components/AnimatedBadge';
-import HolographicCard from '@/components/HolographicCard';
-import ShimmerButton from '@/components/ShimmerButton';
-import ParticleField from '@/components/ParticleField';
-import GlowingOrb from '@/components/GlowingOrb';
-import GridBackground from '@/components/GridBackground';
+import Navbar from '@/components/common/Navbar';
+import Footer from '@/components/common/Footer';
+import TrademarkCard from '@/components/marketplace/TrademarkCard';
+import AnimatedPage from '@/components/common/AnimatedPage';
 import { TrademarkMetadata } from '@/types';
 import { TRADEMARK_CATEGORIES } from '@/utils/constants';
+
+const CategoryPill = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+  <button 
+    onClick={onClick}
+    className={`whitespace-nowrap px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-300 ${
+      active 
+        ? 'bg-white text-black' 
+        : 'bg-white/5 text-white/50 hover:text-white hover:bg-white/10 border border-white/10'
+    }`}
+  >
+    {children}
+  </button>
+);
 
 export default function Marketplace() {
   const router = useRouter();
   const { isConnected } = useWeb3();
   
   const [trademarks, setTrademarks] = useState<TrademarkMetadata[]>([]);
-  const [filteredTrademarks, setFilteredTrademarks] = useState<TrademarkMetadata[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [sortBy, setSortBy] = useState('newest');
-  const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   useEffect(() => {
     loadTrademarks();
@@ -44,12 +52,11 @@ export default function Marketplace() {
       const response = await fetch('/api/trademarks?limitCount=100');
       const data = await response.json();
       if (data.success && data.data) {
-        const trademarksData = data.data.map((tm: any) => ({
+        setTrademarks(data.data.map((tm: any) => ({
           ...tm,
           sloganText: tm.trademarkName || tm.sloganText,
           createdAt: new Date(tm.createdAt?.seconds ? tm.createdAt.seconds * 1000 : tm.createdAt),
-        }));
-        setTrademarks(trademarksData);
+        })));
       }
     } catch (error) {
       console.error('Error loading trademarks:', error);
@@ -58,7 +65,7 @@ export default function Marketplace() {
     }
   };
 
-  useEffect(() => {
+  const filteredTrademarks = useMemo(() => {
     let filtered = [...trademarks];
     if (searchTerm) {
       filtered = filtered.filter(tm =>
@@ -67,171 +74,153 @@ export default function Marketplace() {
       );
     }
     if (selectedCategory) filtered = filtered.filter(tm => tm.category === selectedCategory);
-    if (showVerifiedOnly) filtered = filtered.filter(tm => tm.verified);
+    return filtered;
+  }, [trademarks, searchTerm, selectedCategory]);
 
-    switch (sortBy) {
-      case 'newest': filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); break;
-      case 'oldest': filtered.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()); break;
-      case 'name': filtered.sort((a, b) => a.sloganText.localeCompare(b.sloganText)); break;
-    }
-    setFilteredTrademarks(filtered);
-  }, [trademarks, searchTerm, selectedCategory, sortBy, showVerifiedOnly]);
+  // Derived pagination data
+  const totalPages = Math.ceil(filteredTrademarks.length / itemsPerPage);
+  const currentItems = filteredTrademarks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory]);
 
   return (
     <AnimatedPage>
-      <div className="bg-[#05070a] selection:bg-indigo-500/30">
+      <div className="bg-black text-white selection:bg-indigo-500/30 min-h-screen relative flex flex-col">
         <Head>
-          <title>Marketplace | TrademarkChain Protocol</title>
+          <title>Assets Index | TrademarkChain</title>
         </Head>
 
         <Navbar />
 
-      <main className="min-h-screen pt-32 pb-20 overflow-hidden">
-        {/* Ambient Gradients */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/5 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-cyan-600/5 blur-[120px] rounded-full pointer-events-none" />
-        <GridBackground />
-        <ParticleField />
-        <GlowingOrb />
-
-        <div className="container-custom relative z-10">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16">
-            <div className="max-w-2xl">
-              <AnimatedBadge text="Global Asset Discovery" color="blue" />
-              <div className="mt-4"></div>
-              <h1 className="text-4xl md:text-6xl font-black text-white mb-4">IP Marketplace</h1>
-              <p className="text-slate-400 text-lg">Explore and verify authentic intellectual property assets registered on the universal ledger.</p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="glass-card !p-2 flex items-center gap-1 rounded-2xl">
-                 <button 
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300'}`}
-                 >
-                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-                 </button>
-                 <button 
-                  onClick={() => setViewMode('list')}
-                  className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300'}`}
-                 >
-                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16"/></svg>
-                 </button>
+        <main className="flex-1 pt-28 pb-20 px-4 md:px-6">
+          <div className="max-w-[1400px] mx-auto">
+            
+            {/* Minimal Header Controls */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
+              <div className="flex items-center gap-4">
+                <h1 className="text-xl font-bold tracking-tight">Registry Index</h1>
+                <div className="h-4 w-[1px] bg-white/20 hidden md:block" />
+                <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/50 hidden md:block">
+                  {filteredTrademarks.length} Assets Synchronized
+                </span>
               </div>
-              <Link href="/register" className="btn-premium flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4"/></svg>
-                Register Asset
-              </Link>
+
+              <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="relative flex-1 md:w-64 group">
+                  <input 
+                    type="text" 
+                    className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-10 pr-4 text-[11px] text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-all font-medium" 
+                    placeholder="Search across universal index..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 group-focus-within:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+                
+                <div className="flex items-center bg-white/5 p-1 rounded-full border border-white/10">
+                  <button onClick={() => setViewMode('grid')} className={`p-2 rounded-full transition-all ${viewMode === 'grid' ? 'bg-white text-black' : 'text-white/40'}`}>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                  </button>
+                  <button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all ${viewMode === 'list' ? 'bg-white text-black' : 'text-white/40'}`}>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6h16M4 12h16M4 18h16"/></svg>
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="grid lg:grid-cols-[1fr_300px] gap-12 items-start">
-             <div className="lg:order-2 space-y-8 animate-slide-in-right">
-                <HolographicCard>
-                  <div className="glass-card !p-6">
-                   <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6">Search Registry</h3>
-                   <div className="relative">
-                      <input 
-                        type="text" 
-                        className="premium-input !pl-12" 
-                        placeholder="Name, ID, Owner..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                      <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                   </div>
+            {/* Horizontal Categories */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-8 scrollbar-hide no-scrollbar">
+              <CategoryPill active={selectedCategory === ''} onClick={() => setSelectedCategory('')}>All Protocols</CategoryPill>
+              {TRADEMARK_CATEGORIES.map(cat => (
+                <CategoryPill 
+                  key={cat} 
+                  active={selectedCategory === cat} 
+                  onClick={() => setSelectedCategory(cat)}
+                >
+                  {cat}
+                </CategoryPill>
+              ))}
+            </div>
+
+            {/* Assets Grid */}
+            <div className="min-h-[600px]">
+              {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                   {[1,2,3,4,5,6,7,8].map(i => (
+                     <div key={i} className="aspect-[4/5] rounded-[2rem] bg-white/[0.02] border border-white/10 animate-pulse" />
+                   ))}
                 </div>
-                </HolographicCard>
-
-                <HolographicCard>
-                  <div className="glass-card !p-6">
-                   <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6">Categories</h3>
-                   <div className="space-y-2">
-                      <button 
-                        onClick={() => setSelectedCategory('')}
-                        className={`w-full text-left px-4 py-2 rounded-xl text-sm font-bold transition-all ${selectedCategory === '' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-white/[0.03] hover:text-slate-200'}`}
-                      >
-                        All Assets
-                      </button>
-                      {TRADEMARK_CATEGORIES.map(cat => (
-                        <button 
-                          key={cat}
-                          onClick={() => setSelectedCategory(cat)}
-                          className={`w-full text-left px-4 py-2 rounded-xl text-sm font-bold transition-all ${selectedCategory === cat ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-white/[0.03] hover:text-slate-200'}`}
-                        >
-                          {cat}
-                        </button>
+              ) : (
+                <AnimatePresence mode="wait">
+                  {currentItems.length > 0 ? (
+                    <motion.div 
+                      key={currentPage + selectedCategory + searchTerm}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "flex flex-col gap-4"}
+                    >
+                      {currentItems.map((tm, i) => (
+                        <TrademarkCard key={tm.tokenId} trademark={tm} viewMode={viewMode} />
                       ))}
-                   </div>
-                </div>
-                </HolographicCard>
+                    </motion.div>
+                  ) : (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="py-40 text-center border border-white/10 rounded-[2rem] bg-white/[0.01]"
+                    >
+                       <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">Zero Assets Found in Current Index</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
+            </div>
 
-                <HolographicCard>
-                  <div className="glass-card !p-6">
-                   <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6">Verification</h3>
-                   <label className="flex items-center gap-3 cursor-pointer group">
-                      <div className="relative flex items-center">
-                         <input 
-                          type="checkbox" 
-                          className="sr-only peer"
-                          checked={showVerifiedOnly}
-                          onChange={(e) => setShowVerifiedOnly(e.target.checked)}
-                         />
-                         <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </div>
-                      <span className="text-sm font-bold text-slate-400 group-hover:text-slate-200 transition-colors">Verified Only</span>
-                   </label>
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-16 flex items-center justify-center gap-2">
+                <button 
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="w-10 h-10 flex items-center justify-center rounded-full border border-white/10 disabled:opacity-20 hover:bg-white/5 transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <div className="flex items-center gap-1">
+                   {[...Array(totalPages)].map((_, i) => (
+                     <button
+                        key={i}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={`w-10 h-10 rounded-full text-[10px] font-black transition-all ${currentPage === i + 1 ? 'bg-white text-black' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                     >
+                       {i + 1}
+                     </button>
+                   ))}
                 </div>
-                </HolographicCard>
-             </div>
-
-             <div className="lg:order-1 animate-slide-up">
-                {isLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     {[1,2,3,4].map(i => (
-                       <div key={i} className="glass-card aspect-[4/3] animate-pulse bg-white/5" />
-                     ))}
-                  </div>
-                ) : filteredTrademarks.length > 0 ? (
-                  <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 gap-8" : "space-y-6"}>
-                    {filteredTrademarks.map((tm, i) => (
-                      <HolographicCard key={tm.tokenId}>
-                        <AnimatedCard delay={i * 0.05}>
-                          <TrademarkCard trademark={tm} viewMode={viewMode} />
-                        </AnimatedCard>
-                      </HolographicCard>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="glass-card py-32 text-center">
-                     <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg className="w-12 h-12 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                     </div>
-                     <h3 className="text-2xl font-black mb-2">No Assets Found</h3>
-                     <p className="text-slate-400 mb-8">Try adjusting your filters or search terms for the registry.</p>
-                     <button onClick={() => {setSearchTerm(''); setSelectedCategory(''); setShowVerifiedOnly(false);}} className="btn-glass">Clear All Filters</button>
-                  </div>
-                )}
-
-                <div className="mt-16 pt-8 border-t border-white/5 flex flex-wrap gap-12 opacity-50">
-                   <div>
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Live Inventory</p>
-                      <p className="text-lg font-black text-white">{filteredTrademarks.length}</p>
-                   </div>
-                   <div>
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Authenticated</p>
-                      <p className="text-lg font-black text-indigo-400">{filteredTrademarks.filter(tm => tm.verified).length}</p>
-                   </div>
-                   <div>
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Registry Nodes</p>
-                      <p className="text-lg font-black text-white">POLYGON_MAINNET</p>
-                   </div>
-                </div>
-             </div>
+                <button 
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="w-10 h-10 flex items-center justify-center rounded-full border border-white/10 disabled:opacity-20 hover:bg-white/5 transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            )}
           </div>
-        </div>
-      </main>
+        </main>
+
+        <Footer />
       </div>
+
+
+      <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </AnimatedPage>
   );
-}
+}

@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useWeb3 } from '@/contexts/Web3Context';
-import Navbar from '@/components/Navbar';
-import LicenseCard from '@/components/LicenseCard';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import Navbar from '@/components/common/Navbar';
+import LicenseCard from '@/components/marketplace/LicenseCard';
+import Breadcrumbs from '@/components/common/Breadcrumbs';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { License } from '@/types';
 import { getLicensesForToken, getOwnerTrademarks } from '@/utils/contracts';
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useWeb3 } from '@/contexts/Web3Context';
-import LoadingSpinner from './LoadingSpinner';
-import Toast from './Toast';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Toast from '@/components/common/Toast';
 import QRCode from 'qrcode';
 
 interface VerificationResult {
@@ -38,7 +38,7 @@ export default function VerificationSystem() {
     try {
       // Get contract instance (read-only if no wallet connected)
       let contract = trademarkNFTContract;
-      
+
       if (!contract) {
         // Try to create a read-only contract instance
         if (typeof window !== 'undefined' && window.ethereum) {
@@ -56,7 +56,7 @@ export default function VerificationSystem() {
       if (searchType === 'registration') {
         // Lookup by registration number
         tokenId = await contract.getTokenIdByRegistration(searchValue);
-        
+
         if (tokenId === 0) {
           setResult({
             isValid: false,
@@ -68,7 +68,7 @@ export default function VerificationSystem() {
       } else {
         // Direct token ID lookup
         tokenId = parseInt(searchValue);
-        
+
         if (isNaN(tokenId) || tokenId <= 0) {
           setToast({ message: 'Invalid token ID', type: 'error' });
           setIsVerifying(false);
@@ -78,7 +78,7 @@ export default function VerificationSystem() {
 
       // Get trademark info from contract
       const trademarkInfo = await contract.getTrademarkInfo(tokenId);
-      
+
       // Generate QR code
       const verificationUrl = `${window.location.origin}/verify?tokenId=${tokenId}`;
       const qrCodeUrl = await QRCode.toDataURL(verificationUrl, {
@@ -104,23 +104,23 @@ export default function VerificationSystem() {
         qrCodeUrl,
       });
 
-      setToast({ 
-        message: trademarkInfo.verified ? 'Trademark verified successfully!' : 'Trademark found but not verified', 
-        type: trademarkInfo.verified ? 'success' : 'info' 
+      setToast({
+        message: trademarkInfo.verified ? 'Trademark verified successfully!' : 'Trademark found but not verified',
+        type: trademarkInfo.verified ? 'success' : 'info'
       });
     } catch (error: any) {
       console.error('Verification error:', error);
       setResult({
         isValid: false,
       });
-      
+
       let errorMessage = 'Verification failed';
       if (error.message?.includes('could not decode result data')) {
         errorMessage = 'Token ID not found on blockchain';
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       setToast({ message: errorMessage, type: 'error' });
     } finally {
       setIsVerifying(false);
@@ -150,26 +150,24 @@ export default function VerificationSystem() {
         {/* Search Section */}
         <div className="bg-slate-900/70 rounded-2xl p-6 border border-slate-800">
           <h3 className="text-lg font-semibold text-white mb-4">Verify Trademark</h3>
-          
+
           {/* Search Type Selector */}
           <div className="flex gap-2 mb-4">
             <button
               onClick={() => setSearchType('registration')}
-              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                searchType === 'registration'
+              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${searchType === 'registration'
                   ? 'bg-sky-600 text-white'
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
+                }`}
             >
               Registration Number
             </button>
             <button
               onClick={() => setSearchType('tokenId')}
-              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                searchType === 'tokenId'
+              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${searchType === 'tokenId'
                   ? 'bg-sky-600 text-white'
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
+                }`}
             >
               Token ID
             </button>
@@ -208,13 +206,12 @@ export default function VerificationSystem() {
 
         {/* Results Section */}
         {result && !isVerifying && (
-          <div className={`bg-slate-900/70 rounded-2xl p-6 border ${
-            result.isValid && result.verified
+          <div className={`bg-slate-900/70 rounded-2xl p-6 border ${result.isValid && result.verified
               ? 'border-emerald-500/50'
               : result.isValid
-              ? 'border-amber-500/50'
-              : 'border-rose-500/50'
-          }`}>
+                ? 'border-amber-500/50'
+                : 'border-rose-500/50'
+            }`}>
             {/* Status Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">

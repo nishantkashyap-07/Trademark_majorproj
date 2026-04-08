@@ -2,9 +2,8 @@ import '@/styles/globals.css'
 import type { AppProps } from 'next/app'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { Web3Provider } from '@/contexts/Web3Context'
-import MouseFollower from '@/components/MouseFollower'
 import { useEffect, useState } from 'react'
-import Toast from '@/components/Toast'
+import Toast from '@/components/common/Toast'
 
 export default function App({ Component, pageProps }: AppProps) {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -48,7 +47,6 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <AuthProvider>
       <Web3Provider>
-        <MouseFollower />
         <Component {...pageProps} />
         {toast && (
           <Toast

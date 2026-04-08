@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useWeb3 } from '@/contexts/Web3Context';
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/common/Navbar';
 import { Dispute, DisputeStatus, getDisputeDetails, getTotalDisputes, isVoter, voteOnDispute, resolveDispute, formatDisputeStatus, getVotingTimeRemaining } from '@/utils/dao';
 import { ethers } from 'ethers';
 

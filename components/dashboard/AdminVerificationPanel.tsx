@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useWeb3 } from '@/contexts/Web3Context';
-import LoadingSpinner from './LoadingSpinner';
-import Toast from './Toast';
-import SimilarityWarning from './SimilarityWarning';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Toast from '@/components/common/Toast';
+import SimilarityWarning from '@/components/registry/SimilarityWarning';
 import QRCode from 'qrcode';
 
 interface TrademarkForVerification {

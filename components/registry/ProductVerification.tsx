@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { TrademarkMetadata } from '@/types';
-import TrademarkBadge from './TrademarkBadge';
+import TrademarkBadge from '@/components/marketplace/TrademarkBadge';
 
 interface ProductVerificationProps {
   productName: string;

@@ -1,32 +1,44 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useWeb3 } from '@/contexts/Web3Context';
-import Navbar from '@/components/Navbar';
-import TrademarkCard from '@/components/TrademarkCard';
-import SplineBackground from '@/components/SplineBackground';
-import AnimatedPage from '@/components/AnimatedPage';
-import AnimatedCard from '@/components/AnimatedCard';
-import AnimatedButton from '@/components/AnimatedButton';
-import AnimatedBadge from '@/components/AnimatedBadge';
-import CountUpStats from '@/components/CountUpStats';
-import ParticleField from '@/components/ParticleField';
-import GlowingOrb from '@/components/GlowingOrb';
-import GridBackground from '@/components/GridBackground';
-import ScrollReveal from '@/components/ScrollReveal';
-import TypewriterText from '@/components/TypewriterText';
-import MagneticButton from '@/components/MagneticButton';
-import BeamEffect from '@/components/BeamEffect';
-import HolographicCard from '@/components/HolographicCard';
-import ShimmerButton from '@/components/ShimmerButton';
+import Navbar from '@/components/common/Navbar';
+import Footer from '@/components/common/Footer';
+import AnimatedPage from '@/components/common/AnimatedPage';
 import { demoStats } from '@/lib/demo-data';
 import { SloganMetadata } from '@/types';
+
+const FloatingNode = ({ name, value, x, y, delay, icon }: { name: string; value: string; x: string; y: string; delay: number; icon?: React.ReactNode }) => (
+  <motion.div 
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: [0.5, 0.8, 0.5], scale: [1, 1.05, 1], y: [0, -10, 0] }}
+    transition={{ duration: 5, delay, repeat: Infinity, ease: "easeInOut" }}
+    className="absolute hidden lg:flex items-center gap-3"
+    style={{ left: x, top: y }}
+  >
+    <div className="relative group">
+      <div className="absolute -inset-4 bg-indigo-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="w-2 h-2 bg-white/60 rounded-full" />
+    </div>
+    <div className="flex flex-col">
+      <span className="text-[10px] font-bold text-white uppercase tracking-widest leading-none">{name}</span>
+      <span className="text-[8px] font-medium text-white/50 mt-1">{value}</span>
+    </div>
+    {icon && <div className="ml-2 opacity-50">{icon}</div>}
+  </motion.div>
+);
+
+const PartnerLogo = ({ name, icon }: { name: string; icon?: string }) => (
+  <div className="flex items-center gap-3 opacity-40 hover:opacity-100 transition-all grayscale hover:grayscale-0 cursor-default px-8">
+    <div className="w-6 h-6 bg-white/10 rounded-md" />
+    <span className="text-sm font-bold tracking-tighter text-white">{name}</span>
+  </div>
+);
 
 export default function Home() {
   const { isConnected, connect } = useWeb3();
   const [stats, setStats] = useState(demoStats);
-  const [featuredSlogans, setFeaturedSlogans] = useState<SloganMetadata[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,11 +48,6 @@ export default function Home() {
         if (statsRes.ok) {
           const statsData = await statsRes.json();
           if (statsData.success) setStats(statsData.data);
-        }
-        const trademarksRes = await fetch('/api/trademarks?limitCount=8&sortBy=createdAt&order=desc');
-        if (trademarksRes.ok) {
-          const trademarksData = await trademarksRes.json();
-          if (trademarksData.success) setFeaturedSlogans(trademarksData.data);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -53,233 +60,185 @@ export default function Home() {
 
   return (
     <AnimatedPage>
-      <div className="bg-[#05070a] text-white selection:bg-indigo-500/30 selection:text-white">
+      <div className="bg-black text-white selection:bg-indigo-500/30 min-h-screen relative overflow-hidden flex flex-col">
         <Head>
           <title>TrademarkChain | Professional Blockchain IP Protection</title>
           <meta name="description" content="Secure, verify, and monetize your intellectual property on the Polygon blockchain." />
         </Head>
 
+        {/* Global Navbar */}
         <Navbar />
 
-      <main>
-        {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
-          <div className="absolute inset-0 z-0 opacity-80">
-            <SplineBackground opacity={80} showGradient={true} gradientDirection="bottom" gradientOpacity={90} />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#05070a]/50 to-[#05070a]" />
+        <main className="relative pt-20 flex-1">
+          {/* Background Elements */}
+          <div className="absolute inset-0 z-0">
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.04)_0%,transparent_70%)]" />
+             <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
           </div>
-          <GridBackground />
-          <ParticleField />
-          <GlowingOrb />
-          <BeamEffect />
 
-          <div className="container-custom relative z-10 w-full flex flex-col lg:flex-row items-center justify-between gap-16 py-32">
-            {/* Left Content */}
-            <div className="flex-1 max-w-3xl text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-xs font-black text-indigo-400 mb-8 animate-slide-up tracking-widest uppercase italic">
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                </span>
-                Universal Protocol Infrastructure
-              </div>
+          {/* Hero Section */}
+          <section className="relative min-h-[85vh] flex flex-col items-center justify-center text-center px-6">
+            
+            {/* Floating Nodes */}
+            <FloatingNode name="Cortex" value="20.945" x="15%" y="30%" delay={0} />
+            <FloatingNode name="Quant" value="2.945" x="80%" y="35%" delay={1} />
+            <FloatingNode name="Aelf" value="18.346" x="12%" y="65%" delay={2} />
+            <FloatingNode name="Meeton" value="440" x="82%" y="60%" delay={3} />
 
-              <motion.h1 
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-white mb-8 leading-[0.85] uppercase italic"
-              >
-                <motion.span
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.4 }}
-                  className="inline-block"
-                >
-                  Secure Your
-                </motion.span>
-                <br />
-                <span 
-                  className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-cyan-400 to-indigo-500 whitespace-nowrap min-w-[600px] md:min-w-[800px]"
-                  style={{
-                    WebkitTextStroke: '1px rgba(99, 102, 241, 0.3)',
-                    filter: 'drop-shadow(0 0 40px rgba(99, 102, 241, 0.6))',
-                  }}
-                >
-                  <TypewriterText 
-                    texts={[
-                      'Digital Legacy.',
-                      'IP Rights.',
-                      'Brand Identity.',
-                      'Innovation.',
-                      'Future.'
-                    ]} 
-                  />
-                </span>
-              </motion.h1>
-
-              <p className="text-lg md:text-xl text-slate-400 max-w-2xl mb-12 animate-slide-up leading-relaxed font-bold mx-auto lg:mx-0">
-                TrademarkChain is the definitive protocol for intellectual property. We turn intangible ideas into verifiable, liquid on-chain assets with institutional security.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-slide-up">
-                {isConnected ? (
-                  <>
-                    <ShimmerButton onClick={() => window.location.href = '/register'} className="btn-premium !py-5 !px-12">
-                      Register Asset
-                    </ShimmerButton>
-                    <MagneticButton onClick={() => window.location.href = '/marketplace'} className="btn-glass !py-5 !px-12">Explore Index</MagneticButton>
-                  </>
-                ) : (
-                  <>
-                    <ShimmerButton onClick={() => window.location.href = '/login'} className="btn-premium !py-5 !px-12">
-                      Login to Platform
-                    </ShimmerButton>
-                    <MagneticButton onClick={connect} className="btn-glass !py-5 !px-12">Quick Wallet Sync</MagneticButton>
-                  </>
-                )}
-              </div>
-
-              <div className="mt-20 flex items-center justify-center lg:justify-start gap-10 opacity-30">
-                <p className="text-[10px] font-black font-mono text-slate-500 tracking-[0.3em] uppercase">Secured by Matrix</p>
-                <div className="flex gap-8">
-                  <span className="text-xs font-black text-slate-300 tracking-tighter uppercase italic">Polygon</span>
-                  <span className="text-xs font-black text-slate-300 tracking-tighter uppercase italic">IPFS</span>
-                  <span className="text-xs font-black text-slate-300 tracking-tighter uppercase italic">FirewallV2</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Floating Stats Card */}
-            <div className="hidden lg:block w-[400px] flex-shrink-0 animate-slide-in-right lg:ml-auto lg:mr-0">
-              <HolographicCard>
-                <AnimatedCard delay={0.3} className="glass-card hover-glow border-indigo-500/20 bg-indigo-500/[0.02]">
-                <div className="flex items-center justify-between mb-10 pb-4 border-b border-white/5">
-                  <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Node Activity</h3>
-                  <AnimatedBadge text="LIVE_FEED" color="green" />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-y-10 gap-x-6">
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Protocol Assets</p>
-                    <p className="text-4xl font-black text-white">
-                      <CountUpStats value={stats.overview.totalTrademarks || 1280} />
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Active Nodes</p>
-                    <p className="text-4xl font-black text-white">
-                      <CountUpStats value={stats.overview.totalUsers || 429} />
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Validated IP</p>
-                    <p className="text-4xl font-black text-indigo-400">
-                      <CountUpStats value={stats.overview.verifiedTrademarks || 912} />
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Trust Index</p>
-                    <p className="text-4xl font-black text-cyan-400">
-                      <CountUpStats value={Number(stats.overview.verificationRate) || 99.4} suffix="%" />
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-10 p-5 bg-indigo-500/5 rounded-2xl border border-indigo-500/10">
-                   <p className="text-[10px] font-black text-indigo-300/60 leading-relaxed uppercase tracking-tighter">
-                     TRADEMARK_CHAIN_PROTOCOL_V.1.0 // MULTI_SIG_VERIFIED // POLYGON_SYNC_READY
-                   </p>
-                </div>
-              </AnimatedCard>
-              </HolographicCard>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section className="py-40 bg-[#05070a] relative overflow-hidden">
-          <div className="container-custom relative z-10">
-            <ScrollReveal>
-              <div className="text-center max-w-3xl mx-auto mb-24">
-                 <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.5em] mb-4 block">Core Engine</span>
-                 <h2 className="text-4xl md:text-6xl font-black text-white mb-8 tracking-tighter uppercase italic">Built for Creators</h2>
-                 <p className="text-slate-400 text-lg font-bold">A seamless workflow from registration to monetization, powered by decentralized institutional infrastructure.</p>
-              </div>
-            </ScrollReveal>
-
-            <div className="grid md:grid-cols-3 gap-10">
-              {[
-                { title: 'On-Chain Proof', desc: 'Immutable evidence of IP ownership stored directly on the Polygon blockchain with IPFS metadata support.', icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z', color: 'indigo' },
-                { title: 'Instant Verity', desc: 'Global verification in milliseconds. Allow anyone to verify your assets without third-party intermediaries.', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'cyan' },
-                { title: 'IP Liquidity', desc: 'Direct monetization of trademarks through licensing and direct sales. Automated royalties for every trade.', icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6', color: 'indigo' }
-              ].map((f, i) => (
-                <HolographicCard key={i}>
-                  <AnimatedCard delay={i * 0.2} className="glass-card hover-glow group !p-10">
-                  <div className={`w-16 h-16 bg-${f.color}-500/10 border border-${f.color}-500/20 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500 shadow-xl`}>
-                    <svg className={`w-8 h-8 text-${f.color}-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={f.icon}/></svg>
-                  </div>
-                  <h3 className="text-2xl font-black text-white mb-4 uppercase tracking-tight">{f.title}</h3>
-                  <p className="text-slate-400 leading-relaxed font-bold text-sm">{f.desc}</p>
-                </AnimatedCard>
-                </HolographicCard>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Featured Grid */}
-        <section className="py-40 bg-[#05070a]/50 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-indigo-600/10 blur-[150px] rounded-full pointer-events-none animate-pulse" />
-          <div className="container-custom relative z-10">
-            <div className="flex flex-col md:flex-row justify-between items-end gap-10 mb-20">
-              <div className="max-w-2xl">
-                <h2 className="text-4xl md:text-6xl font-black text-white mb-6 uppercase tracking-tighter italic">Recent Nodes</h2>
-                <p className="text-slate-400 font-bold">Discover the latest intellectual property assets synchronized to the universal ledger.</p>
-              </div>
-              <Link href="/marketplace" className="text-xs font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors flex items-center gap-3 border border-indigo-400/20 px-6 py-3 rounded-xl hover:bg-indigo-400/10 active:scale-95 group">
-                Access Marketplace Index
-                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+            {/* Hero Sub-header Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="mb-10"
+            >
+              <Link href="/register" className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/20 rounded-full text-[10px] font-bold text-white/70 hover:bg-white/10 transition-colors group tracking-widest uppercase">
+                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+                Unlock Your Assets Spark!
+                <svg className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
               </Link>
+            </motion.div>
+
+            {/* Main Title */}
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.1 }}
+              className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-8 max-w-5xl leading-[1.1]"
+            >
+              One-click for <span className="text-white/40">Trademark Defense</span>
+            </motion.h1>
+
+            {/* Subtext */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-sm md:text-lg text-white/60 max-w-2xl mb-12 leading-relaxed font-medium"
+            >
+              Dive into the IP assets, where innovative blockchain technology <br className="hidden md:block" /> meets brand protection expertise.
+            </motion.p>
+
+            {/* CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="flex items-center gap-4"
+            >
+              <Link href="/dashboard" className="btn-pill-primary px-10 py-4 flex items-center gap-2">
+                Open App
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+              </Link>
+              <Link href="/marketplace" className="btn-pill-secondary px-10 py-4 border-white/20">
+                Discover More
+              </Link>
+            </motion.div>
+
+            {/* Scroll Indicator */}
+            <div className="absolute bottom-10 left-10 hidden lg:flex items-center gap-4 opacity-70">
+              <div className="w-8 h-8 rounded-full border border-white flex items-center justify-center">
+                 <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+              </div>
+              <span className="text-[10px] uppercase font-bold tracking-[0.2em]">02/03 . Scroll down</span>
             </div>
 
-            {loading ? (
-              <div className="flex items-center justify-center py-40">
-                <div className="w-16 h-16 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
+            {/* Horizon Indicator */}
+            <div className="absolute bottom-10 right-10 hidden lg:flex flex-col items-end gap-2 opacity-70 text-right">
+              <span className="text-[10px] uppercase font-bold tracking-[0.1em] text-indigo-400">IP Horizons</span>
+              <div className="flex gap-1 h-1">
+                <div className="w-8 bg-white rounded-full" />
+                <div className="w-8 bg-white/30 rounded-full" />
+                <div className="w-8 bg-white/30 rounded-full" />
               </div>
-            ) : featuredSlogans.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {featuredSlogans.map((s, i) => (
-                  <AnimatedCard key={s.tokenId} delay={i * 0.1}><TrademarkCard trademark={s} /></AnimatedCard>
-                ))}
-              </div>
-            ) : (
-              <div className="glass-card py-32 text-center border-dashed border-white/10">
-                 <h3 className="text-2xl font-black mb-4 uppercase tracking-widest text-slate-500">Registry Quiet...</h3>
-                 <Link href="/register" className="btn-premium">Initialize First Token</Link>
-              </div>
-            )}
-          </div>
-        </section>
+            </div>
+          </section>
 
-        {/* CTA Section */}
-        <section className="py-40 container-custom">
-           <ScrollReveal>
-             <div className="relative glass-card bg-gradient-to-br from-indigo-900 via-indigo-600 to-indigo-900 !p-16 md:!p-32 text-center border-white/20 shadow-[0_0_100px_rgba(99,102,241,0.2)] overflow-hidden">
-                <div className="absolute inset-0 bg-white/5 opacity-0 hover:opacity-10 transition-opacity duration-1000" />
-                <div className="relative z-10">
-                  <h2 className="text-5xl md:text-8xl font-black text-white mb-10 tracking-tighter uppercase italic leading-[0.85]">Evolve Your <br /> IP DNA.</h2>
-                  <p className="text-indigo-100 text-lg md:text-2xl max-w-2xl mx-auto mb-16 font-bold">Join the sovereign businesses securing their identity on the blockchain.</p>
-                  <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                     <ShimmerButton onClick={() => window.location.href = '/register'} className="btn-glass !bg-white !text-indigo-600 !px-12">Initialize IP</ShimmerButton>
-                     <MagneticButton onClick={() => window.location.href = '/verify'} className="btn-glass !border-white/40 !px-12">Sync & Verify</MagneticButton>
-                  </div>
+          {/* Partner Logos Bar */}
+          <section className="py-20 border-t border-white/10 flex flex-col items-center">
+             <div className="w-full overflow-hidden relative">
+                <div className="flex items-center animate-[scroll_30s_linear_infinite] whitespace-nowrap gap-20">
+                   <PartnerLogo name="Vercel" />
+                   <PartnerLogo name="Loom" />
+                   <PartnerLogo name="Cash App" />
+                   <PartnerLogo name="Loops" />
+                   <PartnerLogo name="Zapier" />
+                   <PartnerLogo name="Ramp" />
+                   <PartnerLogo name="Raycast" />
+                   {/* Duplicate for infinite loop */}
+                   <PartnerLogo name="Vercel" />
+                   <PartnerLogo name="Loom" />
+                   <PartnerLogo name="Cash App" />
+                   <PartnerLogo name="Loops" />
+                   <PartnerLogo name="Zapier" />
+                   <PartnerLogo name="Ramp" />
+                   <PartnerLogo name="Raycast" />
+                </div>
+                {/* Fade overlays */}
+                <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-black to-transparent z-10" />
+                <div className="absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-black to-transparent z-10" />
+             </div>
+          </section>
+
+          {/* Core Features Integration */}
+          <section id="features" className="py-32 container-custom relative z-10 border-t border-white/10">
+            <div className="grid md:grid-cols-3 gap-12">
+               {[
+                 { title: 'Secure Protocol', desc: 'Enterprise-grade blockchain infrastructure for intellectual property.' },
+                 { title: 'Instant Registry', desc: 'Global trademark verification in milliseconds on the Polygon ledger.' },
+                 { title: 'Web3 Monetization', desc: 'Direct licensing and royalty automation for your digital brands.' }
+               ].map((f, i) => (
+                 <motion.div
+                   key={i}
+                   initial={{ opacity: 0, y: 20 }}
+                   whileInView={{ opacity: 1, y: 0 }}
+                   viewport={{ once: true }}
+                   transition={{ duration: 0.6, delay: i * 0.1 }}
+                   className="group p-8 rounded-3xl bg-white/[0.03] border border-white/[0.1] hover:border-white/30 hover:bg-white/[0.05] transition-all"
+                 >
+                   <div className="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center mb-6 text-indigo-400 font-bold group-hover:scale-110 transition-transform">
+                     0{i + 1}
+                   </div>
+                   <h3 className="text-xl font-bold mb-3">{f.title}</h3>
+                   <p className="text-sm text-white/50 leading-relaxed font-medium">{f.desc}</p>
+                 </motion.div>
+               ))}
+            </div>
+          </section>
+
+          {/* Stats Bar (Condensed) */}
+          <section className="py-20 border-y border-white/10">
+             <div className="container-custom flex flex-wrap justify-between gap-12 opacity-80">
+                <div className="flex flex-col">
+                   <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">Total Assets</span>
+                   <span className="text-2xl font-bold text-white">{stats.overview.totalTrademarks?.toLocaleString() || '1,280'}</span>
+                </div>
+                <div className="flex flex-col">
+                   <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">Active Users</span>
+                   <span className="text-2xl font-bold text-white">{stats.overview.totalUsers?.toLocaleString() || '429'}</span>
+                </div>
+                <div className="flex flex-col">
+                   <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">Verified IP</span>
+                   <span className="text-2xl font-bold text-white">{stats.overview.verifiedTrademarks?.toLocaleString() || '912'}</span>
+                </div>
+                <div className="flex flex-col">
+                   <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">Success Rate</span>
+                   <span className="text-2xl font-bold text-white">{stats.overview.verificationRate || '99.4'}%</span>
                 </div>
              </div>
-           </ScrollReveal>
-        </section>
-      </main>
+          </section>
+
+        </main>
+        
+        <Footer />
       </div>
+
+      <style jsx global>{`
+        @keyframes scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
     </AnimatedPage>
   );
 }

@@ -3,9 +3,9 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useWeb3 } from '@/contexts/Web3Context';
-import Navbar from '@/components/Navbar';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import Toast from '@/components/Toast';
+import Navbar from '@/components/common/Navbar';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Toast from '@/components/common/Toast';
 
 export default function BuyListing() {
   const router = useRouter();

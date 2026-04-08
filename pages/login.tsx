@@ -3,8 +3,8 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
-import ParticleField from '@/components/ParticleField';
-import GridBackground from '@/components/GridBackground';
+import ParticleField from '@/components/ui/ParticleField';
+import GridBackground from '@/components/ui/GridBackground';
 
 export default function Login() {
   const router = useRouter();

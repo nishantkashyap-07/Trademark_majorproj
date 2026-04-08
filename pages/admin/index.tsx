@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useWeb3 } from '@/contexts/Web3Context';
-import Navbar from '@/components/Navbar';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import Toast from '@/components/Toast';
-import AdminVerificationPanel from '@/components/AdminVerificationPanel';
+import Navbar from '@/components/common/Navbar';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Toast from '@/components/common/Toast';
+import AdminVerificationPanel from '@/components/dashboard/AdminVerificationPanel';
 import { apiClient } from '@/lib/api-client';
 
 interface PendingTrademark {

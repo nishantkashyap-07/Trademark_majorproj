@@ -6,13 +6,15 @@
 @tailwind utilities;
 
 :root {
-  --bg-deep: #05070a;
-  --bg-card: rgba(255, 255, 255, 0.03);
-  --border-glass: rgba(255, 255, 255, 0.08);
+  --bg-deep: #000000;
+  --bg-card: rgba(255, 255, 255, 0.02);
+  --border-glass: rgba(255, 255, 255, 0.05);
   --accent-primary: #6366f1;
   --accent-secondary: #06b6d4;
-  --text-primary: #f8fafc;
+  --text-primary: #ffffff;
   --text-secondary: #94a3b8;
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
 }
 
 /* Custom Animations */
@@ -63,11 +65,11 @@ html { scroll-behavior: smooth; }
   }
   
   body {
-    @apply bg-[#05070a] text-slate-100 font-sans min-h-screen selection:bg-indigo-500/30 selection:text-white;
+    @apply bg-black text-slate-100 font-sans min-h-screen selection:bg-indigo-500/30 selection:text-white;
     background-image: 
-      radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 100% 0%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 50% 100%, rgba(79, 70, 229, 0.1) 0%, transparent 50%);
+      radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
+      radial-gradient(circle at 100% 0%, rgba(6, 182, 212, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 0% 100%, rgba(79, 70, 229, 0.05) 0%, transparent 40%);
     background-attachment: fixed;
   }
   
@@ -135,6 +137,22 @@ html { scroll-behavior: smooth; }
            overflow-hidden;
   }
   
+  .btn-pill {
+    @apply px-8 py-3 rounded-full text-sm font-bold transition-all duration-300;
+  }
+
+  .btn-pill-primary {
+    @apply btn-pill bg-white text-black hover:bg-slate-200;
+  }
+
+  .btn-pill-secondary {
+    @apply btn-pill bg-white/5 text-white border border-white/10 backdrop-blur-md hover:bg-white/10;
+  }
+
+  .btn-pill-navbar {
+    @apply px-5 py-1.5 rounded-full text-xs font-medium transition-all duration-300;
+  }
+
   .btn-premium::before {
     content: '';
     @apply absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 
@@ -181,6 +199,15 @@ html { scroll-behavior: smooth; }
   /* Card Hover Effect */
   .card-hover {
     @apply transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-500/20;
+  }
+
+  /* Custom Layout Utilities */
+  .nav-pill {
+    @apply px-4 py-1.5 text-xs font-medium text-slate-400 hover:text-white transition-all duration-300 rounded-full hover:bg-white/5;
+  }
+
+  .nav-pill-active {
+    @apply bg-white/10 text-white;
   }
 }
 

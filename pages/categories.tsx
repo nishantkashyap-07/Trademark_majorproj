@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
-import SplineBackground from '@/components/SplineBackground';
+import Navbar from '@/components/common/Navbar';
+import SplineBackground from '@/components/ui/SplineBackground';
 
 interface Category {
   name: string;

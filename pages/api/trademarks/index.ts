@@ -19,7 +19,7 @@ async function handler(
   try {
     if (req.method === 'GET') {
       // Get all trademarks with optional filters
-      const { category, verified, search, sortBy = 'createdAt', order = 'desc', limitCount = 50, tokenId } = req.query;
+      const { category, verified, search, sortBy = 'createdAt', order = 'desc', limitCount = 50, tokenId, creatorAddress } = req.query;
 
       // Special case: if searching by tokenId, do a simple query
       if (tokenId) {
@@ -53,6 +53,10 @@ async function handler(
       // Apply filters
       if (category) {
         q = query(q, where('category', '==', category));
+      }
+
+      if (creatorAddress) {
+        q = query(q, where('creatorAddress', '==', creatorAddress));
       }
 
       if (verified !== undefined) {

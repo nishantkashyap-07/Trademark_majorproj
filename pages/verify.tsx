@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
-import ProductVerification from '@/components/ProductVerification';
-import VerificationSystem from '@/components/VerificationSystem';
+import Navbar from '@/components/common/Navbar';
+import ProductVerification from '@/components/registry/ProductVerification';
+import VerificationSystem from '@/components/registry/VerificationSystem';
 import { ProductData } from '@/types';
 
 // Mock product data for demonstration
@@ -55,7 +55,7 @@ const mockProducts: ProductData[] = [
 
 export default function VerifyPage() {
   const [selectedProduct, setSelectedProduct] = useState<ProductData | null>(null);
-  const [verificationResults, setVerificationResults] = useState<{[key: string]: any}>({});
+  const [verificationResults, setVerificationResults] = useState<{ [key: string]: any }>({});
 
   const handleVerificationComplete = (productId: string, result: any) => {
     setVerificationResults(prev => ({
@@ -77,7 +77,7 @@ export default function VerifyPage() {
         {/* Ambient Gradients */}
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/5 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-cyan-600/5 blur-[120px] rounded-full pointer-events-none" />
-        
+
         <div className="container-custom relative z-10">
 
           {/* Hero Section */}
@@ -174,15 +174,14 @@ export default function VerifyPage() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
               {mockProducts.map((product) => {
                 const verificationResult = verificationResults[product.id];
-                
+
                 return (
                   <div
                     key={product.id}
-                    className={`glass-card cursor-pointer transition-all duration-200 overflow-hidden ${
-                      selectedProduct?.id === product.id 
-                        ? 'ring-2 ring-indigo-500 shadow-lg shadow-indigo-500/20' 
+                    className={`glass-card cursor-pointer transition-all duration-200 overflow-hidden ${selectedProduct?.id === product.id
+                        ? 'ring-2 ring-indigo-500 shadow-lg shadow-indigo-500/20'
                         : 'hover-glow'
-                    }`}
+                      }`}
                     onClick={() => setSelectedProduct(product)}
                   >
                     {/* Product Image */}
@@ -191,8 +190,8 @@ export default function VerifyPage() {
                         <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
                           <span className="text-3xl">
                             {product.category === 'Technology' ? '📱' :
-                             product.category === 'Fashion & Apparel' ? '👕' :
-                             product.category === 'Food & Beverage' ? '🥤' : '📦'}
+                              product.category === 'Fashion & Apparel' ? '👕' :
+                                product.category === 'Food & Beverage' ? '🥤' : '📦'}
                           </span>
                         </div>
                         <h3 className="font-black text-white text-sm">
@@ -206,7 +205,7 @@ export default function VerifyPage() {
                       <p className="text-xs text-slate-400 mb-3 line-clamp-2 font-bold">
                         {product.description}
                       </p>
-                      
+
                       <div className="flex justify-between items-center mb-4 text-sm">
                         <span className="font-black text-white">
                           ${product.price}
@@ -219,9 +218,8 @@ export default function VerifyPage() {
                       {/* Verification Status */}
                       <div className="flex items-center justify-between">
                         {verificationResult ? (
-                          <div className={`flex items-center text-xs font-black ${
-                            verificationResult.isValid ? 'text-emerald-400' : 'text-rose-400'
-                          }`}>
+                          <div className={`flex items-center text-xs font-black ${verificationResult.isValid ? 'text-emerald-400' : 'text-rose-400'
+                            }`}>
                             {verificationResult.isValid ? (
                               <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -236,7 +234,7 @@ export default function VerifyPage() {
                         ) : (
                           <span className="text-xs text-slate-500 font-bold">Click to verify</span>
                         )}
-                        
+
                         {product.trademarkId && (
                           <span className="text-xs text-indigo-400 font-mono font-black">
                             TM#{product.trademarkId}
@@ -259,14 +257,14 @@ export default function VerifyPage() {
                   <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-tight">
                     Product Details
                   </h2>
-                  
+
                   <div className="glass-card !p-6 bg-white/[0.02]">
                     <div className="flex items-center mb-6">
                       <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center shadow-lg mr-4">
                         <span className="text-3xl">
                           {selectedProduct.category === 'Technology' ? '📱' :
-                           selectedProduct.category === 'Fashion & Apparel' ? '👕' :
-                           selectedProduct.category === 'Food & Beverage' ? '🥤' : '📦'}
+                            selectedProduct.category === 'Fashion & Apparel' ? '👕' :
+                              selectedProduct.category === 'Food & Beverage' ? '🥤' : '📦'}
                         </span>
                       </div>
                       <div>
@@ -276,9 +274,9 @@ export default function VerifyPage() {
                         <p className="text-sm text-slate-400 font-bold">{selectedProduct.category}</p>
                       </div>
                     </div>
-                    
+
                     <p className="text-sm text-slate-300 mb-6 font-bold">{selectedProduct.description}</p>
-                    
+
                     <div className="grid grid-cols-2 gap-4 text-xs">
                       <div>
                         <span className="font-black text-slate-500 uppercase tracking-wider">Price:</span>
@@ -303,7 +301,7 @@ export default function VerifyPage() {
                   <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-tight">
                     Blockchain Verification
                   </h2>
-                  
+
                   <ProductVerification
                     productName={selectedProduct.name}
                     companyName="Demo Company"
