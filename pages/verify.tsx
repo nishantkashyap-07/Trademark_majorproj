@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '@/components/common/Navbar';
+import Footer from '@/components/common/Footer';
 import ProductVerification from '@/components/registry/ProductVerification';
 import VerificationSystem from '@/components/registry/VerificationSystem';
 import { ProductData } from '@/types';
@@ -73,171 +74,117 @@ export default function VerifyPage() {
 
       <Navbar />
 
-      <main className="relative min-h-screen bg-[#05070a] pt-32 pb-20 overflow-hidden">
+      <main className="relative min-h-screen transition-colors duration-500 pt-32 pb-20 overflow-hidden">
         {/* Ambient Gradients */}
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/5 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-cyan-600/5 blur-[120px] rounded-full pointer-events-none" />
 
         <div className="container-custom relative z-10">
 
-          {/* Hero Section */}
-          <section className="mb-16 text-center">
-            <div className="mx-auto max-w-3xl space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[10px] font-black text-indigo-400 mb-4 tracking-widest uppercase">
-                Blockchain Verification
-              </div>
-              <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter uppercase italic">
-                Verify Trademark Authenticity
-              </h1>
-              <p className="text-lg text-slate-400 font-bold">
-                Lookup trademarks by registration number or token ID. Generate QR codes for instant verification.
-              </p>
-            </div>
-          </section>
-
           {/* Verification System */}
           <section className="mb-16">
             <VerificationSystem />
           </section>
 
-          {/* Verification Statistics */}
-          <section className="mb-16 glass-card !p-10">
-            <h2 className="mb-12 text-center text-3xl font-black text-white uppercase tracking-tighter">
-              How TrademarkChain Verifies Products
-            </h2>
-
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-4 mb-10">
-              <div className="glass-card !p-6 text-center hover-glow">
-                <div className="mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">Availability</div>
-                <div className="text-4xl font-black text-emerald-400">24/7</div>
-                <div className="mt-2 text-xs text-slate-400 font-bold">Real-time checks</div>
-              </div>
-
-              <div className="glass-card !p-6 text-center hover-glow">
-                <div className="mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">Integrity</div>
-                <div className="text-4xl font-black text-cyan-400">100%</div>
-                <div className="mt-2 text-xs text-slate-400 font-bold">On-chain truth</div>
-              </div>
-
-              <div className="glass-card !p-6 text-center hover-glow">
-                <div className="mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">Speed</div>
-                <div className="text-4xl font-black text-indigo-400">&lt;2s</div>
-                <div className="mt-2 text-xs text-slate-400 font-bold">Average response</div>
-              </div>
-
-              <div className="glass-card !p-6 text-center hover-glow">
-                <div className="mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">History</div>
-                <div className="text-4xl font-black text-amber-400">∞</div>
-                <div className="mt-2 text-xs text-slate-400 font-bold">Permanent records</div>
-              </div>
+          {/* Refined Stats Section */}
+          <section className="mb-20">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { label: 'Availability', value: '24/7', desc: 'Global access', color: 'text-emerald-500' },
+                { label: 'Integrity', value: '100%', desc: 'On-chain truth', color: 'text-cyan-500' },
+                { label: 'Speed', value: '< 2s', desc: 'Fast validation', color: 'text-indigo-500' },
+                { label: 'Security', value: 'AES', desc: 'End-to-end', color: 'text-amber-500' }
+              ].map((stat, i) => (
+                <div key={i} className="glass-card !p-8 !bg-white/50 dark:!bg-white/[0.02] !border-slate-200 dark:!border-white/10 hover:!bg-white/50 dark:hover:!bg-white/[0.02] hover-glow">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{stat.label}</p>
+                  <p className={`text-3xl font-bold ${stat.color} mb-1`}>{stat.value}</p>
+                  <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{stat.desc}</p>
+                </div>
+              ))}
             </div>
+          </section>
 
-            <div className="glass-card !p-8 bg-white/[0.02]">
-              <h3 className="mb-6 text-sm font-black uppercase tracking-widest text-slate-400">
-                Verification Flow
-              </h3>
-              <div className="space-y-4 text-sm text-slate-300 font-bold">
-
-                <div className="flex items-start">
-                  <svg className="w-5 h-5 text-indigo-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <p><span className="font-black text-white">Smart Contract Query:</span> System queries Polygon blockchain for trademark registration data</p>
+          <section className="mb-20 glass-card !p-12 !bg-white/50 dark:!bg-white/[0.02] !border-slate-200 dark:!border-white/10 hover:!bg-white/50 dark:hover:!bg-white/[0.02] hover:!translate-y-0">
+            <h3 className="mb-10 text-center text-sm font-bold uppercase tracking-[0.2em] text-slate-400 italic">
+              Security Protocol Architecture
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+              {[
+                { title: 'Smart Contract Query', desc: 'System queries the blockchain for real-time registration data' },
+                { title: 'Ownership Validation', desc: 'Authenticates owner addresses and registration validity' },
+                { title: 'Metadata Retrieval', desc: 'Fetches complete trademark artifacts from decentralized storage' },
+                { title: 'Transparency Layer', desc: 'Presents comprehensive results with permanent audit trails' }
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-4">
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight mb-1">{item.title}</p>
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed">{item.desc}</p>
+                  </div>
                 </div>
-                <div className="flex items-start">
-                  <svg className="w-5 h-5 text-indigo-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <p><span className="font-black text-white">Ownership Verification:</span> Validates current owner address and registration authenticity</p>
-                </div>
-                <div className="flex items-start">
-                  <svg className="w-5 h-5 text-indigo-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <p><span className="font-black text-white">Metadata Retrieval:</span> Fetches complete trademark details from IPFS storage</p>
-                </div>
-                <div className="flex items-start">
-                  <svg className="w-5 h-5 text-indigo-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <p><span className="font-black text-white">Result Display:</span> Presents comprehensive verification results with full transparency</p>
-                </div>
-              </div>
+              ))}
             </div>
           </section>
 
           {/* Product Grid */}
-          <section className="mb-16">
-            <h2 className="mb-6 text-sm font-black uppercase tracking-widest text-slate-500">
-              Demo Products
+          <section className="mb-20">
+            <h2 className="mb-10 text-sm font-bold uppercase tracking-widest text-slate-400 italic">
+              Sample Inventory
             </h2>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
               {mockProducts.map((product) => {
                 const verificationResult = verificationResults[product.id];
 
                 return (
                   <div
                     key={product.id}
-                    className={`glass-card cursor-pointer transition-all duration-200 overflow-hidden ${selectedProduct?.id === product.id
-                        ? 'ring-2 ring-indigo-500 shadow-lg shadow-indigo-500/20'
-                        : 'hover-glow'
+                    className={`glass-card !p-0 cursor-pointer transition-all duration-300 overflow-hidden !bg-white/50 dark:!bg-white/[0.02] !border-slate-200 dark:!border-white/10 hover:!bg-white/50 dark:hover:!bg-white/[0.02] ${selectedProduct?.id === product.id
+                      ? 'ring-2 ring-indigo-500 shadow-2xl shadow-indigo-500/20 -translate-y-2'
+                      : 'hover:-translate-y-1 hover:shadow-xl'
                       }`}
                     onClick={() => setSelectedProduct(product)}
                   >
                     {/* Product Image */}
-                    <div className="aspect-square bg-gradient-to-br from-indigo-900/20 via-indigo-800/10 to-indigo-900/20 flex items-center justify-center">
-                      <div className="text-center p-4">
-                        <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                          <span className="text-3xl">
-                            {product.category === 'Technology' ? '📱' :
-                              product.category === 'Fashion & Apparel' ? '👕' :
-                                product.category === 'Food & Beverage' ? '🥤' : '📦'}
-                          </span>
-                        </div>
-                        <h3 className="font-black text-white text-sm">
-                          {product.name}
-                        </h3>
+                    <div className="aspect-square bg-slate-50 dark:bg-white/5 flex items-center justify-center relative group">
+                      <div className="w-20 h-20 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center shadow-lg border border-slate-100 dark:border-white/5 transition-transform duration-500 group-hover:scale-110">
+                        <span className="text-4xl text-slate-800 dark:text-white">
+                          {product.category === 'Technology' ? '📱' :
+                            product.category === 'Fashion & Apparel' ? '👕' :
+                              product.category === 'Food & Beverage' ? '🥤' : '📦'}
+                        </span>
+                      </div>
+                      <div className="absolute top-4 right-4 capitalize">
+                        <span className="text-[9px] font-bold text-slate-400 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-full border border-slate-100 dark:border-white/5 leading-none">
+                          {product.category}
+                        </span>
                       </div>
                     </div>
 
                     {/* Product Info */}
-                    <div className="p-5">
-                      <p className="text-xs text-slate-400 mb-3 line-clamp-2 font-bold">
-                        {product.description}
+                    <div className="p-6">
+                      <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
+                        {product.name}
+                      </h3>
+                      <p className="text-xs text-slate-500 mb-4 line-clamp-1 font-medium">
+                        ${product.price} • {product.description}
                       </p>
 
-                      <div className="flex justify-between items-center mb-4 text-sm">
-                        <span className="font-black text-white">
-                          ${product.price}
-                        </span>
-                        <span className="text-[10px] text-slate-400 bg-white/5 px-2 py-1 rounded-full font-black uppercase tracking-wider">
-                          {product.category}
-                        </span>
-                      </div>
-
                       {/* Verification Status */}
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-white/5">
                         {verificationResult ? (
-                          <div className={`flex items-center text-xs font-black ${verificationResult.isValid ? 'text-emerald-400' : 'text-rose-400'
+                          <div className={`flex items-center text-[10px] font-bold uppercase tracking-widest ${verificationResult.isValid ? 'text-emerald-500' : 'text-rose-500'
                             }`}>
-                            {verificationResult.isValid ? (
-                              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                              </svg>
-                            ) : (
-                              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                            {verificationResult.isValid ? 'Verified' : 'Not Verified'}
+                            {verificationResult.isValid ? 'Verified' : 'Invalid'}
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-500 font-bold">Click to verify</span>
+                          <span className="text-[9px] text-indigo-500 font-bold uppercase tracking-widest">Awaiting Scan</span>
                         )}
 
                         {product.trademarkId && (
-                          <span className="text-xs text-indigo-400 font-mono font-black">
-                            TM#{product.trademarkId}
+                          <span className="text-[10px] text-slate-400 font-mono font-bold">
+                            #{product.trademarkId}
                           </span>
                         )}
                       </div>
@@ -250,46 +197,46 @@ export default function VerifyPage() {
 
           {/* Verification Panel */}
           {selectedProduct && (
-            <section className="glass-card !p-10 hover-glow">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <section className="glass-card !p-12 !bg-white/50 dark:!bg-white/[0.02] !border-slate-200 dark:!border-white/10 shadow-2xl animate-slide-up hover:!bg-white/50 dark:hover:!bg-white/[0.02] hover:!translate-y-0">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
                 {/* Product Details */}
                 <div>
-                  <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-tight">
-                    Product Details
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8 tracking-tight">
+                    Product Specification
                   </h2>
 
-                  <div className="glass-card !p-6 bg-white/[0.02]">
-                    <div className="flex items-center mb-6">
-                      <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center shadow-lg mr-4">
-                        <span className="text-3xl">
+                  <div className="p-8 rounded-3xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-white/5">
+                    <div className="flex items-center mb-8">
+                      <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-xl mr-6 border border-slate-100 dark:border-white/5">
+                        <span className="text-4xl text-slate-800 dark:text-white">
                           {selectedProduct.category === 'Technology' ? '📱' :
                             selectedProduct.category === 'Fashion & Apparel' ? '👕' :
                               selectedProduct.category === 'Food & Beverage' ? '🥤' : '📦'}
                         </span>
                       </div>
                       <div>
-                        <h3 className="text-lg font-black text-white">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
                           {selectedProduct.name}
                         </h3>
-                        <p className="text-sm text-slate-400 font-bold">{selectedProduct.category}</p>
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest leading-none">{selectedProduct.category}</p>
                       </div>
                     </div>
 
-                    <p className="text-sm text-slate-300 mb-6 font-bold">{selectedProduct.description}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-10 font-medium leading-relaxed italic border-l-2 border-indigo-500 pl-4">{selectedProduct.description}</p>
 
-                    <div className="grid grid-cols-2 gap-4 text-xs">
-                      <div>
-                        <span className="font-black text-slate-500 uppercase tracking-wider">Price:</span>
-                        <span className="ml-2 text-white font-black">${selectedProduct.price}</span>
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Market Price</p>
+                        <p className="text-base font-bold text-slate-900 dark:text-white">${selectedProduct.price}</p>
                       </div>
-                      <div>
-                        <span className="font-black text-slate-500 uppercase tracking-wider">Product ID:</span>
-                        <span className="ml-2 font-mono text-white font-black">{selectedProduct.id}</span>
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Artifact ID</p>
+                        <p className="text-base font-mono font-bold text-slate-700 dark:text-slate-300">#0{selectedProduct.id}</p>
                       </div>
                       {selectedProduct.trademarkId && (
-                        <div>
-                          <span className="font-black text-slate-500 uppercase tracking-wider">Trademark ID:</span>
-                          <span className="ml-2 font-mono text-white font-black">#{selectedProduct.trademarkId}</span>
+                        <div className="space-y-1 col-span-2">
+                          <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Registered Protocol</p>
+                          <p className="text-base font-mono font-bold text-indigo-600 dark:text-indigo-400">TM-P00{selectedProduct.trademarkId}-V2</p>
                         </div>
                       )}
                     </div>
@@ -298,8 +245,8 @@ export default function VerifyPage() {
 
                 {/* Verification Component */}
                 <div>
-                  <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-tight">
-                    Blockchain Verification
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8 tracking-tight">
+                    On-Chain Validation
                   </h2>
 
                   <ProductVerification
@@ -313,32 +260,10 @@ export default function VerifyPage() {
               </div>
             </section>
           )}
-
-          {/* Call to Action */}
-          <section className="mt-20 glass-card bg-gradient-to-br from-indigo-900 via-indigo-600 to-indigo-900 !p-12 text-center border-white/20 shadow-lg shadow-indigo-500/20">
-            <h2 className="text-3xl md:text-5xl font-black text-white mb-4 uppercase tracking-tighter italic">
-              Ready to Protect Your Brand?
-            </h2>
-            <p className="text-base text-indigo-100 mb-8 opacity-90 font-bold max-w-2xl mx-auto">
-              Register your trademarks on-chain and unlock instant verification for every product.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link
-                href="/register"
-                className="btn-glass !bg-white !text-indigo-600 !px-8 hover:scale-105"
-              >
-                Register Trademark
-              </Link>
-              <Link
-                href="/marketplace"
-                className="btn-glass !border-white/40 !px-8 hover:scale-105"
-              >
-                Browse Marketplace
-              </Link>
-            </div>
-          </section>
         </div>
       </main>
+
+      <Footer />
     </>
   );
 }

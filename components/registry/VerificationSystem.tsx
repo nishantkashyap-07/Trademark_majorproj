@@ -146,183 +146,161 @@ export default function VerificationSystem() {
         />
       )}
 
-      <div className="space-y-6">
-        {/* Search Section */}
-        <div className="bg-slate-900/70 rounded-2xl p-6 border border-slate-800">
-          <h3 className="text-lg font-semibold text-white mb-4">Verify Trademark</h3>
+      <div className="w-full space-y-8 animate-fade-in">
+        {/* Search Interface */}
+        <div className="glass-card !bg-white/50 dark:!bg-white/[0.02] !p-8 md:!p-10 !border-slate-200 dark:!border-white/10 shadow-sm overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[80px] rounded-full -mr-32 -mt-32 pointer-events-none" />
+          
+          <div className="max-w-2xl mx-auto space-y-8 relative z-10">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Trace Product History</h2>
+              <p className="text-sm text-slate-500 font-medium">Verify through our decentralized ledger using the registration ID or digital protocol index.</p>
+            </div>
 
-          {/* Search Type Selector */}
-          <div className="flex gap-2 mb-4">
-            <button
-              onClick={() => setSearchType('registration')}
-              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${searchType === 'registration'
-                  ? 'bg-sky-600 text-white'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                }`}
-            >
-              Registration Number
-            </button>
-            <button
-              onClick={() => setSearchType('tokenId')}
-              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${searchType === 'tokenId'
-                  ? 'bg-sky-600 text-white'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                }`}
-            >
-              Token ID
-            </button>
-          </div>
+            <div className="flex flex-col gap-6">
+              <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-2xl w-fit mx-auto">
+                {[
+                  { id: 'registration', label: 'Registration ID' },
+                  { id: 'tokenId', label: 'Protocol Index' }
+                ].map((type) => (
+                  <button
+                    key={type.id}
+                    onClick={() => setSearchType(type.id as any)}
+                    className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${searchType === type.id
+                        ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                      }`}
+                  >
+                    {type.label}
+                  </button>
+                ))}
+              </div>
 
-          {/* Search Input */}
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleVerify()}
-              placeholder={
-                searchType === 'registration'
-                  ? 'Enter registration number (e.g., TM001234)'
-                  : 'Enter token ID (e.g., 1)'
-              }
-              className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
-            />
-            <button
-              onClick={handleVerify}
-              disabled={isVerifying}
-              className="px-6 py-3 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isVerifying ? 'Verifying...' : 'Verify'}
-            </button>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1 group">
+                  <input
+                    type="text"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleVerify()}
+                    placeholder={searchType === 'registration' ? "Enter registration number..." : "Enter numeric token ID..."}
+                    className="premium-input !h-14 !pl-14 font-medium"
+                  />
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none group-focus-within:text-indigo-500 transition-colors">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  </div>
+                </div>
+                <button
+                  onClick={handleVerify}
+                  disabled={isVerifying}
+                  className="h-14 px-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 disabled:opacity-50 shadow-xl shadow-slate-900/10 dark:shadow-white/5"
+                >
+                  {isVerifying ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Searching</span>
+                    </div>
+                  ) : 'Verify now'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Loading State */}
-        {isVerifying && (
-          <div className="bg-slate-900/70 rounded-2xl p-8 border border-slate-800 text-center">
-            <LoadingSpinner text="Verifying trademark on blockchain..." />
-          </div>
-        )}
-
-        {/* Results Section */}
+        {/* Verification Report */}
         {result && !isVerifying && (
-          <div className={`bg-slate-900/70 rounded-2xl p-6 border ${result.isValid && result.verified
-              ? 'border-emerald-500/50'
-              : result.isValid
-                ? 'border-amber-500/50'
-                : 'border-rose-500/50'
-            }`}>
-            {/* Status Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                {result.isValid && result.verified ? (
-                  <>
-                    <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-emerald-400">Verified Trademark</h3>
-                      <p className="text-sm text-slate-400">Authenticated on blockchain</p>
-                    </div>
-                  </>
-                ) : result.isValid ? (
-                  <>
-                    <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-amber-400">Pending Verification</h3>
-                      <p className="text-sm text-slate-400">Awaiting admin approval</p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-12 h-12 bg-rose-500/20 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-rose-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-rose-400">Not Found</h3>
-                      <p className="text-sm text-slate-400">Trademark not registered</p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Trademark Details */}
-            {result.isValid && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column - Details */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Trademark Name</label>
-                    <p className="text-lg font-semibold text-white mt-1">{result.trademarkName}</p>
+          <div className="glass-card !bg-white/50 dark:!bg-white/[0.02] !p-0 overflow-hidden !border-slate-200 dark:!border-white/10 shadow-2xl animate-slide-up">
+            <div className="grid grid-cols-1 lg:grid-cols-2">
+              {/* Authenticity Certificate */}
+              <div className="p-12 space-y-10">
+                <div className="flex items-center justify-between">
+                  <div className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${result.isValid && result.verified
+                      ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20'
+                      : result.isValid
+                        ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20'
+                        : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-500/20'
+                    }`}>
+                    {result.isValid && result.verified ? '✓ Official Authentic' : result.isValid ? '⚠ Verification Pending' : '✕ Record Conflict'}
                   </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Company</label>
-                    <p className="text-lg text-slate-200 mt-1">{result.companyName}</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Token ID</label>
-                      <p className="text-lg font-mono text-sky-400 mt-1">#{result.tokenId}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Category</label>
-                      <p className="text-lg text-slate-200 mt-1">{result.category}</p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Registration Number</label>
-                    <p className="text-lg font-mono text-slate-200 mt-1">{result.registrationNumber}</p>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Owner Address</label>
-                    <p className="text-sm font-mono text-slate-300 mt-1 break-all">{result.owner}</p>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Registered On</label>
-                    <p className="text-lg text-slate-200 mt-1">{result.createdAt}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Network Live</span>
                   </div>
                 </div>
 
-                {/* Right Column - QR Code */}
-                <div className="flex flex-col items-center justify-center bg-slate-800/50 rounded-xl p-6">
-                  {result.qrCodeUrl && (
-                    <>
+                <div className="space-y-2">
+                  <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Product / Slogan</h3>
+                  <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                    {result.isValid ? result.trademarkName : 'Unregistered Asset'}
+                  </p>
+                </div>
+
+                {result.isValid && (
+                  <div className="grid grid-cols-2 gap-x-12 gap-y-10">
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Company</p>
+                      <p className="text-base font-bold text-slate-700 dark:text-slate-200">{result.companyName}</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Industry Class</p>
+                      <p className="text-base font-bold text-slate-700 dark:text-slate-200">{result.category}</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Index Index</p>
+                      <p className="text-base font-mono font-bold text-indigo-600 dark:text-indigo-400">#{result.tokenId}</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Registry ID</p>
+                      <p className="text-base font-mono font-bold text-slate-700 dark:text-slate-200">{result.registrationNumber}</p>
+                    </div>
+                  </div>
+                )}
+
+                {result.isValid && (
+                  <div className="pt-10 border-t border-slate-100 dark:border-white/5 space-y-2">
+                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Verified Proprietor</p>
+                    <p className="text-xs font-mono text-slate-500 truncate group relative">
+                      {result.owner}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Digital Proof */}
+              <div className="bg-slate-50 dark:bg-white/[0.02] p-12 flex flex-col items-center justify-center border-l border-slate-200 dark:border-white/10">
+                {result.isValid ? (
+                  <div className="w-full max-w-[280px] space-y-8 flex flex-col items-center">
+                    <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 transition-transform duration-500 hover:scale-[1.02]">
                       <img
                         src={result.qrCodeUrl}
                         alt="Verification QR Code"
-                        className="w-64 h-64 rounded-lg bg-white p-4"
+                        className="w-48 h-48 opacity-90"
                       />
-                      <p className="text-xs text-slate-400 mt-3 text-center">
-                        Scan to verify this trademark
-                      </p>
+                    </div>
+                    <div className="text-center space-y-6 w-full">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Cryptographic QR Index</p>
                       <button
                         onClick={downloadQRCode}
-                        className="mt-4 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-sm font-medium flex items-center gap-2"
+                        className="w-full py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-xl"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Download QR Code
+                        <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        Download Certificate
                       </button>
-                    </>
-                  )}
-                </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center space-y-6">
+                    <div className="w-24 h-24 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center mx-auto">
+                      <svg className="w-12 h-12 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    </div>
+                    <div className="space-y-2">
+                       <h3 className="text-xl font-bold text-slate-800 dark:text-white">Record Conflict</h3>
+                       <p className="text-sm text-slate-500 max-w-[240px] mx-auto">This identifier does not match any official registry entry in the blockchain protocol.</p>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>

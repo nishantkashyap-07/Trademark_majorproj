@@ -15,8 +15,8 @@ const CategoryPill = ({ active, onClick, children }: { active: boolean; onClick:
     onClick={onClick}
     className={`whitespace-nowrap px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-300 ${
       active 
-        ? 'bg-white text-black' 
-        : 'bg-white/5 text-white/50 hover:text-white hover:bg-white/10 border border-white/10'
+        ? 'bg-slate-900 text-white dark:bg-white dark:text-black border-transparent shadow-lg shadow-black/5' 
+        : 'bg-slate-900/5 text-slate-500 hover:text-slate-900 dark:bg-white/5 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/10 border border-transparent dark:border-white/10'
     }`}
   >
     {children}
@@ -88,7 +88,7 @@ export default function Marketplace() {
 
   return (
     <AnimatedPage>
-      <div className="bg-black text-white selection:bg-indigo-500/30 min-h-screen relative flex flex-col">
+      <div className="selection:bg-indigo-500/30 min-h-screen relative flex flex-col transition-colors duration-500">
         <Head>
           <title>Assets Index | TrademarkChain</title>
         </Head>
@@ -99,12 +99,12 @@ export default function Marketplace() {
           <div className="max-w-[1400px] mx-auto">
             
             {/* Minimal Header Controls */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-16">
               <div className="flex items-center gap-4">
-                <h1 className="text-xl font-bold tracking-tight">Registry Index</h1>
-                <div className="h-4 w-[1px] bg-white/20 hidden md:block" />
-                <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/50 hidden md:block">
-                  {filteredTrademarks.length} Assets Synchronized
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Registry Index</h1>
+                <div className="h-5 w-[1px] bg-slate-900/10 dark:bg-white/20 hidden md:block" />
+                <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-white/40 hidden md:block">
+                  {filteredTrademarks.length} Protocols Active
                 </span>
               </div>
 
@@ -112,19 +112,19 @@ export default function Marketplace() {
                 <div className="relative flex-1 md:w-64 group">
                   <input 
                     type="text" 
-                    className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-10 pr-4 text-[11px] text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-all font-medium" 
+                    className="w-full bg-slate-900/5 dark:bg-white/5 border border-slate-900/10 dark:border-white/10 rounded-full py-2.5 pl-10 pr-4 text-[11px] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 focus:outline-none focus:border-indigo-500 transition-all font-semibold" 
                     placeholder="Search across universal index..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
-                  <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 group-focus-within:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-white/30 group-focus-within:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
                 
-                <div className="flex items-center bg-white/5 p-1 rounded-full border border-white/10">
-                  <button onClick={() => setViewMode('grid')} className={`p-2 rounded-full transition-all ${viewMode === 'grid' ? 'bg-white text-black' : 'text-white/40'}`}>
+                <div className="flex items-center bg-slate-900/5 dark:bg-white/5 p-1 rounded-full border border-slate-900/10 dark:border-white/10">
+                  <button onClick={() => setViewMode('grid')} className={`p-2 rounded-full transition-all ${viewMode === 'grid' ? 'bg-slate-900 text-white dark:bg-white dark:text-black' : 'text-slate-400 dark:text-white/40'}`}>
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
                   </button>
-                  <button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all ${viewMode === 'list' ? 'bg-white text-black' : 'text-white/40'}`}>
+                  <button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all ${viewMode === 'list' ? 'bg-slate-900 text-white dark:bg-white dark:text-black' : 'text-slate-400 dark:text-white/40'}`}>
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6h16M4 12h16M4 18h16"/></svg>
                   </button>
                 </div>
@@ -150,7 +150,7 @@ export default function Marketplace() {
               {isLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                    {[1,2,3,4,5,6,7,8].map(i => (
-                     <div key={i} className="aspect-[4/5] rounded-[2rem] bg-white/[0.02] border border-white/10 animate-pulse" />
+                     <div key={i} className="aspect-[4/5] rounded-[2rem] bg-slate-900/5 dark:bg-white/[0.02] border border-slate-900/5 dark:border-white/10 animate-pulse" />
                    ))}
                 </div>
               ) : (
@@ -171,9 +171,9 @@ export default function Marketplace() {
                     <motion.div 
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="py-40 text-center border border-white/10 rounded-[2rem] bg-white/[0.01]"
+                      className="py-40 text-center border border-slate-900/10 dark:border-white/10 rounded-[2rem] bg-slate-900/5 dark:bg-white/[0.01]"
                     >
-                       <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">Zero Assets Found in Current Index</span>
+                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-white/30">Universal Index Empty: No protocols match criteria</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -186,7 +186,7 @@ export default function Marketplace() {
                 <button 
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className="w-10 h-10 flex items-center justify-center rounded-full border border-white/10 disabled:opacity-20 hover:bg-white/5 transition-all"
+                  className="w-10 h-10 flex items-center justify-center rounded-full border border-slate-900/10 dark:border-white/10 disabled:opacity-20 hover:bg-slate-900/5 dark:hover:bg-white/5 transition-all"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
                 </button>
@@ -195,7 +195,7 @@ export default function Marketplace() {
                      <button
                         key={i}
                         onClick={() => setCurrentPage(i + 1)}
-                        className={`w-10 h-10 rounded-full text-[10px] font-black transition-all ${currentPage === i + 1 ? 'bg-white text-black' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                        className={`w-10 h-10 rounded-full text-[10px] font-bold transition-all ${currentPage === i + 1 ? 'bg-slate-900 text-white dark:bg-white dark:text-black' : 'text-slate-400 dark:text-white/40 hover:text-slate-900 dark:hover:text-white hover:bg-slate-900/5 dark:hover:bg-white/5'}`}
                      >
                        {i + 1}
                      </button>
@@ -204,7 +204,7 @@ export default function Marketplace() {
                 <button 
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                  className="w-10 h-10 flex items-center justify-center rounded-full border border-white/10 disabled:opacity-20 hover:bg-white/5 transition-all"
+                  className="w-10 h-10 flex items-center justify-center rounded-full border border-slate-900/10 dark:border-white/10 disabled:opacity-20 hover:bg-slate-900/5 dark:hover:bg-white/5 transition-all"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
                 </button>

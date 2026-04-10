@@ -53,14 +53,14 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#05070a] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-primary)' }}>
         <LoadingSpinner text="Loading profile protocols..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#05070a] text-white selection:bg-indigo-500/30">
+    <div className="min-h-screen transition-colors duration-500 selection:bg-indigo-500/30">
       <Head>
         <title>Profile | {profileAccount} | TrademarkChain</title>
       </Head>
@@ -79,9 +79,9 @@ export default function ProfilePage() {
             
             <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
               {/* Avatar/Icon */}
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 p-1">
-                <div className="w-full h-full bg-[#05070a] rounded-full flex items-center justify-center overflow-hidden">
-                   <div className="text-5xl font-black text-white">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 p-1 shadow-2xl">
+                <div className="w-full h-full bg-slate-50 dark:bg-[#05070a] rounded-full flex items-center justify-center overflow-hidden">
+                   <div className="text-5xl font-black text-slate-900 dark:text-white">
                      {(profileAccount as string)?.slice(2, 4).toUpperCase()}
                    </div>
                 </div>
@@ -90,23 +90,23 @@ export default function ProfilePage() {
               {/* User Identity */}
               <div className="flex-1 text-center md:text-left">
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mb-3">
-                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+                  <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
                     Creator Profile
                   </h1>
                   {isOwnProfile && (
-                    <span className="px-3 py-1 bg-indigo-500/20 border border-indigo-500/30 rounded-full text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                    <span className="px-3 py-1 bg-indigo-500 text-white dark:bg-indigo-500/20 border border-indigo-500/30 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20">
                       Your Profile
                     </span>
                   )}
                 </div>
                 
                 <div className="flex items-center justify-center md:justify-start gap-3 mb-6">
-                  <span className="font-mono text-slate-400 break-all text-sm md:text-lg">
+                  <span className="font-mono text-slate-500 dark:text-slate-400 break-all text-sm md:text-lg">
                     {profileAccount}
                   </span>
                   <button 
                     onClick={() => navigator.clipboard.writeText(profileAccount as string)}
-                    className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-all text-slate-500 hover:text-white"
+                    className="p-2 bg-slate-900/5 dark:bg-white/5 hover:bg-slate-900/10 dark:hover:bg-white/10 rounded-lg transition-all text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-900/5 dark:border-white/5"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -117,7 +117,7 @@ export default function ProfilePage() {
                 <div className="flex flex-wrap justify-center md:justify-start gap-8">
                   <div>
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Assets</p>
-                    <p className="text-2xl font-black text-white">{trademarks.length}</p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">{trademarks.length}</p>
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Trust Rating</p>
@@ -126,8 +126,8 @@ export default function ProfilePage() {
                   <div>
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Status</p>
                     <div className="flex items-center gap-2">
-                       <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                       <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">Active Provider</span>
+                       <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                       <span className="text-xs font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest">Active Provider</span>
                     </div>
                   </div>
                 </div>
@@ -152,10 +152,10 @@ export default function ProfilePage() {
           <section className="mb-20">
             <div className="flex items-center justify-between mb-10">
                <div>
-                  <h2 className="text-xl font-bold tracking-tight text-white uppercase">Assets Portfolio</h2>
-                  <p className="text-sm text-slate-500 font-medium">Intellectual property protocols managed by this user.</p>
+                  <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Assets Portfolio</h2>
+                  <p className="text-sm text-slate-500 font-bold italic">Intellectual property protocols managed by this node.</p>
                </div>
-               <div className="hidden md:block h-px flex-1 bg-white/5 mx-10" />
+               <div className="hidden md:block h-px flex-1 bg-slate-900/5 dark:bg-white/5 mx-10" />
                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                   Sort: Newest First
                </div>
@@ -189,17 +189,17 @@ export default function ProfilePage() {
                </div>
             </div>
 
-            <div className="glass-card !p-0 overflow-hidden divide-y divide-white/5">
+            <div className="glass-card !p-0 overflow-hidden divide-y divide-slate-900/5 dark:divide-white/5 bg-slate-50 dark:bg-white/[0.02]">
               {[1, 2, 3].map((item) => (
-                <div key={item} className="p-8 flex items-center gap-8 hover:bg-white/[0.01] transition-colors group">
-                  <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center flex-shrink-0 text-slate-500 group-hover:bg-indigo-500/10 group-hover:text-indigo-400 group-hover:border-indigo-500/20 transition-all">
+                <div key={item} className="p-8 flex items-center gap-8 hover:bg-slate-900/[0.02] dark:hover:bg-white/[0.01] transition-colors group">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-900/5 dark:bg-white/5 border border-slate-900/10 dark:border-white/5 flex items-center justify-center flex-shrink-0 text-slate-400 group-hover:bg-indigo-500/10 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:border-indigo-500/20 transition-all">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-bold text-white mb-1">Asset Protocol Minted</h4>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                    <h4 className="font-black text-slate-900 dark:text-white mb-1">Asset Protocol Minted</h4>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest">
                        TRADEMARK_REGISTRATION • 0x4f...{item}de • {new Date().toLocaleDateString()}
                     </p>
                   </div>
