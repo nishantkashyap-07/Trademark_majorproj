@@ -51,7 +51,12 @@ export default function RegisterTrademark() {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, authLoading, router]);
+
+    // Auto-fill company name from organization if available
+    if (user?.organization && !formData.companyName) {
+      setFormData(prev => ({ ...prev, companyName: user.organization || '' }));
+    }
+  }, [isAuthenticated, authLoading, router, user, formData.companyName]);
 
   const handleInputChange = (field: keyof TrademarkFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -217,7 +222,7 @@ export default function RegisterTrademark() {
             description: formData.description,
             royaltyPercentage: formData.royaltyPercentage,
             tokenURI,
-            transactionHash: result.transactionHash,
+            transactionHash: result.transactionHash || '',
             verified: false,
             verificationStatus: 'pending',
           }),
@@ -290,7 +295,7 @@ export default function RegisterTrademark() {
                 <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-white mb-2">Registration</h1>
                 <p className="text-xs text-slate-500 font-medium">Follow the steps to secure your brand identity.</p>
               </div>
- 
+
               <div className="space-y-6">
                 {steps.map((step) => (
                   <div key={step.id} className="relative group">
@@ -316,7 +321,7 @@ export default function RegisterTrademark() {
                   </div>
                 ))}
               </div>
- 
+
               <div className="mt-16 p-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -327,7 +332,7 @@ export default function RegisterTrademark() {
                 </p>
               </div>
             </div>
- 
+
             {/* Main Content Area */}
             <div className="flex-1 w-full glass-card !bg-white/50 dark:!bg-white/[0.02] !p-10 !border-slate-200 dark:!border-white/10">
               <div className="animate-fade-in relative z-30">
@@ -338,20 +343,27 @@ export default function RegisterTrademark() {
                       <div className="relative group">
                         <input
                           type="text"
-                          className={`premium-input !h-14 ${validationErrors.companyName ? 'border-red-500 text-red-500' : ''}`}
+                          className={`premium-input !h-14 ${validationErrors.companyName ? 'border-red-500 text-red-500' : ''} ${user?.organization ? 'bg-slate-50 dark:bg-white/5 cursor-not-allowed opacity-80' : ''}`}
                           placeholder="e.g. Nexus Industries"
                           value={formData.companyName}
                           onChange={(e) => handleInputChange('companyName', e.target.value)}
+                          readOnly={!!user?.organization}
                         />
                         <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none group-focus-within:text-indigo-500 transition-colors">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 v5m-4 0h4" /></svg>
                         </div>
                       </div>
+                      {user?.organization && (
+                        <p className="text-[10px] text-indigo-500/80 dark:text-indigo-400/80 font-medium ml-1 flex items-center gap-1.5">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          Pre-filled based on your registered organization profile for protocol consistency.
+                        </p>
+                      )}
                       {validationErrors.companyName && (
                         <p className="text-[10px] font-bold text-red-500 ml-1 uppercase tracking-tight">{validationErrors.companyName}</p>
                       )}
                     </div>
- 
+
                     <div className="space-y-3">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Trademark Text / Slogan</label>
                       <div className="relative group">
@@ -370,7 +382,7 @@ export default function RegisterTrademark() {
                         <p className="text-[10px] font-bold text-red-500 ml-1 uppercase tracking-tight">{validationErrors.sloganText}</p>
                       )}
                     </div>
- 
+
                     <div className="grid sm:grid-cols-2 gap-8">
                       <div className="space-y-3">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Registration ID</label>
@@ -406,7 +418,7 @@ export default function RegisterTrademark() {
                         </div>
                       </div>
                     </div>
- 
+
                     <div className="space-y-3">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Description & Usage</label>
                       <textarea
@@ -467,7 +479,7 @@ export default function RegisterTrademark() {
                           <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-[320px] mx-auto text-sm leading-relaxed font-medium">
                             Upload your corporate logo or slogan design. This visual will be tied to your certificate.
                           </p>
- 
+
                           <input
                             type="file"
                             id="file-upload"
@@ -485,7 +497,7 @@ export default function RegisterTrademark() {
                     </div>
                   </div>
                 )}
- 
+
                 {currentStep === 3 && (
                   <div className="space-y-10 animate-fade-in">
                     {showWalletPrompt && !isConnected && (
@@ -509,7 +521,7 @@ export default function RegisterTrademark() {
                         </div>
                       </div>
                     )}
- 
+
                     <div className="bg-slate-50 dark:bg-white/[0.02] rounded-3xl p-10 border border-slate-200 dark:border-white/5 relative overflow-hidden shadow-sm">
                       <div className="flex items-center justify-between mb-12">
                         <h3 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-3">
@@ -517,7 +529,7 @@ export default function RegisterTrademark() {
                           Registration Summary
                         </h3>
                       </div>
- 
+
                       <div className="grid grid-cols-2 gap-y-12 gap-x-12">
                         <div className="space-y-2">
                           <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Company</p>
@@ -536,7 +548,7 @@ export default function RegisterTrademark() {
                           <p className="text-xl font-bold text-slate-900 dark:text-white tracking-tight italic">{formData.category}</p>
                         </div>
                       </div>
- 
+
                       <div className="mt-16 pt-8 border-t border-slate-200 dark:border-white/5 flex items-center justify-between">
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fee</p>
@@ -547,7 +559,7 @@ export default function RegisterTrademark() {
                         </div>
                       </div>
                     </div>
- 
+
                     <div className="flex gap-5 items-start p-8 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl shadow-sm">
                       <div className="w-10 h-10 bg-amber-100 dark:bg-amber-500/20 rounded-xl flex items-center justify-center flex-shrink-0 text-amber-600 dark:text-amber-400">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -559,10 +571,10 @@ export default function RegisterTrademark() {
                     </div>
                   </div>
                 )}
- 
+
                 {error && <div className="mt-12 p-6 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-500/20 rounded-2xl text-red-600 dark:text-red-400 text-xs font-bold text-center">{error}</div>}
                 {success && <div className="mt-12 p-6 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl text-emerald-600 dark:text-emerald-400 text-xs font-bold text-center">{success}</div>}
- 
+
                 {isLoading && uploadProgress > 0 && (
                   <div className="mt-12 space-y-4">
                     <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
@@ -574,7 +586,7 @@ export default function RegisterTrademark() {
                     </div>
                   </div>
                 )}
- 
+
                 <div className="mt-16 flex justify-between items-center pt-8 border-t border-slate-100 dark:border-white/5">
                   <button
                     onClick={() => setCurrentStep(s => Math.max(1, s - 1))}
@@ -583,7 +595,7 @@ export default function RegisterTrademark() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
                     Previous Step
                   </button>
- 
+
                   {currentStep < 3 ? (
                     <button
                       onClick={handleNextStep}
