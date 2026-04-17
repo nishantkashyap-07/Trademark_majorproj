@@ -18,14 +18,14 @@ async function handler(
 
   try {
     if (req.method === 'GET') {
-      // Get single trademark by ID
-      const docRef = doc(db, 'trademarks', id);
+      // Get single asset by ID
+      const docRef = doc(db, 'ip_assets', id);
       const docSnap = await getDoc(docRef);
 
       if (!docSnap.exists()) {
         return res.status(404).json({
           success: false,
-          error: 'Trademark not found',
+          error: 'Asset not found',
         });
       }
 
@@ -39,11 +39,11 @@ async function handler(
     }
 
     if (req.method === 'PUT') {
-      // Update trademark
+      // Update asset
       const updateData = req.body;
       updateData.updatedAt = Timestamp.now();
 
-      const docRef = doc(db, 'trademarks', id);
+      const docRef = doc(db, 'ip_assets', id);
       await updateDoc(docRef, updateData);
 
       const updatedDoc = await getDoc(docRef);
@@ -58,13 +58,13 @@ async function handler(
     }
 
     if (req.method === 'DELETE') {
-      // Delete trademark
-      const docRef = doc(db, 'trademarks', id);
+      // Delete asset
+      const docRef = doc(db, 'ip_assets', id);
       await deleteDoc(docRef);
 
       return res.status(200).json({
         success: true,
-        message: 'Trademark deleted successfully',
+        message: 'Asset deleted successfully',
       });
     }
 

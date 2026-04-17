@@ -41,16 +41,17 @@
     "@nomicfoundation/hardhat-ethers": "^3.1.2",
     "@nomicfoundation/hardhat-network-helpers": "^1.1.2",
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
-    "@nomicfoundation/hardhat-verify": "^3.0.7",
+    "@nomicfoundation/hardhat-verify": "^1.1.1",
     "@openzeppelin/contracts": "^4.9.0",
     "@typechain/ethers-v6": "^0.4.3",
     "@typechain/hardhat": "^8.0.3",
     "@types/chai": "^4.3.20",
     "@types/form-data": "^2.2.1",
     "@types/formidable": "^3.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.0.0",
+    "@types/node": "^20.19.39",
+    "@types/react": "^18.3.28",
     "@types/react-dom": "^18.0.0",
     "autoprefixer": "^10.4.16",
     "baseline-browser-mapping": "^2.9.19",
@@ -65,6 +66,6 @@
     "tailwindcss": "^3.3.0",
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   }
 }

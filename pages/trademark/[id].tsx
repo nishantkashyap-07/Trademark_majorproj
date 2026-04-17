@@ -25,7 +25,7 @@ export default function TrademarkDetail() {
    const [trademark, setTrademark] = useState<TrademarkMetadata | null>(null);
    const [ratingKey, setRatingKey] = useState(0);
 
-   const isOwner = account?.toLowerCase() === trademark?.creatorAddress.toLowerCase();
+   const isOwner = account?.toLowerCase() === (trademark?.ownerId || trademark?.creatorAddress)?.toLowerCase();
 
    useEffect(() => {
       if (id) loadTrademark();
@@ -46,11 +46,15 @@ export default function TrademarkDetail() {
          if (data.success && data.data) {
             const trademarkData = {
                ...data.data,
-               sloganText: data.data.trademarkName || data.data.sloganText,
+               title: data.data.title || data.data.trademarkName || data.data.sloganText,
+               sloganText: data.data.title || data.data.trademarkName || data.data.sloganText, // compat
+               previewUrl: data.data.previewUrl || data.data.imageUrl,
+               imageUrl: data.data.previewUrl || data.data.imageUrl, // compat
+               blockchainTokenId: data.data.blockchainTokenId || data.data.tokenId,
                createdAt: new Date(data.data.createdAt?.seconds ? data.data.createdAt.seconds * 1000 : data.data.createdAt),
             };
             setTrademark(trademarkData);
-            loadLicenses(trademarkData.tokenId);
+            loadLicenses(trademarkData.blockchainTokenId || trademarkData.tokenId);
          }
       } catch (error) {
          console.error('Error loading trademark:', error);

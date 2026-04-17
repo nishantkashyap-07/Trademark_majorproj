@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWeb3 } from '@/contexts/Web3Context';
+import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/common/Navbar';
 import Footer from '@/components/common/Footer';
 import AnimatedPage from '@/components/common/AnimatedPage';
@@ -22,7 +23,7 @@ const FloatingNode = ({ name, value, x, y, delay, icon }: { name: string; value:
       <div className="w-2 h-2 bg-white/60 rounded-full" />
     </div>
     <div className="flex flex-col">
-      <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest leading-none">{name}</span>
+      <span className="text-[10px] font-semibold text-slate-900 dark:text-white uppercase tracking-widest leading-none">{name}</span>
       <span className="text-[8px] font-bold text-slate-500 dark:text-white/50 mt-1">{value}</span>
     </div>
     {icon && <div className="ml-2 opacity-50">{icon}</div>}
@@ -38,6 +39,7 @@ const PartnerLogo = ({ name, icon }: { name: string; icon?: string }) => (
 
 export default function Home() {
   const { isConnected, connect } = useWeb3();
+  const { isAuthenticated } = useAuth();
   const [stats, setStats] = useState(demoStats);
   const [loading, setLoading] = useState(true);
 
@@ -130,9 +132,11 @@ export default function Home() {
                 Open App
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
               </Link>
-              <Link href="/marketplace" className="btn-pill-secondary px-10 py-4">
-                Discover More
-              </Link>
+              {!isAuthenticated && (
+                <Link href="/signup" className="btn-pill-secondary px-10 py-4">
+                  Get Started
+                </Link>
+              )}
             </motion.div>
 
             {/* Scroll Indicator */}
@@ -140,12 +144,12 @@ export default function Home() {
               <div className="w-8 h-8 rounded-full border border-slate-900 dark:border-white flex items-center justify-center">
                 <svg className="w-3 h-3 text-slate-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
               </div>
-              <span className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-700 dark:text-white">02/03 . Scroll down</span>
+              <span className="text-[10px] uppercase font-semibold tracking-[0.2em] text-slate-700 dark:text-white">02/03 . Scroll down</span>
             </div>
 
             {/* Horizon Indicator */}
             <div className="absolute bottom-10 right-10 hidden lg:flex flex-col items-end gap-2 opacity-50 text-right">
-              <span className="text-[10px] uppercase font-black tracking-[0.1em] text-indigo-500">IP Horizons</span>
+              <span className="text-[10px] uppercase font-semibold tracking-[0.1em] text-indigo-500">IP Horizons</span>
               <div className="flex gap-1 h-1">
                 <div className="w-8 bg-slate-900 dark:bg-white rounded-full" />
                 <div className="w-8 bg-slate-900/20 dark:bg-white/30 rounded-full" />
@@ -210,20 +214,20 @@ export default function Home() {
           <section className="py-20 border-y transition-colors duration-500">
             <div className="container-custom flex flex-wrap justify-between gap-12 opacity-80">
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-600 dark:text-white/50 uppercase tracking-widest mb-1">Total Assets</span>
-                <span className="text-2xl font-black text-slate-900 dark:text-white">{stats.overview.totalTrademarks?.toLocaleString() || '1,280'}</span>
+                <span className="text-[10px] font-semibold text-slate-600 dark:text-white/50 uppercase tracking-widest mb-1">Total Assets</span>
+                <span className="text-2xl font-semibold text-slate-900 dark:text-white">{stats.overview.totalTrademarks?.toLocaleString() || '1,280'}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest mb-1">Active Users</span>
-                <span className="text-2xl font-black">{stats.overview.totalUsers?.toLocaleString() || '429'}</span>
+                <span className="text-[10px] font-semibold text-slate-500 dark:text-white/50 uppercase tracking-widest mb-1">Active Users</span>
+                <span className="text-2xl font-semibold">{stats.overview.totalUsers?.toLocaleString() || '429'}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest mb-1">Verified IP</span>
-                <span className="text-2xl font-black">{stats.overview.verifiedTrademarks?.toLocaleString() || '912'}</span>
+                <span className="text-[10px] font-semibold text-slate-500 dark:text-white/50 uppercase tracking-widest mb-1">Verified IP</span>
+                <span className="text-2xl font-semibold">{stats.overview.verifiedTrademarks?.toLocaleString() || '912'}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest mb-1">Success Rate</span>
-                <span className="text-2xl font-black">{stats.overview.verificationRate || '99.4'}%</span>
+                <span className="text-[10px] font-semibold text-slate-500 dark:text-white/50 uppercase tracking-widest mb-1">Success Rate</span>
+                <span className="text-2xl font-semibold">{stats.overview.verificationRate || '99.4'}%</span>
               </div>
             </div>
           </section>

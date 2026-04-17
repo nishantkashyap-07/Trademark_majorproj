@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import { Web3ContextType } from '@/types';
 import { DEFAULT_CHAIN, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/utils/constants';
 import { getTrademarkNFTContract, getMarketplaceContract } from '@/utils/contracts';
+import { useAuth } from './AuthContext';
 
 const Web3Context = createContext<Web3ContextType | undefined>(undefined);
 
@@ -17,6 +18,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [trademarkNFTContract, setTrademarkNFTContract] = useState<any | null>(null);
   const [marketplaceContract, setMarketplaceContract] = useState<any | null>(null);
+  const { updateProfile, isAuthenticated, user } = useAuth();
 
   // Check if wallet is already connected on page load
   useEffect(() => {
@@ -58,6 +60,11 @@ export function Web3Provider({ children }: Web3ProviderProps) {
           setChainId(Number(network.chainId));
           setIsConnected(true);
           
+          // Sync with backend if needed
+          if (isAuthenticated && user && accounts[0].address) {
+            updateProfile({ walletAddress: accounts[0].address });
+          }
+
           // Initialize contracts
           const signer = await provider.getSigner();
           const nftContract = getTrademarkNFTContract(signer);
@@ -137,6 +144,11 @@ export function Web3Provider({ children }: Web3ProviderProps) {
           detail: { address, chainId: networkChainId } 
         });
         window.dispatchEvent(event);
+      }
+
+      // Sync with backend profile if logged in
+      if (isAuthenticated && user && address) {
+        await updateProfile({ walletAddress: address });
       }
       
       // Check if on correct network (skip if we couldn't get network info)

@@ -16,11 +16,11 @@ export default function ProfilePage() {
   const { account: profileAccount } = router.query;
   const { user: currentUser } = useAuth();
   const { account: currentWallet } = useWeb3();
-  
+
   const [trademarks, setTrademarks] = useState<TrademarkMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   const isOwnProfile = (profileAccount as string)?.toLowerCase() === currentWallet?.toLowerCase();
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function ProfilePage() {
     try {
       const response = await fetch(`/api/trademarks?creatorAddress=${profileAccount}`);
       const data = await response.json();
-      
+
       if (data.success) {
         setTrademarks(data.data.map((tm: any) => ({
           ...tm,
@@ -76,35 +76,35 @@ export default function ProfilePage() {
           {/* Profile Header Card */}
           <div className="glass-card !p-12 mb-16 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[80px] rounded-full -mr-20 -mt-20 group-hover:bg-indigo-500/10 transition-all duration-700" />
-            
+
             <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
               {/* Avatar/Icon */}
               <div className="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 p-1 shadow-2xl">
                 <div className="w-full h-full bg-slate-50 dark:bg-[#05070a] rounded-full flex items-center justify-center overflow-hidden">
-                   <div className="text-5xl font-black text-slate-900 dark:text-white">
-                     {(profileAccount as string)?.slice(2, 4).toUpperCase()}
-                   </div>
+                  <div className="text-5xl font-semibold text-slate-900 dark:text-white">
+                    {(profileAccount as string)?.slice(2, 4).toUpperCase()}
+                  </div>
                 </div>
               </div>
 
               {/* User Identity */}
               <div className="flex-1 text-center md:text-left">
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mb-3">
-                  <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                  <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
                     Creator Profile
                   </h1>
                   {isOwnProfile && (
-                    <span className="px-3 py-1 bg-indigo-500 text-white dark:bg-indigo-500/20 border border-indigo-500/30 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20">
+                    <span className="px-3 py-1 bg-indigo-500 text-white dark:bg-indigo-500/20 border border-indigo-500/30 rounded-full text-[10px] font-semibold uppercase tracking-widest shadow-lg shadow-indigo-500/20">
                       Your Profile
                     </span>
                   )}
                 </div>
-                
+
                 <div className="flex items-center justify-center md:justify-start gap-3 mb-6">
                   <span className="font-mono text-slate-500 dark:text-slate-400 break-all text-sm md:text-lg">
                     {profileAccount}
                   </span>
-                  <button 
+                  <button
                     onClick={() => navigator.clipboard.writeText(profileAccount as string)}
                     className="p-2 bg-slate-900/5 dark:bg-white/5 hover:bg-slate-900/10 dark:hover:bg-white/10 rounded-lg transition-all text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-900/5 dark:border-white/5"
                   >
@@ -116,18 +116,18 @@ export default function ProfilePage() {
 
                 <div className="flex flex-wrap justify-center md:justify-start gap-8">
                   <div>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Assets</p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white">{trademarks.length}</p>
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Total Assets</p>
+                    <p className="text-2xl font-semibold text-slate-900 dark:text-white">{trademarks.length}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Trust Rating</p>
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Trust Rating</p>
                     <RatingDisplay creatorAddress={profileAccount as string} size="medium" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Status</p>
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Status</p>
                     <div className="flex items-center gap-2">
-                       <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                       <span className="text-xs font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest">Active Provider</span>
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-500 uppercase tracking-widest">Active Provider</span>
                     </div>
                   </div>
                 </div>
@@ -151,14 +151,14 @@ export default function ProfilePage() {
           {/* User's Assets Section */}
           <section className="mb-20">
             <div className="flex items-center justify-between mb-10">
-               <div>
-                  <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Assets Portfolio</h2>
-                  <p className="text-sm text-slate-500 font-bold italic">Intellectual property protocols managed by this node.</p>
-               </div>
-               <div className="hidden md:block h-px flex-1 bg-slate-900/5 dark:bg-white/5 mx-10" />
-               <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  Sort: Newest First
-               </div>
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white uppercase">Assets Portfolio</h2>
+                <p className="text-sm text-slate-500 font-bold italic">Intellectual property protocols managed by this node.</p>
+              </div>
+              <div className="hidden md:block h-px flex-1 bg-slate-900/5 dark:bg-white/5 mx-10" />
+              <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+                Sort: Newest First
+              </div>
             </div>
 
             {trademarks.length > 0 ? (
@@ -169,24 +169,24 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="glass-card !py-24 text-center">
-                 <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/5 text-slate-700">
-                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                 </div>
-                 <h3 className="text-2xl font-black mb-2 uppercase">No Assets Detected</h3>
-                 <p className="text-slate-500 font-bold max-w-md mx-auto">This node has not registered any intellectual property protocols on the network yet.</p>
+                <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/5 text-slate-700">
+                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-semibold mb-2 uppercase">No Assets Detected</h3>
+                <p className="text-slate-500 font-bold max-w-md mx-auto">This node has not registered any intellectual property protocols on the network yet.</p>
               </div>
             )}
           </section>
 
           {/* Activity Section */}
           <section>
-             <div className="flex items-center justify-between mb-8">
-               <div>
-                  <h2 className="text-xl font-bold tracking-tight text-white uppercase">Recent Activity</h2>
-                  <p className="text-sm text-slate-500 font-medium">Record of recent network interactions.</p>
-               </div>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-xl font-bold tracking-tight text-white uppercase">Recent Activity</h2>
+                <p className="text-sm text-slate-500 font-medium">Record of recent network interactions.</p>
+              </div>
             </div>
 
             <div className="glass-card !p-0 overflow-hidden divide-y divide-slate-900/5 dark:divide-white/5 bg-slate-50 dark:bg-white/[0.02]">
@@ -198,22 +198,22 @@ export default function ProfilePage() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-black text-slate-900 dark:text-white mb-1">Asset Protocol Minted</h4>
+                    <h4 className="font-semibold text-slate-900 dark:text-white mb-1">Asset Protocol Minted</h4>
                     <p className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest">
-                       TRADEMARK_REGISTRATION • 0x4f...{item}de • {new Date().toLocaleDateString()}
+                      TRADEMARK_REGISTRATION • 0x4f...{item}de • {new Date().toLocaleDateString()}
                     </p>
                   </div>
                   <div className="hidden md:block">
-                    <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[10px] font-black uppercase tracking-widest">
+                    <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-widest">
                       Confirmed
                     </span>
                   </div>
                 </div>
               ))}
               <div className="p-8 text-center bg-white/[0.01]">
-                 <button className="text-xs font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300 transition-colors">
-                    Retrieve Full Ledger History
-                 </button>
+                <button className="text-xs font-semibold text-indigo-400 uppercase tracking-widest hover:text-indigo-300 transition-colors">
+                  Retrieve Full Ledger History
+                </button>
               </div>
             </div>
           </section>

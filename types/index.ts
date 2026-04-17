@@ -71,51 +71,41 @@ export interface ProductData {
 
 // Database Types (aligned with class diagram)
 export interface UserProfile {
+  id: string; // From diagram
   address: string;
-  companyName?: string;
+  name: string; // From diagram (replaces displayName/companyName)
   displayName?: string;
-  email?: string;
-  role: 'buyer' | 'creator' | 'admin';
-  walletAddress: string; // Explicit wallet address field
+  email: string; // From diagram
+  role: string; // From diagram
+  walletAddress: string; // From diagram
+  profileImage?: string; // From diagram
+  status: string; // From diagram
   createdAt: Date;
   updatedAt: Date;
-  totalTrademarks: number;
-  totalProducts: number;
-  totalSales: number;
-  totalPurchases: number;
-  verified: boolean;
-  suspended: boolean;
-  suspensionReason?: string;
-  averageRating?: number;
-  ratingCount: number;
-  profileImage?: string;
+  totalTrademarks?: number;
 }
 
 export interface SloganMetadata {
-  tokenId: number;
-  creatorAddress: string;
-  currentOwner?: string; // Current owner if transferred
+  id: string; // From diagram
+  ownerId: string; // From diagram
+  creatorAddress?: string; // Compatibility
+  title: string; // From diagram (replaces sloganText)
+  sloganText: string; // From diagram (kept for ref)
+  description: string; // From diagram
+  category: string; // From diagram
+  ipfsHash: string; // From diagram
+  previewUrl: string; // From diagram (replaces imageUrl)
+  imageUrl?: string; // Compatibility
+  blockchainTokenId: number; // From diagram (replaces tokenId)
+  tokenId?: number; // Compatibility
   companyName: string;
-  sloganText: string;
   registrationNumber: string;
-  category: string;
-  description: string;
-  ipfsHash: string;
-  imageUrl?: string; // Direct URL to the main image
-  royaltyPercentage: number;
+  contractAddress?: string; // From diagram
+  verificationStatus: 'pending' | 'verified' | 'rejected'; // From diagram
   createdAt: Date;
   updatedAt?: Date;
-  transactionHash: string;
+  transactionHash?: string;
   verified: boolean;
-  verificationStatus: 'pending' | 'verified' | 'rejected';
-  verifiedBy?: string; // Admin address who verified
-  verifiedAt?: Date;
-  rejectionReason?: string;
-  language?: string;
-  usageContext?: string;
-  views?: number;
-  listingCount?: number;
-  salesCount?: number;
 }
 
 // Keep backward compatibility

@@ -5,132 +5,123 @@ interface User {
   id: string;
   email: string;
   name: string;
-  role: 'creator' | 'buyer' | 'admin';
-  createdAt: Date;
+  role: string;
+  walletAddress?: string;
+  organization?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  sendOtp: (email: string) => Promise<any>;
+  registerInit: (data: { fullName: string; email: string; organization: string; role: string }) => Promise<any>;
+  verifyAuth: (email: string, otp: string) => Promise<void>;
+  updateProfile: (data: any) => Promise<void>;
   logout: () => void;
-  register: (email: string, password: string, name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is logged in (check session/token)
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
     try {
-      // Check localStorage for session
       const sessionData = localStorage.getItem('user_session');
-      if (sessionData) {
-        const userData = JSON.parse(sessionData);
-        setUser(userData);
+      const token = localStorage.getItem('auth_token');
+
+      if (sessionData && token) {
+        setUser(JSON.parse(sessionData));
       }
     } catch (error) {
-      console.error('Auth check error:', error);
+      console.error('Session restoration failed:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const login = async (email: string, password: string) => {
-    try {
-      // TODO: Call your authentication API
-      // For now, mock authentication
-      const mockUser: User = {
-        id: '1',
-        email,
-        name: email.split('@')[0],
-        role: 'creator',
-        createdAt: new Date(),
-      };
+  const sendOtp = async (email: string) => {
+    const res = await fetch('/api/auth/otp/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to send verification code');
+    return data;
+  };
 
-      setUser(mockUser);
-      localStorage.setItem('user_session', JSON.stringify(mockUser));
-      
-      // Dispatch login event
-      if (typeof window !== 'undefined') {
-        const event = new CustomEvent('user-logged-in', { detail: mockUser });
-        window.dispatchEvent(event);
-      }
-    } catch (error: any) {
-      throw new Error(error.message || 'Login failed');
+  const registerInit = async (regData: { fullName: string; email: string; organization: string; role: string }) => {
+    const res = await fetch('/api/auth/register-init', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(regData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Organization initialization failed');
+    return data;
+  };
+
+  const verifyAuth = async (email: string, otp: string) => {
+    const res = await fetch('/api/auth/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Verification failed');
+
+    // Secure the session
+    const userData = data.user;
+    setUser(userData);
+    localStorage.setItem('user_session', JSON.stringify(userData));
+    localStorage.setItem('auth_token', data.token);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('user-logged-in', { detail: userData }));
     }
   };
 
-  const loginWithGoogle = async () => {
+  const updateProfile = async (updateData: any) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
     try {
-      // TODO: Implement Google OAuth
-      // For now, mock Google login
-      const mockUser: User = {
-        id: '2',
-        email: 'user@gmail.com',
-        name: 'Google User',
-        role: 'creator',
-        createdAt: new Date(),
-      };
+      const res = await fetch('/api/auth/profile/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updateData),
+      });
 
-      setUser(mockUser);
-      localStorage.setItem('user_session', JSON.stringify(mockUser));
-      
-      if (typeof window !== 'undefined') {
-        const event = new CustomEvent('user-logged-in', { detail: mockUser });
-        window.dispatchEvent(event);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setUser(data.user);
+        localStorage.setItem('user_session', JSON.stringify(data.user));
       }
-    } catch (error: any) {
-      throw new Error(error.message || 'Google login failed');
-    }
-  };
-
-  const register = async (email: string, password: string, name: string) => {
-    try {
-      // TODO: Call your registration API
-      const mockUser: User = {
-        id: Date.now().toString(),
-        email,
-        name,
-        role: 'creator',
-        createdAt: new Date(),
-      };
-
-      setUser(mockUser);
-      localStorage.setItem('user_session', JSON.stringify(mockUser));
-      
-      if (typeof window !== 'undefined') {
-        const event = new CustomEvent('user-logged-in', { detail: mockUser });
-        window.dispatchEvent(event);
-      }
-    } catch (error: any) {
-      throw new Error(error.message || 'Registration failed');
+    } catch (error) {
+      console.error('Profile update failed:', error);
     }
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user_session');
-    
+    localStorage.removeItem('auth_token');
+
     if (typeof window !== 'undefined') {
-      const event = new CustomEvent('user-logged-out');
-      window.dispatchEvent(event);
+      window.dispatchEvent(new CustomEvent('user-logged-out'));
     }
-    
     router.push('/login');
   };
 
@@ -138,10 +129,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     isAuthenticated: !!user,
     isLoading,
-    login,
-    loginWithGoogle,
+    sendOtp,
+    registerInit,
+    verifyAuth,
+    updateProfile,
     logout,
-    register,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -149,8 +141,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 }

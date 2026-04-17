@@ -32,9 +32,9 @@ export default function Breadcrumbs() {
             <div className="w-1 h-1 bg-white/10 rounded-full mx-1" />
           )}
           {index === breadcrumbs.length - 1 ? (
-            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">{crumb.label}</span>
+            <span className="text-[10px] font-semibold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">{crumb.label}</span>
           ) : (
-            <Link href={crumb.href} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors px-2 py-1">
+            <Link href={crumb.href} className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest hover:text-white transition-colors px-2 py-1">
               {crumb.label}
             </Link>
           )}

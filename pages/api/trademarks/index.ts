@@ -18,85 +18,65 @@ async function handler(
 ) {
   try {
     if (req.method === 'GET') {
-      // Get all trademarks with optional filters
-      const { category, verified, search, sortBy = 'createdAt', order = 'desc', limitCount = 50, tokenId, creatorAddress } = req.query;
+      const { category, verified, search, sortBy = 'createdAt', order = 'desc', limitCount = 50, blockchainTokenId, ownerId } = req.query;
 
-      // Special case: if searching by tokenId, do a simple query
-      if (tokenId) {
+      if (blockchainTokenId) {
         const q = query(
-          collection(db, 'trademarks'),
-          where('tokenId', '==', Number(tokenId))
+          collection(db, 'ip_assets'),
+          where('blockchainTokenId', '==', Number(blockchainTokenId))
         );
         
         const snapshot = await getDocs(q);
-        const trademarks = snapshot.docs.map(doc => {
+        const assets = snapshot.docs.map(doc => {
           const data = doc.data();
           return {
             id: doc.id,
             ...data,
-            // Convert Firestore Timestamps to ISO strings for JSON serialization
             createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
             updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
-            verifiedAt: data.verifiedAt?.toDate?.() ? data.verifiedAt.toDate().toISOString() : data.verifiedAt,
           };
         });
 
         return res.status(200).json({
           success: true,
-          data: trademarks,
-          count: trademarks.length,
+          data: assets,
+          count: assets.length,
         });
       }
 
-      let q = query(collection(db, 'trademarks'));
+      let q = query(collection(db, 'ip_assets'));
 
-      // Apply filters
       if (category) {
         q = query(q, where('category', '==', category));
       }
 
-      if (creatorAddress) {
-        q = query(q, where('creatorAddress', '==', creatorAddress));
+      if (ownerId) {
+        q = query(q, where('ownerId', '==', ownerId));
       }
 
       if (verified !== undefined) {
         q = query(q, where('verified', '==', verified === 'true'));
       }
 
-      // Apply sorting
       q = query(q, orderBy(sortBy as string, order as 'asc' | 'desc'));
-
-      // Apply limit
       q = query(q, limit(Number(limitCount)));
 
       const snapshot = await getDocs(q);
-      const trademarks = snapshot.docs.map(doc => {
+      const assets = snapshot.docs.map(doc => {
         const data = doc.data();
-        
-        // Debug log to see what's in the database
-        console.log('Raw trademark data:', {
-          id: doc.id,
-          sloganText: data.sloganText,
-          companyName: data.companyName,
-          createdAt: data.createdAt,
-        });
-        
         return {
           id: doc.id,
           ...data,
-          // Convert Firestore Timestamps to ISO strings for JSON serialization
           createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
           updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
-          verifiedAt: data.verifiedAt?.toDate?.() ? data.verifiedAt.toDate().toISOString() : data.verifiedAt,
         };
       });
 
-      // Apply search filter (client-side for now)
-      let filteredTrademarks = trademarks;
+      let filteredAssets = assets;
       if (search) {
         const searchLower = (search as string).toLowerCase();
-        filteredTrademarks = trademarks.filter((tm: any) =>
-          tm.trademarkName?.toLowerCase().includes(searchLower) ||
+        filteredAssets = assets.filter((tm: any) =>
+          tm.title?.toLowerCase().includes(searchLower) ||
           tm.companyName?.toLowerCase().includes(searchLower) ||
           tm.description?.toLowerCase().includes(searchLower)
         );
@@ -104,57 +84,52 @@ async function handler(
 
       return res.status(200).json({
         success: true,
-        data: filteredTrademarks,
-        count: filteredTrademarks.length,
+        data: filteredAssets,
+        count: filteredAssets.length,
       });
     }
 
     if (req.method === 'POST') {
-      // Create new trademark record
-      const trademarkData = req.body;
+      const data = req.body;
 
-      // Log the received data for debugging
-      console.log('Received trademark data:', trademarkData);
+      if (!data || typeof data !== 'object') {
+        return res.status(400).json({ success: false, error: 'Invalid request format' });
+      }
 
-      // Validate required fields
-      if (!trademarkData || typeof trademarkData !== 'object') {
+      // Mapping for diagram consistency
+      const assetData = {
+        blockchainTokenId: data.blockchainTokenId || data.tokenId,
+        ownerId: data.ownerId || data.creatorAddress,
+        title: data.title || data.sloganText || data.trademarkName,
+        companyName: data.companyName,
+        registrationNumber: data.registrationNumber,
+        ipfsHash: data.ipfsHash,
+        previewUrl: data.previewUrl || data.imageUrl,
+        category: data.category,
+        description: data.description,
+        royaltyPercentage: data.royaltyPercentage,
+        tokenURI: data.tokenURI,
+        transactionHash: data.transactionHash,
+        verified: data.verified || false,
+        verificationStatus: data.verificationStatus || 'pending',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      };
+      
+      if (!assetData.blockchainTokenId || !assetData.ownerId || !assetData.title) {
         return res.status(400).json({
           success: false,
-          error: 'Invalid request format',
+          error: 'Missing required diagram fields: blockchainTokenId, ownerId, or title',
         });
       }
 
-      // Accept both trademarkName and sloganText for compatibility
-      const name = trademarkData.trademarkName || trademarkData.sloganText;
-      
-      if (!trademarkData.tokenId || !trademarkData.creatorAddress || !name) {
-        return res.status(400).json({
-          success: false,
-          error: 'Missing required fields: tokenId, creatorAddress, and trademarkName/sloganText',
-          received: {
-            tokenId: !!trademarkData.tokenId,
-            creatorAddress: !!trademarkData.creatorAddress,
-            trademarkName: !!trademarkData.trademarkName,
-            sloganText: !!trademarkData.sloganText,
-          }
-        });
-      }
-      
-      // Ensure both fields are set for consistency
-      if (!trademarkData.trademarkName) trademarkData.trademarkName = name;
-      if (!trademarkData.sloganText) trademarkData.sloganText = name;
-
-      // Add timestamp
-      trademarkData.createdAt = Timestamp.now();
-      trademarkData.updatedAt = Timestamp.now();
-
-      const docRef = await addDoc(collection(db, 'trademarks'), trademarkData);
+      const docRef = await addDoc(collection(db, 'ip_assets'), assetData);
 
       return res.status(201).json({
         success: true,
         data: {
           id: docRef.id,
-          ...trademarkData,
+          ...assetData,
         },
       });
     }

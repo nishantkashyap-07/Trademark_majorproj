@@ -15,22 +15,22 @@ async function handler(
   }
 
   try {
-    // Get all trademarks
-    const trademarksSnapshot = await getDocs(collection(db, 'trademarks'));
-    const trademarks = trademarksSnapshot.docs.map(doc => doc.data());
+    // Get all assets
+    const assetsSnapshot = await getDocs(collection(db, 'ip_assets'));
+    const assets = assetsSnapshot.docs.map(doc => doc.data());
 
     // Get all users
     const usersSnapshot = await getDocs(collection(db, 'users'));
     const users = usersSnapshot.size;
 
     // Calculate statistics
-    const totalTrademarks = trademarks.length;
-    const verifiedTrademarks = trademarks.filter((tm: any) => tm.verified).length;
-    const categories = new Set(trademarks.map((tm: any) => tm.category)).size;
+    const totalSlogans = assets.length;
+    const verifiedSlogans = assets.filter((tm: any) => tm.verified).length;
+    const categories = new Set(assets.map((tm: any) => tm.category)).size;
 
     // Get category breakdown
     const categoryBreakdown: { [key: string]: number } = {};
-    trademarks.forEach((tm: any) => {
+    assets.forEach((tm: any) => {
       if (tm.category) {
         categoryBreakdown[tm.category] = (categoryBreakdown[tm.category] || 0) + 1;
       }
@@ -39,8 +39,8 @@ async function handler(
     // Get recent registrations (last 7 days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentRegistrations = trademarks.filter((tm: any) => {
-      const createdAt = new Date(tm.createdAt);
+    const recentRegistrations = assets.filter((tm: any) => {
+      const createdAt = tm.createdAt?.toDate?.() || new Date(tm.createdAt);
       return createdAt >= sevenDaysAgo;
     }).length;
 
@@ -54,12 +54,12 @@ async function handler(
       success: true,
       data: {
         overview: {
-          totalTrademarks,
-          verifiedTrademarks,
+          totalSlogans,
+          verifiedSlogans,
           totalUsers: users,
           totalCategories: categories,
-          verificationRate: totalTrademarks > 0 
-            ? ((verifiedTrademarks / totalTrademarks) * 100).toFixed(1) 
+          verificationRate: totalSlogans > 0 
+            ? ((verifiedSlogans / totalSlogans) * 100).toFixed(1) 
             : '0',
         },
         recent: {

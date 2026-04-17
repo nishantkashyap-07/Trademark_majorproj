@@ -17,110 +17,137 @@ import {
 } from 'firebase/firestore';
 
 export class DatabaseService {
-  // Trademarks Collection
-  async createTrademark(data: any) {
+  // IPAssets Collection (Aligned with Diagram)
+  async createIPAsset(data: any) {
     try {
-      const trademarkRef = doc(collection(db, 'trademarks'));
-      await setDoc(trademarkRef, {
-        ...data,
+      const assetRef = doc(collection(db, 'ip_assets'));
+      // Mapping diagram fields
+      const assetData = {
+        ownerId: data.ownerId || data.creatorAddress,
+        title: data.title || data.sloganText,
+        description: data.description,
+        category: data.category,
+        ipfsHash: data.ipfsHash,
+        previewUrl: data.previewUrl || data.imageUrl,
+        blockchainTokenId: data.blockchainTokenId || data.tokenId,
+        contractAddress: data.contractAddress || '',
+        verificationStatus: data.verificationStatus || 'pending',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-      });
-      return { success: true, id: trademarkRef.id };
+        ...data // Allow for extra fields like registrationNumber
+      };
+      
+      await setDoc(assetRef, assetData);
+      return { success: true, id: assetRef.id };
     } catch (error: any) {
-      console.error('Create Trademark Error:', error);
+      console.error('Create IP Asset Error:', error);
       return { success: false, error: error.message };
     }
   }
 
-  async getTrademark(id: string) {
+  async getIPAsset(id: string) {
     try {
-      const trademarkRef = doc(db, 'trademarks', id);
-      const trademarkSnap = await getDoc(trademarkRef);
+      const assetRef = doc(db, 'ip_assets', id);
+      const assetSnap = await getDoc(assetRef);
 
-      if (!trademarkSnap.exists()) {
-        return { success: false, error: 'Trademark not found' };
+      if (!assetSnap.exists()) {
+        return { success: false, error: 'Asset not found' };
       }
 
       return {
         success: true,
-        data: { id: trademarkSnap.id, ...trademarkSnap.data() },
+        data: { id: assetSnap.id, ...assetSnap.data() },
       };
     } catch (error: any) {
-      console.error('Get Trademark Error:', error);
+      console.error('Get IP Asset Error:', error);
       return { success: false, error: error.message };
     }
   }
 
-  async getTrademarksByOwner(ownerAddress: string) {
+  async getIPAssetsByOwner(ownerId: string) {
     try {
       const q = query(
-        collection(db, 'trademarks'),
-        where('creatorAddress', '==', ownerAddress.toLowerCase()),
+        collection(db, 'ip_assets'),
+        where('ownerId', '==', ownerId.toLowerCase()),
         orderBy('createdAt', 'desc')
       );
 
       const snapshot = await getDocs(q);
-      const trademarks = snapshot.docs.map(doc => ({
+      const assets = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       }));
 
-      return { success: true, data: trademarks };
+      return { success: true, data: assets };
     } catch (error: any) {
-      console.error('Get Trademarks By Owner Error:', error);
+      console.error('Get Assets By Owner Error:', error);
       return { success: false, error: error.message };
     }
   }
 
-  async getTrademarks() {
+  async getIPAssets() {
     try {
       const q = query(
-        collection(db, 'trademarks'),
+        collection(db, 'ip_assets'),
         orderBy('createdAt', 'desc')
       );
 
       const snapshot = await getDocs(q);
-      const trademarks = snapshot.docs.map(doc => ({
+      const assets = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       }));
 
-      return { success: true, data: trademarks };
+      return { success: true, data: assets };
     } catch (error: any) {
-      console.error('Get Trademarks Error:', error);
+      console.error('Get Assets Error:', error);
       return { success: false, error: error.message };
     }
   }
 
-  async updateTrademark(id: string, data: any) {
+  async updateIPAsset(id: string, data: any) {
     try {
-      const trademarkRef = doc(db, 'trademarks', id);
-      await updateDoc(trademarkRef, {
+      const assetRef = doc(db, 'ip_assets', id);
+      await updateDoc(assetRef, {
         ...data,
         updatedAt: Timestamp.now(),
       });
       return { success: true };
     } catch (error: any) {
-      console.error('Update Trademark Error:', error);
+      console.error('Update Asset Error:', error);
       return { success: false, error: error.message };
     }
   }
 
   // Users Collection
-  async createOrUpdateUser(address: string, data: any) {
+  async createOrUpdateUser(id: string, data: any) {
     try {
-      const userRef = doc(db, 'users', address.toLowerCase());
+      const userRef = doc(db, 'users', id.toLowerCase());
       const userSnap = await getDoc(userRef);
 
+      // Only set walletAddress if it's provided in data or if 'id' looks like an ethereum address
+      const isEthAddress = id.startsWith('0x') && id.length === 42;
+      const walletAddress = data.walletAddress || (isEthAddress ? id.toLowerCase() : '');
+
       if (userSnap.exists()) {
-        await updateDoc(userRef, {
+        const updateData: any = {
           ...data,
           updatedAt: Timestamp.now(),
-        });
+        };
+        // Only update name if provided
+        if (data.fullName || data.name) updateData.name = data.name || data.fullName;
+        if (walletAddress) updateData.walletAddress = walletAddress;
+
+        await updateDoc(userRef, updateData);
       } else {
         await setDoc(userRef, {
-          address: address.toLowerCase(),
+          id: id.toLowerCase(),
+          name: data.name || data.fullName || '',
+          email: data.email || '',
+          walletAddress: walletAddress,
+          role: data.role || 'creator',
+          status: data.status || 'active',
+          profileImage: data.profileImage || '',
           ...data,
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
@@ -153,13 +180,139 @@ export class DatabaseService {
     }
   }
 
-  // Transactions Collection
+  async getUserByEmail(email: string) {
+    try {
+      const q = query(
+        collection(db, 'users'),
+        where('email', '==', email.toLowerCase()),
+        limit(1)
+      );
+
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) {
+        return { success: false, error: 'User not found' };
+      }
+
+      const userDoc = snapshot.docs[0];
+      return {
+        success: true,
+        data: { id: userDoc.id, ...userDoc.data() },
+      };
+    } catch (error: any) {
+      console.error('Get User By Email Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // OTP Collection Methods
+  async saveOtp(email: string, otp: string) {
+    try {
+      const otpRef = doc(db, 'otps', email.toLowerCase());
+      await setDoc(otpRef, {
+        otp,
+        email: email.toLowerCase(),
+        expiresAt: Timestamp.fromDate(new Date(Date.now() + 10 * 60000)), // 10 minutes expiry
+        createdAt: Timestamp.now(),
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error('Save OTP Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async verifyOtp(email: string, otp: string) {
+    try {
+      const otpRef = doc(db, 'otps', email.toLowerCase());
+      const otpSnap = await getDoc(otpRef);
+
+      if (!otpSnap.exists()) {
+        return { success: false, error: 'OTP not found or expired' };
+      }
+
+      const data = otpSnap.data();
+      if (data.otp !== otp) {
+        return { success: false, error: 'Invalid verification code' };
+      }
+
+      if (data.expiresAt.toDate() < new Date()) {
+        await deleteDoc(otpRef);
+        return { success: false, error: 'Verification code expired' };
+      }
+
+      // Valid OTP
+      await deleteDoc(otpRef);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Verify OTP Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Pending Registration Methods
+  async savePendingUser(email: string, data: any) {
+    try {
+      const pendingRef = doc(db, 'pending_users', email.toLowerCase());
+      await setDoc(pendingRef, {
+        ...data,
+        email: email.toLowerCase(),
+        expiresAt: Timestamp.fromDate(new Date(Date.now() + 30 * 60000)), // 30 minutes
+        createdAt: Timestamp.now(),
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error('Save Pending User Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getPendingUser(email: string) {
+    try {
+      const pendingRef = doc(db, 'pending_users', email.toLowerCase());
+      const pendingSnap = await getDoc(pendingRef);
+
+      if (!pendingSnap.exists()) {
+        return { success: false, error: 'Registration session expired or not found' };
+      }
+
+      const data = pendingSnap.data();
+      if (data.expiresAt.toDate() < new Date()) {
+        await deleteDoc(pendingRef);
+        return { success: false, error: 'Registration session expired' };
+      }
+
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('Get Pending User Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async deletePendingUser(email: string) {
+    try {
+      const pendingRef = doc(db, 'pending_users', email.toLowerCase());
+      await deleteDoc(pendingRef);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Delete Pending User Error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Transactions Collection (Aligned with Diagram)
   async createTransaction(data: any) {
     try {
       const transactionRef = doc(collection(db, 'transactions'));
       await setDoc(transactionRef, {
-        ...data,
-        createdAt: Timestamp.now(),
+        listingId: data.listingId,
+        ipId: data.ipId || data.tokenId,
+        buyerId: data.buyerId || data.toAddress,
+        sellerId: data.sellerId || data.fromAddress,
+        transactionType: data.transactionType,
+        amount: data.amount,
+        transactionHash: data.transactionHash,
+        timestamp: Timestamp.now(),
+        ...data
       });
       return { success: true, id: transactionRef.id };
     } catch (error: any) {
@@ -253,23 +406,23 @@ export class DatabaseService {
 
       const listingData = listingSnap.data();
       
-      // Get trademark data if tokenId exists
-      if (listingData?.tokenId) {
+      // Get asset data if blockchainTokenId exists
+      if (listingData?.blockchainTokenId || listingData?.tokenId) {
         const q = query(
-          collection(db, 'trademarks'),
-          where('tokenId', '==', listingData.tokenId),
+          collection(db, 'ip_assets'),
+          where('blockchainTokenId', '==', listingData.blockchainTokenId || listingData.tokenId),
           limit(1)
         );
-        const trademarkSnap = await getDocs(q);
+        const assetSnap = await getDocs(q);
         
-        if (!trademarkSnap.empty) {
-          const trademarkData = trademarkSnap.docs[0].data();
+        if (!assetSnap.empty) {
+          const assetData = assetSnap.docs[0].data();
           return {
             success: true,
             data: {
               id: listingSnap.id,
               ...listingData,
-              trademark: trademarkData,
+              asset: assetData,
             },
           };
         }
@@ -347,27 +500,27 @@ export class DatabaseService {
     }
   }
 
-  // Update trademark owner
-  async updateTrademarkOwner(tokenId: number, newOwner: string) {
+  // Update asset owner
+  async updateAssetOwner(blockchainTokenId: number, newOwnerId: string) {
     try {
       const q = query(
-        collection(db, 'trademarks'),
-        where('tokenId', '==', tokenId),
+        collection(db, 'ip_assets'),
+        where('blockchainTokenId', '==', blockchainTokenId),
         limit(1)
       );
 
       const snapshot = await getDocs(q);
       if (!snapshot.empty) {
-        const trademarkRef = snapshot.docs[0].ref;
-        await updateDoc(trademarkRef, {
-          currentOwner: newOwner.toLowerCase(),
+        const assetRef = snapshot.docs[0].ref;
+        await updateDoc(assetRef, {
+          ownerId: newOwnerId.toLowerCase(),
           updatedAt: Timestamp.now(),
         });
       }
 
       return { success: true };
     } catch (error: any) {
-      console.error('Update Trademark Owner Error:', error);
+      console.error('Update Asset Owner Error:', error);
       return { success: false, error: error.message };
     }
   }
@@ -751,19 +904,19 @@ export class DatabaseService {
     }
   }
 
-  // Trademark verification methods
-  async verifyTrademark(tokenId: number, adminAddress: string) {
+  // Asset verification methods
+  async verifyIPAsset(blockchainTokenId: number, adminAddress: string) {
     try {
       const q = query(
-        collection(db, 'trademarks'),
-        where('tokenId', '==', tokenId),
+        collection(db, 'ip_assets'),
+        where('blockchainTokenId', '==', blockchainTokenId),
         limit(1)
       );
 
       const snapshot = await getDocs(q);
       if (!snapshot.empty) {
-        const trademarkRef = snapshot.docs[0].ref;
-        await updateDoc(trademarkRef, {
+        const assetRef = snapshot.docs[0].ref;
+        await updateDoc(assetRef, {
           verified: true,
           verificationStatus: 'verified',
           verifiedBy: adminAddress,
@@ -775,51 +928,41 @@ export class DatabaseService {
         await this.createAdminLog({
           adminAddress,
           action: 'verify',
-          targetType: 'trademark',
-          targetId: tokenId.toString(),
+          targetType: 'asset',
+          targetId: blockchainTokenId.toString(),
         });
       }
 
       return { success: true };
     } catch (error: any) {
-      console.error('Verify Trademark Error:', error);
+      console.error('Verify Asset Error:', error);
       return { success: false, error: error.message };
     }
   }
 
-  async rejectTrademark(tokenId: number, reason: string, adminAddress: string) {
+  async rejectIPAsset(blockchainTokenId: number, reason: string, adminAddress: string) {
     try {
       const q = query(
-        collection(db, 'trademarks'),
-        where('tokenId', '==', tokenId),
+        collection(db, 'ip_assets'),
+        where('blockchainTokenId', '==', blockchainTokenId),
         limit(1)
       );
 
       const snapshot = await getDocs(q);
       if (!snapshot.empty) {
-        const trademarkRef = snapshot.docs[0].ref;
-        await updateDoc(trademarkRef, {
+        const assetRef = snapshot.docs[0].ref;
+        await updateDoc(assetRef, {
           verified: false,
           verificationStatus: 'rejected',
           rejectionReason: reason,
-          verifiedBy: adminAddress,
-          verifiedAt: Timestamp.now(),
+          rejectedBy: adminAddress,
+          rejectedAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
         });
-
-        // Create admin log
-        await this.createAdminLog({
-          adminAddress,
-          action: 'reject',
-          targetType: 'trademark',
-          targetId: tokenId.toString(),
-          reason,
-        });
       }
-
       return { success: true };
     } catch (error: any) {
-      console.error('Reject Trademark Error:', error);
+      console.error('Reject Asset Error:', error);
       return { success: false, error: error.message };
     }
   }
@@ -827,8 +970,8 @@ export class DatabaseService {
   // Statistics methods
   async getStats() {
     try {
-      const [trademarksSnap, usersSnap, listingsSnap, transactionsSnap] = await Promise.all([
-        getDocs(collection(db, 'trademarks')),
+      const [ipAssetsSnap, usersSnap, listingsSnap, transactionsSnap] = await Promise.all([
+        getDocs(collection(db, 'ip_assets')),
         getDocs(collection(db, 'users')),
         getDocs(query(collection(db, 'listings'), where('active', '==', true))),
         getDocs(collection(db, 'transactions')),
@@ -837,7 +980,7 @@ export class DatabaseService {
       return {
         success: true,
         data: {
-          totalTrademarks: trademarksSnap.size,
+          totalIPAssets: ipAssetsSnap.size,
           totalUsers: usersSnap.size,
           activeListings: listingsSnap.size,
           totalTransactions: transactionsSnap.size,
