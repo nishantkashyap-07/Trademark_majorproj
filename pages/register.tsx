@@ -7,10 +7,11 @@ import { useWeb3 } from '@/contexts/Web3Context';
 import Navbar from '@/components/common/Navbar';
 import Footer from '@/components/common/Footer';
 import { TrademarkFormData } from '@/types';
-import { TRADEMARK_CATEGORIES, ROYALTY_CONSTRAINTS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/utils/constants';
+import { TRADEMARK_CATEGORIES, ROYALTY_CONSTRAINTS, ERROR_MESSAGES, SUCCESS_MESSAGES, CONTRACT_ADDRESSES } from '@/utils/constants';
 import { uploadFilesToIPFS, uploadMetadataToIPFS, createTrademarkMetadata } from '@/utils/ipfs';
 import { registerTrademark } from '@/utils/contracts';
 import { ethers } from 'ethers';
+import InfringementChecker from '@/components/register/InfringementChecker';
 
 export default function RegisterTrademark() {
   const router = useRouter();
@@ -39,6 +40,7 @@ export default function RegisterTrademark() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showWalletPrompt, setShowWalletPrompt] = useState(false);
+  const [infringementResult, setInfringementResult] = useState<any>(null);
 
   const steps = [
     { id: 1, name: 'Identity', description: 'Brand details' },
@@ -92,6 +94,11 @@ export default function RegisterTrademark() {
 
   const handleNextStep = () => {
     if (validateStep(currentStep)) {
+      // Block progression if infringement check is 'blocked'
+      if (currentStep === 1 && infringementResult?.riskLevel === 'blocked') {
+        setError('Registration blocked: A high-confidence trademark conflict was detected. Please choose a different slogan.');
+        return;
+      }
       setCurrentStep(s => s + 1);
     } else {
       setError('Please fill in all required fields');
@@ -383,6 +390,18 @@ export default function RegisterTrademark() {
                       )}
                     </div>
 
+                    {/* ── IP Guard Infringement Checker ── */}
+                    {formData.sloganText.trim().length >= 2 && formData.category && (
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">IP Guard Check</label>
+                        <InfringementChecker
+                          slogan={formData.sloganText}
+                          category={formData.category}
+                          onResult={setInfringementResult}
+                        />
+                      </div>
+                    )}
+
                     <div className="grid sm:grid-cols-2 gap-8">
                       <div className="space-y-3">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Registration ID</label>
@@ -597,12 +616,48 @@ export default function RegisterTrademark() {
                   </button>
 
                   {currentStep < 3 ? (
-                    <button
-                      onClick={handleNextStep}
-                      className="px-10 py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl"
-                    >
-                      Next Step
-                    </button>
+                    <div className="flex flex-col items-end gap-2">
+                      {/* Scan required nudge */}
+                      {currentStep === 1 && formData.sloganText.trim().length >= 2 && formData.category && !infringementResult && (
+                        <p className="text-[10px] font-bold text-blue-500 flex items-center gap-1.5">
+                          <span>🛡️</span> Run the IP Guard check above before continuing
+                        </p>
+                      )}
+                      {/* Risk warning inline message */}
+                      {currentStep === 1 && infringementResult?.riskLevel === 'blocked' && (
+                        <p className="text-[10px] font-bold text-red-500 flex items-center gap-1.5">
+                          <span>🚫</span> Trademark conflict detected — change your slogan
+                        </p>
+                      )}
+                      {currentStep === 1 && infringementResult?.riskLevel === 'risky' && (
+                        <p className="text-[10px] font-bold text-amber-500 flex items-center gap-1.5">
+                          <span>⚠️</span> Similarity flagged — will be sent for admin review
+                        </p>
+                      )}
+                      <button
+                        onClick={handleNextStep}
+                        disabled={
+                          // Blocked by infringement
+                          (currentStep === 1 && infringementResult?.riskLevel === 'blocked') ||
+                          // Scan not run yet (checker is visible)
+                          (currentStep === 1 && formData.sloganText.trim().length >= 2 && !!formData.category && !infringementResult)
+                        }
+                        className={`px-10 py-5 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all shadow-xl
+                          ${
+                            (currentStep === 1 && infringementResult?.riskLevel === 'blocked') ||
+                            (currentStep === 1 && formData.sloganText.trim().length >= 2 && !!formData.category && !infringementResult)
+                              ? 'bg-slate-100 dark:bg-white/5 text-slate-400 cursor-not-allowed opacity-60'
+                              : currentStep === 1 && infringementResult?.riskLevel === 'risky'
+                              ? 'bg-amber-500 hover:bg-amber-400 text-white hover:scale-[1.02] active:scale-[0.98]'
+                              : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:scale-[1.02] active:scale-[0.98]'
+                          }`}
+                      >
+                        {currentStep === 1 && infringementResult?.riskLevel === 'risky'
+                          ? 'Proceed with Review'
+                          : 'Next Step'
+                        }
+                      </button>
+                    </div>
                   ) : (
                     <button
                       onClick={handleSubmit}
