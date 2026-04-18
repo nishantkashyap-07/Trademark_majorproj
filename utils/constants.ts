@@ -48,7 +48,7 @@ export const SUPPORTED_CHAINS = {
 const isLocalhost = process.env.NEXT_PUBLIC_POLYGON_RPC_URL?.includes('127.0.0.1') || 
                     process.env.NEXT_PUBLIC_POLYGON_RPC_URL?.includes('localhost');
 
-export const DEFAULT_CHAIN = isLocalhost ? SUPPORTED_CHAINS.LOCALHOST : SUPPORTED_CHAINS.POLYGON_MUMBAI;
+export const DEFAULT_CHAIN = isLocalhost ? SUPPORTED_CHAINS.LOCALHOST : SUPPORTED_CHAINS.POLYGON_AMOY;
 
 // Contract Addresses (to be updated after deployment)
 export const CONTRACT_ADDRESSES = {
@@ -109,7 +109,7 @@ export const DEBOUNCE_DELAY = 300;
 // Error Messages
 export const ERROR_MESSAGES = {
   WALLET_NOT_CONNECTED: 'Please connect your wallet to continue',
-  WRONG_NETWORK: 'Please switch to Polygon Mumbai testnet',
+  WRONG_NETWORK: 'Please switch to Polygon Amoy testnet',
   TRANSACTION_REJECTED: 'Transaction was rejected by user',
   INSUFFICIENT_FUNDS: 'Insufficient funds for transaction',
   CONTRACT_ERROR: 'Smart contract execution failed',

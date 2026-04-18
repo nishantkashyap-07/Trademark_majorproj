@@ -117,9 +117,11 @@ export interface Web3ContextType {
   chainId: number | null;
   isConnected: boolean;
   isLoading: boolean;
+  devMode: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
   switchNetwork: () => Promise<void>;
+  setDevMode: (value: boolean) => void;
   trademarkNFTContract: any | null;
   marketplaceContract: any | null;
 }

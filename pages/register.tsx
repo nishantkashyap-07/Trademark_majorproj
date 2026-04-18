@@ -16,7 +16,7 @@ import InfringementChecker from '@/components/register/InfringementChecker';
 export default function RegisterTrademark() {
   const router = useRouter();
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
-  const { account, isConnected, connect } = useWeb3();
+  const { account, isConnected, connect, devMode, setDevMode } = useWeb3();
 
   const [formData, setFormData] = useState<TrademarkFormData>({
     companyName: '',
@@ -191,11 +191,17 @@ export default function RegisterTrademark() {
       const tokenURI = `ipfs://${metadataCID}/metadata.json`;
 
       let useBlockchain = false;
-      try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const network = await provider.getNetwork();
-        if (Number(network.chainId) === 31337) useBlockchain = true;
-      } catch (e) { }
+      if (!devMode) {
+        try {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const network = await provider.getNetwork();
+          const cid = Number(network.chainId);
+          // Support Hardhat, Polygon Mainnet, Mumbai, and Amoy
+          if ([31337, 137, 80001, 80002].includes(cid)) {
+            useBlockchain = true;
+          }
+        } catch (e) { }
+      }
 
       const imageUrl = formData.files.length === 1
         ? `https://gateway.pinata.cloud/ipfs/${assetsCID}`
@@ -330,12 +336,22 @@ export default function RegisterTrademark() {
               </div>
 
               <div className="mt-16 p-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Network Secure</span>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${devMode ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{devMode ? 'Development' : 'Blockchain Ready'}</span>
+                  </div>
+                  <button 
+                    onClick={() => setDevMode(!devMode)}
+                    className={`w-8 h-4 rounded-full relative transition-colors duration-300 ${devMode ? 'bg-amber-500/20' : 'bg-indigo-600/20'}`}
+                  >
+                    <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all duration-300 ${devMode ? 'left-0.5 bg-amber-500' : 'left-4.5 bg-indigo-600'}`} />
+                  </button>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                  Your data is encrypted and permanently recorded on the decentralized infrastructure.
+                  {devMode 
+                    ? 'Running in Dev Mode. Assets will be saved to database only (no gas fees).' 
+                    : 'Blockchain mode active. Assets will be cryptographically secured on Polygon.'}
                 </p>
               </div>
             </div>

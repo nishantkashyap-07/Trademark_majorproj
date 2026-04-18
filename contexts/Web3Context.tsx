@@ -18,19 +18,16 @@ export function Web3Provider({ children }: Web3ProviderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [trademarkNFTContract, setTrademarkNFTContract] = useState<any | null>(null);
   const [marketplaceContract, setMarketplaceContract] = useState<any | null>(null);
+  const [devMode, setDevModeState] = useState<boolean>(true); // Default to true (safe mode)
   const { updateProfile, isAuthenticated, user } = useAuth();
 
   // Check if wallet is already connected on page load
   useEffect(() => {
-    // Disable auto-connect to prevent RPC errors on page load
-    // User must manually click "Connect Wallet"
-    // const hasDisconnected = localStorage.getItem('walletDisconnected');
-    // if (!hasDisconnected) {
-    //   const timer = setTimeout(() => {
-    //     checkConnection();
-    //   }, 100);
-    //   return () => clearTimeout(timer);
-    // }
+    // Load dev mode preference
+    const savedDevMode = localStorage.getItem('devMode');
+    if (savedDevMode !== null) {
+      setDevModeState(savedDevMode === 'true');
+    }
   }, []);
   
   // Listen for account and chain changes
@@ -269,14 +266,26 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     }
   };
 
+  const setDevMode = (value: boolean) => {
+    setDevModeState(value);
+    localStorage.setItem('devMode', value.toString());
+    
+    // If turning off dev mode, encourage switching to Polygon
+    if (!value && chainId === 31337) {
+      console.log("Dev mode disabled. You should switch to Polygon network.");
+    }
+  };
+
   const value: Web3ContextType = {
     account,
     chainId,
     isConnected,
     isLoading,
+    devMode,
     connect,
     disconnect,
     switchNetwork,
+    setDevMode,
     trademarkNFTContract,
     marketplaceContract,
   };

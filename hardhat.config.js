@@ -18,7 +18,7 @@ module.exports = {
       chainId: 1337,
     },
     polygon: {
-      url: process.env.POLYGON_RPC_URL || "https://polygon-amoy.g.alchemy.com/v2/7SNq2WaxLCKofX_pgGZsk",
+      url: process.env.POLYGON_RPC_URL || "https://rpc-amoy.polygon.technology",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 80002, // Amoy testnet
     },
