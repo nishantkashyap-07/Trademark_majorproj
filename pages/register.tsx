@@ -9,7 +9,7 @@ import Footer from '@/components/common/Footer';
 import { TrademarkFormData } from '@/types';
 import { TRADEMARK_CATEGORIES, ROYALTY_CONSTRAINTS, ERROR_MESSAGES, SUCCESS_MESSAGES, CONTRACT_ADDRESSES } from '@/utils/constants';
 import { uploadFilesToIPFS, uploadMetadataToIPFS, createTrademarkMetadata } from '@/utils/ipfs';
-import { registerTrademark } from '@/utils/contracts';
+import { registerTrademark, getStaticProvider } from '@/utils/contracts';
 import { ethers } from 'ethers';
 import InfringementChecker from '@/components/register/InfringementChecker';
 
@@ -193,14 +193,21 @@ export default function RegisterTrademark() {
       let useBlockchain = false;
       if (!devMode) {
         try {
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const network = await provider.getNetwork();
-          const cid = Number(network.chainId);
-          // Support Hardhat, Polygon Mainnet, Mumbai, and Amoy
+          console.log('Blockchain mode active. Checking network...');
+          const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
+          const cid = parseInt(chainIdHex, 16);
+          console.log('Detected Chain ID:', cid);
+          
+          // Support Hardhat (31337), Polygon Mainnet (137), Mumbai (80001), and Amoy (80002)
           if ([31337, 137, 80001, 80002].includes(cid)) {
             useBlockchain = true;
+            console.log('Valid network detected. Proceeding with blockchain registration.');
+          } else {
+            console.warn('Connected to an unsupported network for blockchain mode. Falling back to database.');
           }
-        } catch (e) { }
+        } catch (e) { 
+          console.error('Error detecting network:', e);
+        }
       }
 
       const imageUrl = formData.files.length === 1
@@ -208,7 +215,7 @@ export default function RegisterTrademark() {
         : `https://gateway.pinata.cloud/ipfs/${assetsCID}/${formData.files[0].name}`;
 
       if (useBlockchain) {
-        const provider = new ethers.BrowserProvider(window.ethereum);
+        const provider = getStaticProvider();
         const signer = await provider.getSigner();
         const result = await registerTrademark(signer, {
           companyName: formData.companyName,
@@ -268,7 +275,15 @@ export default function RegisterTrademark() {
       setSuccess('Asset registered successfully on-chain. Redirecting...');
       setTimeout(() => router.push('/dashboard'), 2000);
     } catch (err: any) {
-      setError(err.message || 'Minting failed. Check network status.');
+      const msg = err.message || '';
+      // Filter raw ethers.js RPC polling errors into a friendly message
+      if (msg.includes('could not coalesce') || msg.includes('-32002') || msg.includes('RPC endpoint returned too many errors')) {
+        setError('Network is busy. Your file was uploaded to IPFS successfully. Please try clicking "Complete Registration" again in 30 seconds.');
+      } else if (msg.includes('user rejected') || msg.includes('User denied')) {
+        setError('Transaction was cancelled. Please click "Complete Registration" and confirm in MetaMask.');
+      } else {
+        setError(msg || 'Minting failed. Check network status.');
+      }
       setUploadProgress(0);
     } finally {
       setIsLoading(false);

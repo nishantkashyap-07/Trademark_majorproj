@@ -148,11 +148,10 @@ export function Web3Provider({ children }: Web3ProviderProps) {
         await updateProfile({ walletAddress: address });
       }
       
-      // Check if on correct network (skip if we couldn't get network info)
+      // Force switch to correct network if needed
       if (networkChainId && networkChainId !== DEFAULT_CHAIN.chainId) {
-        console.log(`Connected to chain ${networkChainId}, expected ${DEFAULT_CHAIN.chainId}`);
-        // Don't auto-switch, just log it
-        // await switchNetwork();
+        console.log(`Connected to chain ${networkChainId}, expected ${DEFAULT_CHAIN.chainId}. Switching...`);
+        await switchNetwork();
       }
       
       console.log(SUCCESS_MESSAGES.WALLET_CONNECTED);

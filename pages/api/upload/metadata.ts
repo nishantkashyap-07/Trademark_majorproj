@@ -12,10 +12,11 @@ export default async function handler(
   }
 
   try {
+    const pinataJwt = process.env.PINATA_JWT;
     const apiKey = process.env.PINATA_API_KEY;
     const secretKey = process.env.PINATA_SECRET_KEY;
 
-    if (!apiKey || !secretKey) {
+    if (!pinataJwt && (!apiKey || !secretKey)) {
       return res.status(500).json({
         success: false,
         error: 'Pinata API credentials not configured',
@@ -31,14 +32,22 @@ export default async function handler(
       });
     }
 
+    // Construct headers properly for TypeScript
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (pinataJwt) {
+      headers['Authorization'] = `Bearer ${pinataJwt}`;
+    } else if (apiKey && secretKey) {
+      headers['pinata_api_key'] = apiKey;
+      headers['pinata_secret_api_key'] = secretKey;
+    }
+
     // Upload JSON to Pinata
     const response = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'pinata_api_key': apiKey,
-        'pinata_secret_api_key': secretKey,
-      },
+      headers,
       body: JSON.stringify({
         pinataContent: metadata,
         pinataMetadata: {
@@ -48,8 +57,14 @@ export default async function handler(
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Pinata upload failed');
+      let errorMessage = 'Pinata upload failed';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error?.message || errorData.error || errorMessage;
+      } catch (e) {
+        errorMessage = `Pinata error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();

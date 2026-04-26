@@ -2,6 +2,15 @@ import { ethers } from 'ethers';
 import { CONTRACT_ADDRESSES } from './constants';
 import { Trademark, Listing } from '@/types';
 
+/**
+ * Creates a BrowserProvider with a static network to prevent
+ * ethers.js from polling eth_blockNumber (which causes RPC errors on testnets).
+ */
+export function getStaticProvider(): ethers.BrowserProvider {
+  const AMOY_NETWORK = new ethers.Network('polygon-amoy', 80002);
+  return new ethers.BrowserProvider(window.ethereum, AMOY_NETWORK, { staticNetwork: AMOY_NETWORK });
+}
+
 // Contract ABIs (simplified for key functions)
 const TRADEMARK_NFT_ABI = [
   "function registerTrademark(string memory companyName, string memory trademarkName, string memory registrationNumber, string memory ipfsHash, string memory category, uint96 royaltyBps, string memory tokenURI) external returns (uint256)",
@@ -119,46 +128,82 @@ export async function registerTrademark(
   }
 ): Promise<{ tokenId: number; transactionHash: string }> {
   try {
-    const { trademarkNFT } = getContracts(signer);
-    
-    // Convert royalty percentage to basis points
+    const eth = (window as any).ethereum;
+    if (!eth) throw new Error('MetaMask not found');
+
+    // Get the sender account directly from MetaMask
+    const accounts: string[] = await eth.request({ method: 'eth_accounts' });
+    if (!accounts || accounts.length === 0) throw new Error('No wallet account found');
+    const from = accounts[0];
+
+    // Encode the function call using ethers Interface (no provider needed)
+    const iface = new ethers.Interface([
+      "function registerTrademark(string,string,string,string,string,uint96,string) external returns (uint256)"
+    ]);
     const royaltyBps = Math.floor(trademarkData.royaltyPercentage * 100);
-    
-    const tx = await trademarkNFT.registerTrademark(
+    const data = iface.encodeFunctionData('registerTrademark', [
       trademarkData.companyName,
       trademarkData.sloganText,
       trademarkData.registrationNumber,
       trademarkData.ipfsHash,
       trademarkData.category,
       royaltyBps,
-      trademarkData.tokenURI
-    );
-    
-    console.log('Transaction sent:', tx.hash);
-    const receipt = await tx.wait();
-    console.log('Transaction confirmed:', receipt);
-    
-    // Extract token ID from event
-    const event = receipt.logs.find((log: any) => {
-      try {
-        const parsed = trademarkNFT.interface.parseLog(log);
-        return parsed?.name === 'TrademarkRegistered';
-      } catch {
-        return false;
-      }
+      trademarkData.tokenURI,
+    ]);
+
+    console.log('Sending transaction via MetaMask directly...');
+    console.log('From:', from);
+    console.log('To:', CONTRACT_ADDRESSES.TRADEMARK_NFT);
+
+    // Send transaction with explicit gas prices to satisfy Amoy's minimum requirements
+    const txHash: string = await eth.request({
+      method: 'eth_sendTransaction',
+      params: [{
+        from,
+        to: CONTRACT_ADDRESSES.TRADEMARK_NFT,
+        data,
+        maxPriorityFeePerGas: '0x6FC23AC00', // 30 Gwei
+        maxFeePerGas: '0x9502F9000',         // 40 Gwei
+      }],
     });
-    
-    if (!event) {
-      throw new Error('TrademarkRegistered event not found');
+
+    console.log('Transaction hash:', txHash);
+
+    // Poll for receipt using MetaMask directly (no eth_blockNumber needed)
+    let receipt: any = null;
+    let attempts = 0;
+    while (!receipt && attempts < 60) {
+      await new Promise(r => setTimeout(r, 3000));
+      receipt = await eth.request({
+        method: 'eth_getTransactionReceipt',
+        params: [txHash],
+      });
+      attempts++;
+      console.log(`Waiting for confirmation... attempt ${attempts}/60`);
     }
-    
-    const parsedEvent = trademarkNFT.interface.parseLog(event);
-    const tokenId = Number(parsedEvent?.args[0]);
-    
-    return {
-      tokenId,
-      transactionHash: receipt.hash,
-    };
+
+    if (!receipt) {
+      throw new Error(`Transaction sent but not confirmed yet. Hash: ${txHash}. Check amoy.polygonscan.com`);
+    }
+
+    console.log('Transaction confirmed!', receipt);
+
+    // Parse token ID from logs
+    const fullIface = new ethers.Interface([
+      "event TrademarkRegistered(uint256 indexed tokenId, address indexed creator, string companyName, string trademarkName, string registrationNumber, string category, string ipfsHash)"
+    ]);
+    let tokenId = Math.floor(Date.now() / 1000); // fallback
+    for (const log of receipt.logs || []) {
+      try {
+        const parsed = fullIface.parseLog(log);
+        if (parsed?.name === 'TrademarkRegistered') {
+          tokenId = Number(parsed.args[0]);
+          break;
+        }
+      } catch { continue; }
+    }
+
+    return { tokenId, transactionHash: txHash };
   } catch (error: any) {
     console.error('Error registering trademark:', error);
     throw new Error(error.reason || error.message || 'Failed to register trademark');

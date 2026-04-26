@@ -74,9 +74,9 @@ export async function uploadMetadataToIPFS(metadata: IPFSMetadata): Promise<stri
     const data = await response.json();
     console.log('Metadata uploaded to IPFS:', data.data.cid);
     return data.data.cid;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading metadata to IPFS:', error);
-    throw new Error('Failed to upload metadata to IPFS');
+    throw new Error(error.message || 'Failed to upload metadata to IPFS');
   }
 }
 

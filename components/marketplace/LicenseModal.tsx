@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ethers } from 'ethers';
-import { createListing } from '@/utils/contracts';
+import { createListing, getStaticProvider } from '@/utils/contracts';
 import { useWeb3 } from '@/contexts/Web3Context';
 
 interface LicenseModalProps {
@@ -34,7 +34,7 @@ export default function LicenseModal({ isOpen, onClose, tokenId, trademarkName, 
     setIsLoading(true);
     try {
       if (!account) throw new Error('Wallet not connected');
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = getStaticProvider();
       const signer = await provider.getSigner();
       const { trademarkNFT, marketplace } = await import('@/utils/contracts').then(m => m.getContracts(signer));
       const owner = await trademarkNFT.ownerOf(tokenId);
@@ -75,6 +75,10 @@ export default function LicenseModal({ isOpen, onClose, tokenId, trademarkName, 
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
+        <div className="glass-card !bg-white/50 dark:!bg-white/[0.02] !border-slate-200 dark:!border-white/10 hover:!translate-y-0 mb-6">
+           <p className="text-[10px] font-bold text-slate-400 dark:text-white/20 uppercase tracking-widest mb-2">Registry ID</p>
+           <p className="text-xl font-bold text-slate-900 dark:text-white">#{tokenId}</p>
+        </div>
 
         <div className="mb-8 p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/10">
           <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Asset Target</p>
@@ -83,7 +87,7 @@ export default function LicenseModal({ isOpen, onClose, tokenId, trademarkName, 
 
         <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
           <div>
-            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Price per period (ETH)</label>
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Price per period (MATIC)</label>
             <input
               type="number" step="0.001" min="0.001" value={price}
               onChange={(e) => setPrice(e.target.value)}

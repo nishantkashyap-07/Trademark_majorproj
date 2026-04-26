@@ -22,10 +22,11 @@ export default async function handler(
   }
 
   try {
+    const pinataJwt = process.env.PINATA_JWT;
     const apiKey = process.env.PINATA_API_KEY;
     const secretKey = process.env.PINATA_SECRET_KEY;
 
-    if (!apiKey || !secretKey) {
+    if (!pinataJwt && (!apiKey || !secretKey)) {
       return res.status(500).json({
         success: false,
         error: 'Pinata API credentials not configured',
@@ -97,8 +98,10 @@ export default async function handler(
           {
             headers: {
               'Content-Type': `multipart/form-data; boundary=${formData.getBoundary()}`,
-              'pinata_api_key': apiKey,
-              'pinata_secret_api_key': secretKey,
+              ...(pinataJwt 
+                ? { 'Authorization': `Bearer ${pinataJwt}` }
+                : { 'pinata_api_key': apiKey, 'pinata_secret_api_key': secretKey }
+              )
             },
             maxBodyLength: Infinity,
             maxContentLength: Infinity,

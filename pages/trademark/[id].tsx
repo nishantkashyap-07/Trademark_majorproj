@@ -146,7 +146,7 @@ export default function TrademarkDetail() {
                         </div>
                         <div className="glass-card !bg-white/50 dark:!bg-white/[0.02] !border-slate-200 dark:!border-white/10 hover:!translate-y-0">
                            <p className="text-[10px] font-bold text-slate-400 dark:text-white/20 uppercase tracking-widest mb-2">Registry ID</p>
-                           <p className="text-xl font-bold text-slate-900 dark:text-white">#{trademark.tokenId}</p>
+                           <p className="text-xl font-bold text-slate-900 dark:text-white">#{trademark.blockchainTokenId || trademark.tokenId || '...'}</p>
                         </div>
                         <div className="glass-card !bg-white/50 dark:!bg-white/[0.02] !border-slate-200 dark:!border-white/10 hover:!translate-y-0">
                            <p className="text-[10px] font-bold text-slate-400 dark:text-white/20 uppercase tracking-widest mb-2">Secondary Royalty</p>
@@ -306,9 +306,9 @@ export default function TrademarkDetail() {
          <LicenseModal
             isOpen={showLicenseModal}
             onClose={() => setShowLicenseModal(false)}
-            tokenId={trademark.tokenId}
+            tokenId={(trademark.blockchainTokenId || trademark.tokenId) as number}
             trademarkName={trademark.sloganText}
-            onSuccess={() => loadLicenses(trademark.tokenId)}
+            onSuccess={() => loadLicenses((trademark.blockchainTokenId || trademark.tokenId) as number)}
          />
 
          {selectedListing && (
@@ -317,7 +317,7 @@ export default function TrademarkDetail() {
                onClose={() => { setShowPurchaseModal(false); setSelectedListing(null); }}
                listing={selectedListing}
                trademarkName={trademark.sloganText}
-               onSuccess={() => loadLicenses(trademark.tokenId)}
+               onSuccess={() => loadLicenses((trademark.blockchainTokenId || trademark.tokenId) as number)}
             />
          )}
       </div>

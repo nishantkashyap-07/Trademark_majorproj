@@ -106,6 +106,7 @@ export interface SloganMetadata {
   updatedAt?: Date;
   transactionHash?: string;
   verified: boolean;
+  royaltyPercentage?: number;
 }
 
 // Keep backward compatibility
