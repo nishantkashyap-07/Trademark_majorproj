@@ -49,7 +49,7 @@ async function handler(
     }
 
     // Get trademark from database
-    const trademarkRef = doc(db, 'trademarks', trademarkId);
+    const trademarkRef = doc(db, 'ip_assets', trademarkId);
     const trademarkSnap = await getDoc(trademarkRef);
 
     if (!trademarkSnap.exists()) {
@@ -123,7 +123,7 @@ async function handler(
       action: 'verified',
       trademarkId,
       tokenId,
-      trademarkName: trademarkData.trademarkName || trademarkData.sloganText,
+      trademarkName: trademarkData.title || trademarkData.trademarkName || trademarkData.sloganText || 'Unknown',
       companyName: trademarkData.companyName,
       timestamp: Timestamp.now(),
       blockchainTxHash,

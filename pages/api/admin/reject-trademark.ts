@@ -31,7 +31,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   try {
     // Update trademark status to rejected
-    await dbService.updateTrademark(trademarkId, {
+    await dbService.updateIPAsset(trademarkId, {
       rejected: true,
       rejectedAt: new Date(),
       rejectedBy: adminAddress,
@@ -53,7 +53,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { db } = await import('@/lib/firebase');
     const { addDoc, collection, Timestamp, getDoc, doc } = await import('firebase/firestore');
     
-    const trademarkRef = doc(db, 'trademarks', trademarkId);
+    const trademarkRef = doc(db, 'ip_assets', trademarkId);
     const trademarkSnap = await getDoc(trademarkRef);
     const trademarkData = trademarkSnap.exists() ? trademarkSnap.data() : {};
     
@@ -62,7 +62,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       action: 'rejected',
       trademarkId,
       tokenId: trademarkData.tokenId || 0,
-      trademarkName: trademarkData.trademarkName || trademarkData.sloganText || 'Unknown',
+      trademarkName: trademarkData.title || trademarkData.trademarkName || trademarkData.sloganText || 'Unknown',
       companyName: trademarkData.companyName || 'Unknown',
       reason: reason || 'No reason provided',
       timestamp: Timestamp.now(),

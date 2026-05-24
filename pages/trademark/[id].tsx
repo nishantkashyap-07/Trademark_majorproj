@@ -21,6 +21,7 @@ export default function TrademarkDetail() {
    const [showRatingModal, setShowRatingModal] = useState(false);
    const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
    const [licenses, setLicenses] = useState<License[]>([]);
+   const [activeListings, setActiveListings] = useState<Listing[]>([]);
    const [isLoading, setIsLoading] = useState(true);
    const [trademark, setTrademark] = useState<TrademarkMetadata | null>(null);
    const [ratingKey, setRatingKey] = useState(0);
@@ -54,7 +55,9 @@ export default function TrademarkDetail() {
                createdAt: new Date(data.data.createdAt?.seconds ? data.data.createdAt.seconds * 1000 : data.data.createdAt),
             };
             setTrademark(trademarkData);
-            loadLicenses(trademarkData.blockchainTokenId || trademarkData.tokenId);
+            const tokenId = trademarkData.blockchainTokenId || trademarkData.tokenId;
+            loadLicenses(tokenId);
+            loadActiveListings(tokenId);
          }
       } catch (error) {
          console.error('Error loading trademark:', error);
@@ -65,11 +68,45 @@ export default function TrademarkDetail() {
 
    const loadLicenses = async (tokenId: number) => {
       try {
+         const { getLicensesForToken } = await import('@/utils/contracts');
          const licenseData = await getLicensesForToken(tokenId);
          setLicenses(licenseData || []);
       } catch (err) {
          setLicenses([]);
       }
+   };
+
+   const loadActiveListings = async (tokenId: number) => {
+      try {
+         const { getActiveListingsForToken, getListingInfo } = await import('@/utils/contracts');
+         const listingIds = await getActiveListingsForToken(tokenId);
+         
+         const listingsData = await Promise.all(
+            listingIds.map(async (lid) => {
+               const info = await getListingInfo(lid);
+               return info;
+            })
+         );
+         
+         // Filter for only license listings
+         setActiveListings(listingsData.filter(l => l.isLicense && l.active));
+      } catch (err) {
+         console.error('Error loading listings:', err);
+         setActiveListings([]);
+      }
+   };
+
+   const scrollToLicenses = () => {
+      setActiveTab('licenses');
+      const element = document.getElementById('trademark-tabs');
+      if (element) {
+         element.scrollIntoView({ behavior: 'smooth' });
+      }
+   };
+
+   const handlePurchaseClick = (listing: Listing) => {
+      setSelectedListing(listing);
+      setShowPurchaseModal(true);
    };
 
    if (isLoading || !trademark) {
@@ -155,7 +192,7 @@ export default function TrademarkDetail() {
                      </div>
 
                      {/* Tabs Content */}
-                     <div className="glass-card !p-0 overflow-hidden !bg-white/50 dark:!bg-white/[0.02] !border-slate-200 dark:!border-white/10 shadow-xl">
+                     <div id="trademark-tabs" className="glass-card !p-0 overflow-hidden !bg-white/50 dark:!bg-white/[0.02] !border-slate-200 dark:!border-white/10 shadow-xl">
                         <div className="flex border-b border-slate-100 dark:border-white/5">
                            {['details', 'licenses', 'history', 'verification'].map((tab) => (
                               <button
@@ -188,20 +225,64 @@ export default function TrademarkDetail() {
                            )}
 
                            {activeTab === 'licenses' && (
-                              <div className="space-y-6 animate-fade-in">
-                                 <div className="flex items-center justify-between mb-2">
-                                    <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">License Matrix Configuration</h3>
-                                    {isOwner && <button onClick={() => setShowLicenseModal(true)} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20">Provision License</button>}
+                              <div className="space-y-10 animate-fade-in">
+                                 {/* Available for Licensing Section */}
+                                 <div className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                       <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Available Licenses</h3>
+                                       {isOwner && <button onClick={() => setShowLicenseModal(true)} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20">Provision New License</button>}
+                                    </div>
+                                    
+                                    {activeListings.length > 0 ? (
+                                       <div className="grid grid-cols-1 gap-4">
+                                          {activeListings.map(listing => (
+                                             <div key={listing.listingId} className="bg-white/[0.03] border border-white/5 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 hover:bg-white/[0.05] transition-all">
+                                                <div className="flex items-center gap-6">
+                                                   <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+                                                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                                                   </div>
+                                                   <div>
+                                                      <p className="text-sm font-bold text-white uppercase tracking-widest">{listing.duration === 0 ? 'Perpetual Access' : `${Math.floor(listing.duration! / (24 * 60 * 60))} Day License`}</p>
+                                                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Acquire usage rights for commercial protocol</p>
+                                                   </div>
+                                                </div>
+                                                <div className="flex items-center gap-8">
+                                                   <div className="text-right">
+                                                      <p className="text-lg font-bold text-white">{listing.price} ETH</p>
+                                                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Protocol Fee</p>
+                                                   </div>
+                                                   {!isOwner && (
+                                                      <button 
+                                                         onClick={() => handlePurchaseClick(listing)}
+                                                         className="px-8 py-3 bg-white text-slate-900 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all shadow-xl"
+                                                      >
+                                                         Acquire
+                                                      </button>
+                                                   )}
+                                                </div>
+                                             </div>
+                                          ))}
+                                       </div>
+                                    ) : (
+                                       <div className="py-12 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-[2.5rem] bg-slate-50/50 dark:bg-white/[0.01]">
+                                          <p className="text-sm font-medium text-slate-400">No available license protocols found for this asset.</p>
+                                       </div>
+                                    )}
                                  </div>
-                                 {licenses.length > 0 ? (
-                                    <div className="space-y-4">
-                                       {licenses.map(l => <LicenseCard key={l.licenseId} license={l} trademarkName={trademark.sloganText} showTrademark={false} />)}
-                                    </div>
-                                 ) : (
-                                    <div className="py-20 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-[2.5rem] bg-slate-50/50 dark:bg-white/[0.01]">
-                                       <p className="text-sm font-medium text-slate-400">No active license protocols available for this asset.</p>
-                                    </div>
-                                 )}
+
+                                 {/* Issued Licenses Section */}
+                                 <div className="space-y-6 pt-10 border-t border-white/5">
+                                    <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Registry of Issued Licenses</h3>
+                                    {licenses.length > 0 ? (
+                                       <div className="space-y-4">
+                                          {licenses.map(l => <LicenseCard key={l.licenseId} license={l} trademarkName={trademark.sloganText} showTrademark={false} />)}
+                                       </div>
+                                    ) : (
+                                       <div className="py-12 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-[2.5rem] bg-slate-50/50 dark:bg-white/[0.01]">
+                                          <p className="text-sm font-medium text-slate-400">No licenses have been issued for this asset identity yet.</p>
+                                       </div>
+                                    )}
+                                 </div>
                               </div>
                            )}
 
@@ -273,7 +354,7 @@ export default function TrademarkDetail() {
                               Provision License Access
                            </button>
                         ) : (
-                           <button className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold text-xs uppercase tracking-[0.15em] transition-all shadow-xl active:scale-95">Request Commercial License</button>
+                           <button onClick={scrollToLicenses} className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold text-xs uppercase tracking-[0.15em] transition-all shadow-xl active:scale-95">Request Commercial License</button>
                         )}
                         <div className="grid grid-cols-2 gap-4">
                            <button className="py-4 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-white rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all border border-slate-100 dark:border-white/5 flex items-center justify-center gap-3">
@@ -308,7 +389,11 @@ export default function TrademarkDetail() {
             onClose={() => setShowLicenseModal(false)}
             tokenId={(trademark.blockchainTokenId || trademark.tokenId) as number}
             trademarkName={trademark.sloganText}
-            onSuccess={() => loadLicenses((trademark.blockchainTokenId || trademark.tokenId) as number)}
+            onSuccess={() => {
+               const tokenId = (trademark.blockchainTokenId || trademark.tokenId) as number;
+               loadLicenses(tokenId);
+               loadActiveListings(tokenId);
+            }}
          />
 
          {selectedListing && (
@@ -317,9 +402,13 @@ export default function TrademarkDetail() {
                onClose={() => { setShowPurchaseModal(false); setSelectedListing(null); }}
                listing={selectedListing}
                trademarkName={trademark.sloganText}
-               onSuccess={() => loadLicenses((trademark.blockchainTokenId || trademark.tokenId) as number)}
+               onSuccess={() => {
+                  const tokenId = (trademark.blockchainTokenId || trademark.tokenId) as number;
+                  loadLicenses(tokenId);
+                  loadActiveListings(tokenId);
+               }}
             />
          )}
       </div>
    );
-}
+}

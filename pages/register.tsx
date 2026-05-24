@@ -214,6 +214,8 @@ export default function RegisterTrademark() {
         ? `https://gateway.pinata.cloud/ipfs/${assetsCID}`
         : `https://gateway.pinata.cloud/ipfs/${assetsCID}/${formData.files[0].name}`;
 
+      const isAutoVerified = infringementResult?.riskLevel === 'clear';
+
       if (useBlockchain) {
         const provider = getStaticProvider();
         const signer = await provider.getSigner();
@@ -243,8 +245,8 @@ export default function RegisterTrademark() {
             royaltyPercentage: formData.royaltyPercentage,
             tokenURI,
             transactionHash: result.transactionHash || '',
-            verified: false,
-            verificationStatus: 'pending',
+            verified: isAutoVerified,
+            verificationStatus: isAutoVerified ? 'verified' : 'pending',
           }),
         });
       } else {
@@ -263,8 +265,8 @@ export default function RegisterTrademark() {
             description: formData.description,
             royaltyPercentage: formData.royaltyPercentage,
             tokenURI,
-            verified: false,
-            verificationStatus: 'pending',
+            verified: isAutoVerified,
+            verificationStatus: isAutoVerified ? 'verified' : 'pending',
           }),
         });
         const data = await response.json();

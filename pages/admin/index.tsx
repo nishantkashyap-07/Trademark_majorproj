@@ -134,7 +134,7 @@ export default function AdminDashboard() {
       const promises = Array.from(selectedTrademarks).map(async (id) => {
         const tm = pendingTrademarks.find(t => t.id === id);
         if (tm) {
-          await handleVerify(id, tm.tokenId);
+          await handleVerify(id, tm.blockchainTokenId || tm.tokenId);
         }
       });
       
@@ -396,16 +396,16 @@ export default function AdminDashboard() {
                                )}
                                <div>
                                   <div className="flex items-center gap-2 mb-1">
-                                    <h3 className="text-lg font-bold text-gray-900">{tm.trademarkName}</h3>
+                                    <h3 className="text-lg font-bold text-gray-900">{tm.title || tm.trademarkName}</h3>
                                     <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold uppercase rounded">{tm.category}</span>
                                   </div>
                                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-1 gap-x-8 text-xs text-gray-600">
                                     <p><span className="text-gray-400 uppercase font-semibold text-[9px]">Entity:</span> {tm.companyName}</p>
-                                    <p><span className="text-gray-400 uppercase font-semibold text-[9px]">Token ID:</span> #{tm.tokenId}</p>
+                                    <p><span className="text-gray-400 uppercase font-semibold text-[9px]">Token ID:</span> #{tm.blockchainTokenId || tm.tokenId}</p>
                                     <p><span className="text-gray-400 uppercase font-semibold text-[9px]">Reg #:</span> {tm.registrationNumber}</p>
                                     <p><span className="text-gray-400 uppercase font-semibold text-[9px]">Created:</span> {new Date(tm.createdAt).toLocaleDateString()}</p>
                                   </div>
-                                  <p className="mt-2 text-[10px] font-mono text-gray-400">Owner: {tm.creatorAddress}</p>
+                                  <p className="mt-2 text-[10px] font-mono text-gray-400">Owner: {tm.ownerId || tm.creatorAddress}</p>
                                </div>
                             </div>
                             <button 

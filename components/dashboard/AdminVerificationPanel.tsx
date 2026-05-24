@@ -8,11 +8,14 @@ import QRCode from 'qrcode';
 interface TrademarkForVerification {
   id: string;
   tokenId: number;
+  blockchainTokenId?: number;
   companyName: string;
   trademarkName: string;
+  title?: string;
   registrationNumber: string;
   category: string;
   creatorAddress: string;
+  ownerId?: string;
   createdAt: Date;
   ipfsHash: string;
   verified: boolean;
@@ -40,16 +43,20 @@ export default function AdminVerificationPanel({
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
+  const effectiveTokenId = trademark.blockchainTokenId || trademark.tokenId;
+  const effectiveTrademarkName = trademark.title || trademark.trademarkName;
+  const effectiveCreatorAddress = trademark.ownerId || trademark.creatorAddress;
+
   useEffect(() => {
     loadBlockchainData();
     generateQRCode();
   }, [trademark]);
 
   const loadBlockchainData = async () => {
-    if (!trademarkNFTContract) return;
+    if (!trademarkNFTContract || !effectiveTokenId) return;
 
     try {
-      const info = await trademarkNFTContract.getTrademarkInfo(trademark.tokenId);
+      const info = await trademarkNFTContract.getTrademarkInfo(effectiveTokenId);
       setBlockchainData({
         tokenId: info.tokenId.toNumber(),
         creator: info.creator,
@@ -67,7 +74,7 @@ export default function AdminVerificationPanel({
 
   const generateQRCode = async () => {
     try {
-      const verificationUrl = `${window.location.origin}/verify?tokenId=${trademark.tokenId}`;
+      const verificationUrl = `${window.location.origin}/verify?tokenId=${effectiveTokenId}`;
       const qrUrl = await QRCode.toDataURL(verificationUrl, {
         width: 400,
         margin: 2,
@@ -85,7 +92,7 @@ export default function AdminVerificationPanel({
   const handleVerify = async () => {
     setIsLoading(true);
     try {
-      await onVerify(trademark.tokenId);
+      await onVerify(effectiveTokenId);
       setToast({ message: 'Trademark verified successfully!', type: 'success' });
       setTimeout(() => onClose(), 2000);
     } catch (error: any) {
@@ -117,7 +124,7 @@ export default function AdminVerificationPanel({
   const downloadQRCode = () => {
     if (!qrCodeUrl) return;
     const link = document.createElement('a');
-    link.download = `trademark-${trademark.tokenId}-verification-qr.png`;
+    link.download = `trademark-${effectiveTokenId}-verification-qr.png`;
     link.href = qrCodeUrl;
     link.click();
   };
@@ -141,7 +148,7 @@ export default function AdminVerificationPanel({
           <div className="sticky top-0 bg-white border-b border-gray-100 px-8 py-6 flex items-center justify-between z-10">
             <div>
               <h2 className="text-xl font-bold text-gray-900 uppercase tracking-tight">Voucher & Integrity Review</h2>
-              <p className="text-xs text-gray-400 mt-1 uppercase font-semibold">Verification Queue • Token ID: #{trademark.tokenId}</p>
+              <p className="text-xs text-gray-400 mt-1 uppercase font-semibold">Verification Queue • Token ID: #{effectiveTokenId}</p>
             </div>
             <button
               onClick={onClose}
@@ -175,7 +182,7 @@ export default function AdminVerificationPanel({
                   <div className="grid grid-cols-2 gap-x-6 gap-y-4">
                     <div>
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Trademark String</label>
-                      <p className="text-sm font-bold text-gray-900">{trademark.trademarkName}</p>
+                      <p className="text-sm font-bold text-gray-900">{effectiveTrademarkName}</p>
                     </div>
 
                     <div>
@@ -196,7 +203,7 @@ export default function AdminVerificationPanel({
 
                   <div className="pt-4 border-t border-gray-100">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Proprietor Address</label>
-                    <p className="text-[10px] font-mono text-gray-500 mt-1 break-all bg-gray-50 p-2 border border-gray-100">{blockchainData?.creator || trademark.creatorAddress}</p>
+                    <p className="text-[10px] font-mono text-gray-500 mt-1 break-all bg-gray-50 p-2 border border-gray-100">{blockchainData?.creator || effectiveCreatorAddress}</p>
                   </div>
                 </div>
 
@@ -205,7 +212,7 @@ export default function AdminVerificationPanel({
                   <h3 className="text-sm font-black text-gray-900 uppercase border-b border-gray-900 pb-2">Conflict Analysis</h3>
                   <div className="bg-gray-50 p-1 border border-gray-200">
                     <SimilarityWarning
-                      trademarkName={trademark.trademarkName}
+                      trademarkName={effectiveTrademarkName}
                       companyName={trademark.companyName}
                       ipfsHash={trademark.ipfsHash}
                     />

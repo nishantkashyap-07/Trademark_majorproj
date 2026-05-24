@@ -64,45 +64,75 @@ export default function LicenseModal({ isOpen, onClose, tokenId, trademarkName, 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-in">
-      <div className="glass-card max-w-md w-full !p-8 relative overflow-hidden animate-scale-in">
+    <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-fade-in">
+      <div className="glass-card max-w-md w-full !p-8 relative overflow-hidden animate-scale-in !bg-white dark:!bg-[#0a0c10] !border-slate-200 dark:!border-white/10 shadow-2xl">
         {/* Glow */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/20 blur-[60px] rounded-full pointer-events-none" />
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 dark:bg-indigo-500/20 blur-[60px] rounded-full pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-cyan-500/10 dark:bg-cyan-500/20 blur-[60px] rounded-full pointer-events-none" />
 
         <div className="flex items-center justify-between mb-8 relative z-10">
-          <h2 className="text-2xl font-semibold text-white">Issue License</h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl text-slate-400 transition-colors">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Issue License</h2>
+            <p className="text-[10px] font-bold text-slate-400 dark:text-white/20 uppercase tracking-[0.2em] mt-1">Acquisition Protocol Configuration</p>
+          </div>
+          <button onClick={onClose} className="p-2.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-2xl text-slate-400 transition-all duration-300 active:scale-90">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
-        <div className="glass-card !bg-white/50 dark:!bg-white/[0.02] !border-slate-200 dark:!border-white/10 hover:!translate-y-0 mb-6">
-           <p className="text-[10px] font-bold text-slate-400 dark:text-white/20 uppercase tracking-widest mb-2">Registry ID</p>
-           <p className="text-xl font-bold text-slate-900 dark:text-white">#{tokenId}</p>
-        </div>
 
-        <div className="mb-8 p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/10">
-          <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Asset Target</p>
-          <p className="text-white font-semibold">{trademarkName}</p>
+        <div className="grid grid-cols-2 gap-4 mb-8 relative z-10">
+          <div className="bg-slate-50 dark:bg-white/[0.02] p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+             <p className="text-[9px] font-bold text-slate-400 dark:text-white/20 uppercase tracking-widest mb-1">Asset ID</p>
+             <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400 font-mono">#{tokenId}</p>
+          </div>
+          <div className="bg-slate-50 dark:bg-white/[0.02] p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+             <p className="text-[9px] font-bold text-slate-400 dark:text-white/20 uppercase tracking-widest mb-1">Target Identity</p>
+             <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{trademarkName}</p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
           <div>
-            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Price per period (MATIC)</label>
-            <input
-              type="number" step="0.001" min="0.001" value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="premium-input" placeholder="0.05" required
-            />
+            <label className="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 mb-2.5 block">Subscription Premium (MATIC)</label>
+            <div className="relative group">
+               <input
+                 type="number" step="0.001" min="0.001" max="1000000" value={price}
+                 onKeyDown={(e) => {
+                   if (['e', 'E', '+', '-'].includes(e.key)) {
+                     e.preventDefault();
+                   }
+                 }}
+                 onChange={(e) => {
+                   const val = parseFloat(e.target.value);
+                   if (val > 1000000) setPrice('1000000');
+                   else setPrice(e.target.value);
+                 }}
+                 className="w-full bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-white/10 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition-all appearance-none"
+                 placeholder="0.00" required
+                 style={{ MozAppearance: 'textfield' }}
+               />
+               <div className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-indigo-500 uppercase tracking-widest pointer-events-none">MATIC</div>
+            </div>
           </div>
 
+          <style jsx>{`
+            input::-webkit-outer-spin-button,
+            input::-webkit-inner-spin-button {
+              -webkit-appearance: none;
+              margin: 0;
+            }
+          `}</style>
+
           <div>
-            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest ml-1 mb-2 block">License Vector (Duration)</label>
+            <label className="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1 mb-2.5 block">Access Duration</label>
             <div className="grid grid-cols-2 gap-3">
               {LICENSE_DURATIONS.map((opt) => (
                 <button
                   key={opt.label} type="button"
                   onClick={() => setDuration(opt.value)}
-                  className={`px-4 py-3 rounded-xl border-2 text-xs font-semibold transition-all ${duration === opt.value ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/10'
+                  className={`px-4 py-3.5 rounded-2xl border-2 text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ${duration === opt.value 
+                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-600/20' 
+                    : 'bg-slate-50 dark:bg-white/[0.03] border-transparent text-slate-400 dark:text-white/30 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-600 dark:hover:text-white'
                     }`}
                 >
                   {opt.label}
@@ -111,20 +141,34 @@ export default function LicenseModal({ isOpen, onClose, tokenId, trademarkName, 
             </div>
           </div>
 
-          <div className="bg-amber-500/5 border border-amber-500/10 rounded-2xl p-4 flex gap-4">
-            <svg className="w-5 h-5 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-            <p className="text-[10px] font-bold text-amber-500/80 leading-relaxed">System automates royalty collection. Owner retains 100% NFT equity during active lease.</p>
+          <div className="bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex gap-4">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 flex-shrink-0">
+               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <p className="text-[10px] font-bold text-amber-600/80 dark:text-amber-500/60 leading-relaxed uppercase tracking-wider">
+               System automates royalty distribution. Owner retains full NFT equity during active lease protocol.
+            </p>
           </div>
 
-          {error && <p className="text-xs font-bold text-red-400 bg-red-500/10 p-3 rounded-xl border border-red-500/20">{error}</p>}
+          {error && (
+            <div className="bg-red-500/5 border border-red-500/20 p-4 rounded-2xl flex gap-3 items-center animate-shake">
+               <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+               <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">{error}</p>
+            </div>
+          )}
 
           <div className="flex gap-4 pt-4">
-            <button type="button" onClick={onClose} className="flex-1 btn-glass !py-3 font-semibold text-xs uppercase tracking-widest">Abort</button>
+            <button type="button" onClick={onClose} className="flex-1 py-4 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/40 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-slate-200 dark:hover:bg-white/10 transition-all active:scale-95">Abort</button>
             <button
               type="submit" disabled={isLoading}
-              className="flex-1 btn-premium !py-3 font-semibold text-xs uppercase tracking-widest"
+              className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-600/20 active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
             >
-              {isLoading ? 'Processing...' : 'Authorize Issue'}
+              {isLoading ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  Processing...
+                </>
+              ) : 'Authorize Issue'}
             </button>
           </div>
         </form>
