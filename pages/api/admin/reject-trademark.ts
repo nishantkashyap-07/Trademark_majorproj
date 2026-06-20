@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { dbService } from '@/lib/db-service';
 import { withErrorHandler, withCors } from '@/lib/api-middleware';
+import { cooldownService } from '@/lib/cooldown-service';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -76,6 +77,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       timestamp: new Date(),
       details: { reason },
     });
+
+    // ── Apply 7-day registration ban to the asset owner ───────────────────
+    const ownerWallet = trademarkData.ownerId || trademarkData.creatorAddress || '';
+    if (ownerWallet && ownerWallet !== 'unknown') {
+      await cooldownService.applyRejectionBan(ownerWallet);
+      console.log(`[CooldownService] 7-day ban applied to wallet: ${ownerWallet}`);
+    }
+    // ──────────────────────────────────────────────────────────────
 
     return res.status(200).json({
       success: true,

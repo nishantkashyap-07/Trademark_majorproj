@@ -42,6 +42,18 @@ export default function RegisterTrademark() {
   const [showWalletPrompt, setShowWalletPrompt] = useState(false);
   const [infringementResult, setInfringementResult] = useState<any>(null);
 
+  // ── Cooldown state ─────────────────────────────────────────
+  const [cooldown, setCooldown] = useState<{
+    allowed: boolean;
+    isBanned: boolean;
+    remainingMs: number;
+    remainingFormatted: string;
+    registrationsThisWeek: number;
+    cooldownEndsAt: string | null;
+  } | null>(null);
+  const [cooldownDisplay, setCooldownDisplay] = useState('');
+  // ─────────────────────────────────────────────────────────────
+
   const steps = [
     { id: 1, name: 'Identity', description: 'Brand details' },
     { id: 2, name: 'Assets', description: 'Upload documents' },
@@ -59,6 +71,42 @@ export default function RegisterTrademark() {
       setFormData(prev => ({ ...prev, companyName: user.organization || '' }));
     }
   }, [isAuthenticated, authLoading, router, user, formData.companyName]);
+
+  // ── Fetch cooldown status when wallet connects ─────────────────────────
+  useEffect(() => {
+    if (!account) {
+      setCooldown(null);
+      return;
+    }
+
+    const fetchCooldown = async () => {
+      try {
+        const res = await fetch(`/api/cooldown/check?address=${account}`);
+        const json = await res.json();
+        if (json.success) {
+          setCooldown(json.data);
+          setCooldownDisplay(json.data.remainingFormatted || '');
+        }
+      } catch (_) {}
+    };
+
+    fetchCooldown();
+    // Live countdown: tick every second while a cooldown is active
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/cooldown/check?address=${account}`);
+        const json = await res.json();
+        if (json.success) {
+          setCooldown(json.data);
+          setCooldownDisplay(json.data.remainingFormatted || '');
+          if (json.data.allowed) clearInterval(interval);
+        }
+      } catch (_) {}
+    }, 10000); // Re-poll every 10 s (display is approximate)
+
+    return () => clearInterval(interval);
+  }, [account]);
+  // ─────────────────────────────────────────────────────────────
 
   const handleInputChange = (field: keyof TrademarkFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -624,6 +672,40 @@ export default function RegisterTrademark() {
                   </div>
                 )}
 
+                {/* ── Cooldown Warning Banner ──────────────────────────────── */}
+                {cooldown && !cooldown.allowed && currentStep === 3 && (
+                  <div className={`flex gap-5 items-start p-8 rounded-2xl shadow-sm border ${
+                    cooldown.isBanned
+                      ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-500/20'
+                      : 'bg-orange-50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-500/20'
+                  }`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      cooldown.isBanned
+                        ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400'
+                        : 'bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400'
+                    }`}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <p className={`text-[10px] font-bold uppercase tracking-widest ${
+                        cooldown.isBanned ? 'text-red-800 dark:text-red-400' : 'text-orange-800 dark:text-orange-400'
+                      }`}>
+                        {cooldown.isBanned ? '🚫 Registration Banned' : '⏳ Cooldown Active'}
+                      </p>
+                      <p className={`text-[12px] leading-relaxed font-medium ${
+                        cooldown.isBanned ? 'text-red-700 dark:text-red-500/80' : 'text-orange-700 dark:text-orange-500/80'
+                      }`}>
+                        {cooldown.isBanned
+                          ? `Your wallet was banned due to a rejected asset. Registration will unlock in ${cooldownDisplay || cooldown.remainingFormatted}.`
+                          : `You have registered ${cooldown.registrationsThisWeek} asset(s) this week. Please wait ${cooldownDisplay || cooldown.remainingFormatted} before registering again.`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {error && <div className="mt-12 p-6 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-500/20 rounded-2xl text-red-600 dark:text-red-400 text-xs font-bold text-center">{error}</div>}
                 {success && <div className="mt-12 p-6 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl text-emerald-600 dark:text-emerald-400 text-xs font-bold text-center">{success}</div>}
 
@@ -694,15 +776,17 @@ export default function RegisterTrademark() {
                   ) : (
                     <button
                       onClick={handleSubmit}
-                      disabled={isLoading}
+                      disabled={isLoading || (currentStep === 3 && cooldown !== null && !cooldown.allowed)}
                       className="px-12 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-30 flex items-center gap-3 shadow-lg shadow-indigo-600/30 active:scale-95"
                     >
                       {isLoading ? (
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : cooldown && !cooldown.allowed ? (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                       ) : (
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                       )}
-                      {isLoading ? 'Processing...' : 'Complete Registration'}
+                      {isLoading ? 'Processing...' : cooldown && !cooldown.allowed ? 'Locked' : 'Complete Registration'}
                     </button>
                   )}
                 </div>

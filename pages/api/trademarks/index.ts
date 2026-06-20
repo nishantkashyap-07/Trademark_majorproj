@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { withApi, withMethods } from '@/lib/api-middleware';
+import { cooldownService } from '@/lib/cooldown-service';
 
 // Ensure body parser is enabled
 export const config = {
@@ -96,6 +97,28 @@ async function handler(
         return res.status(400).json({ success: false, error: 'Invalid request format' });
       }
 
+      // ── Cooldown Guard ─────────────────────────────────────────────
+      const walletAddress = (data.ownerId || data.creatorAddress || '').toLowerCase();
+      if (walletAddress && walletAddress !== 'unknown') {
+        const cooldown = await cooldownService.getStatus(walletAddress);
+        if (!cooldown.allowed) {
+          return res.status(429).json({
+            success: false,
+            error: cooldown.isBanned
+              ? `Your wallet has been banned from registering for ${cooldown.remainingFormatted} due to a rejected asset.`
+              : `Registration cooldown active. You can register again in ${cooldown.remainingFormatted}.`,
+            cooldown: {
+              isBanned: cooldown.isBanned,
+              remainingMs: cooldown.remainingMs,
+              remainingFormatted: cooldown.remainingFormatted,
+              cooldownEndsAt: cooldown.cooldownEndsAt?.toISOString() ?? null,
+              registrationsThisWeek: cooldown.registrationsThisWeek,
+            },
+          });
+        }
+      }
+      // ──────────────────────────────────────────────────────────────
+
       // Mapping for diagram consistency
       const assetData = {
         blockchainTokenId: data.blockchainTokenId || data.tokenId || Date.now(),
@@ -124,6 +147,11 @@ async function handler(
       }
 
       const docRef = await addDoc(collection(db, 'ip_assets'), assetData);
+
+      // Record this registration to update the rolling cooldown counter
+      if (walletAddress && walletAddress !== 'unknown') {
+        await cooldownService.recordRegistration(walletAddress);
+      }
 
       return res.status(201).json({
         success: true,
