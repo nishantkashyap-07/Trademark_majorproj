@@ -188,19 +188,20 @@ export async function registerTrademark(
 
     console.log('Transaction confirmed!', receipt);
 
-    // Parse token ID from logs
-    const fullIface = new ethers.Interface([
-      "event TrademarkRegistered(uint256 indexed tokenId, address indexed creator, string companyName, string trademarkName, string registrationNumber, string category, string ipfsHash)"
-    ]);
+    // Instead of parsing raw RPC logs (which often fails), 
+    // we query the contract directly using the unique registration number
     let tokenId = Math.floor(Date.now() / 1000); // fallback
-    for (const log of receipt.logs || []) {
-      try {
-        const parsed = fullIface.parseLog(log);
-        if (parsed?.name === 'TrademarkRegistered') {
-          tokenId = Number(parsed.args[0]);
-          break;
-        }
-      } catch { continue; }
+    try {
+      const { trademarkNFT } = getContracts();
+      // Wait a tiny bit for RPC nodes to sync the state
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const actualTokenId = await trademarkNFT.getTokenIdByRegistration(trademarkData.registrationNumber);
+      if (actualTokenId) {
+        tokenId = Number(actualTokenId);
+        console.log('Successfully retrieved on-chain Token ID:', tokenId);
+      }
+    } catch (e) {
+      console.warn('Failed to fetch actual token ID from contract, using fallback', e);
     }
 
     return { tokenId, transactionHash: txHash };

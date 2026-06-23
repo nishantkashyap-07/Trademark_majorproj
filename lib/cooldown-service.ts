@@ -52,10 +52,10 @@ function formatDuration(ms: number): string {
 }
 
 function calculateCooldownMs(registrationsThisWeek: number): number {
-  if (registrationsThisWeek <= 1) return COOLDOWN_MS.NONE;
-  if (registrationsThisWeek === 2) return COOLDOWN_MS.HOURS_12;
-  if (registrationsThisWeek === 3) return COOLDOWN_MS.HOURS_24;
-  return COOLDOWN_MS.HOURS_72; // 4th and beyond
+  if (registrationsThisWeek <= 0) return COOLDOWN_MS.NONE;
+  if (registrationsThisWeek === 1) return COOLDOWN_MS.HOURS_12; // 12h wait before 2nd registration
+  if (registrationsThisWeek === 2) return COOLDOWN_MS.HOURS_24; // 24h wait before 3rd registration
+  return COOLDOWN_MS.HOURS_72; // 72h wait for 4th and beyond
 }
 
 export class CooldownService {
@@ -64,6 +64,18 @@ export class CooldownService {
    * Does NOT modify any data.
    */
   async getStatus(walletAddress: string): Promise<CooldownStatus> {
+    // Feature Flag: Disable cooldowns for testing if env var is not 'true'
+    if (process.env.NEXT_PUBLIC_ENABLE_COOLDOWN !== 'true') {
+      return {
+        allowed: true,
+        registrationsThisWeek: 0,
+        cooldownEndsAt: null,
+        remainingMs: 0,
+        remainingFormatted: '',
+        isBanned: false,
+      };
+    }
+
     const address = walletAddress.toLowerCase();
     const ref = doc(db, COLLECTION, address);
     const snap = await getDoc(ref);
@@ -143,6 +155,8 @@ export class CooldownService {
    * Call this AFTER the asset is saved to Firestore.
    */
   async recordRegistration(walletAddress: string): Promise<void> {
+    if (process.env.NEXT_PUBLIC_ENABLE_COOLDOWN !== 'true') return;
+
     const address = walletAddress.toLowerCase();
     const ref = doc(db, COLLECTION, address);
     const snap = await getDoc(ref);

@@ -157,7 +157,7 @@ async function checkUSPTO(slogan: string, category: string): Promise<MatchResult
 
     console.log(` [Famous Marks] "${mark.name}" | Score: ${score}% | Same Cat: ${sameCategory}`);
 
-    if (score >= 50 || (score >= 35 && sameCategory)) {
+    if (score >= 55 || (score >= 50 && sameCategory)) {
       matches.push({
         source: 'uspto',
         label: 'Famous Marks Registry',
@@ -293,21 +293,31 @@ export async function runInfringementCheck(
   );
 
   // ─── Risk Scoring ───────────────────────────────────────────────────────────
+  // Weights are ADDITIVE bonuses on top of the base similarity, not multipliers.
+  // This prevents a weak base score (e.g. 43%) from being pushed into "blocked"
+  // purely by category/source bonuses.
   let riskScore = 0;
 
   unique.forEach(m => {
     const base = m.similarity;
-    let weight = 1;
+    let bonus = 0;
 
-    // Higher weight if same category
-    if (m.sameCategory) weight = 1.5;
+    // Exact internal duplicate: treat as maximum risk immediately
+    if (m.source === 'internal' && m.similarity === 100) {
+      riskScore = 100;
+      return;
+    }
 
-    // Source priority
-    if (m.source === 'internal' && m.similarity === 100) weight = 2;
-    if (m.source === 'uspto') weight *= 1.3;
-    if (m.source === 'wipo') weight *= 1.2;
+    // Same-category bonus — only meaningful when base similarity is already high
+    if (m.sameCategory && base >= 55) bonus += 10;
 
-    riskScore = Math.max(riskScore, Math.min(100, Math.round(base * weight)));
+    // Source credibility bonus — USPTO/WIPO records carry extra weight,
+    // but only add bonus when base is above the meaningful threshold
+    if (m.source === 'uspto' && base >= 55) bonus += 8;
+    if (m.source === 'wipo' && base >= 55) bonus += 6;
+
+    const contribution = Math.min(100, base + bonus);
+    riskScore = Math.max(riskScore, contribution);
   });
 
   // ─── Risk Level Decision ────────────────────────────────────────────────────

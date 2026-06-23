@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Navbar from '@/components/common/Navbar';
 import LicenseModal from '@/components/marketplace/LicenseModal';
 import PurchaseLicenseModal from '@/components/marketplace/PurchaseLicenseModal';
+import SellModal from '@/components/marketplace/SellModal';
+import BuyModal from '@/components/marketplace/BuyModal';
 import LicenseCard from '@/components/marketplace/LicenseCard';
 import { TrademarkMetadata, Listing, License } from '@/types';
 import { useWeb3 } from '@/contexts/Web3Context';
@@ -18,10 +20,14 @@ export default function TrademarkDetail() {
    const [activeTab, setActiveTab] = useState<'details' | 'history' | 'verification' | 'licenses'>('details');
    const [showLicenseModal, setShowLicenseModal] = useState(false);
    const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+   const [showSellModal, setShowSellModal] = useState(false);
+   const [showBuyModal, setShowBuyModal] = useState(false);
    const [showRatingModal, setShowRatingModal] = useState(false);
    const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+   const [selectedSaleListing, setSelectedSaleListing] = useState<Listing | null>(null);
    const [licenses, setLicenses] = useState<License[]>([]);
    const [activeListings, setActiveListings] = useState<Listing[]>([]);
+   const [activeSaleListings, setActiveSaleListings] = useState<Listing[]>([]);
    const [isLoading, setIsLoading] = useState(true);
    const [trademark, setTrademark] = useState<TrademarkMetadata | null>(null);
    const [ratingKey, setRatingKey] = useState(0);
@@ -88,11 +94,13 @@ export default function TrademarkDetail() {
             })
          );
          
-         // Filter for only license listings
+         // Separate license listings from sale listings
          setActiveListings(listingsData.filter(l => l.isLicense && l.active));
+         setActiveSaleListings(listingsData.filter(l => !l.isLicense && l.active));
       } catch (err) {
          console.error('Error loading listings:', err);
          setActiveListings([]);
+         setActiveSaleListings([]);
       }
    };
 
@@ -107,6 +115,11 @@ export default function TrademarkDetail() {
    const handlePurchaseClick = (listing: Listing) => {
       setSelectedListing(listing);
       setShowPurchaseModal(true);
+   };
+
+   const handleBuyClick = (listing: Listing) => {
+      setSelectedSaleListing(listing);
+      setShowBuyModal(true);
    };
 
    if (isLoading || !trademark) {
@@ -226,8 +239,52 @@ export default function TrademarkDetail() {
 
                            {activeTab === 'licenses' && (
                               <div className="space-y-10 animate-fade-in">
-                                 {/* Available for Licensing Section */}
+
+                                 {/* ── Sale Listings Section ── */}
                                  <div className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                       <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">For Sale — Full Ownership</h3>
+                                       {isOwner && <button onClick={() => setShowSellModal(true)} className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-white rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20">List for Sale</button>}
+                                    </div>
+                                    {activeSaleListings.length > 0 ? (
+                                       <div className="grid grid-cols-1 gap-4">
+                                          {activeSaleListings.map(listing => (
+                                             <div key={listing.listingId} className="bg-amber-500/5 border border-amber-500/20 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 hover:bg-amber-500/10 transition-all">
+                                                <div className="flex items-center gap-6">
+                                                   <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                   </div>
+                                                   <div>
+                                                      <p className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest">Outright Purchase</p>
+                                                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Full NFT ownership transferred on purchase</p>
+                                                   </div>
+                                                </div>
+                                                <div className="flex items-center gap-8">
+                                                   <div className="text-right">
+                                                      <p className="text-lg font-bold text-slate-900 dark:text-white">{listing.price} MATIC</p>
+                                                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sale Price</p>
+                                                   </div>
+                                                   {!isOwner && (
+                                                      <button
+                                                         onClick={() => handleBuyClick(listing)}
+                                                         className="px-8 py-3 bg-amber-500 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 transition-all shadow-xl"
+                                                      >
+                                                         Buy Now
+                                                      </button>
+                                                   )}
+                                                </div>
+                                             </div>
+                                          ))}
+                                       </div>
+                                    ) : (
+                                       <div className="py-10 text-center border-2 border-dashed border-amber-200 dark:border-amber-500/10 rounded-[2.5rem] bg-amber-50/50 dark:bg-amber-500/[0.02]">
+                                          <p className="text-sm font-medium text-slate-400">This asset is not currently listed for sale.</p>
+                                       </div>
+                                    )}
+                                 </div>
+
+                                 {/* ── License Listings Section ── */}
+                                 <div className="space-y-6 pt-10 border-t border-slate-100 dark:border-white/5">
                                     <div className="flex items-center justify-between">
                                        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Available Licenses</h3>
                                        {isOwner && <button onClick={() => setShowLicenseModal(true)} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20">Provision New License</button>}
@@ -348,14 +405,20 @@ export default function TrademarkDetail() {
                      </div>
 
                      <div className="space-y-4">
-                        {isOwner ? (
-                           <button onClick={() => setShowLicenseModal(true)} className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-xs uppercase tracking-[0.15em] transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-3">
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                              Provision License Access
-                           </button>
-                        ) : (
-                           <button onClick={scrollToLicenses} className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold text-xs uppercase tracking-[0.15em] transition-all shadow-xl active:scale-95">Request Commercial License</button>
-                        )}
+                         {isOwner ? (
+                            <>
+                               <button onClick={() => setShowSellModal(true)} className="w-full py-5 bg-amber-500 hover:bg-amber-400 text-white rounded-2xl font-bold text-xs uppercase tracking-[0.15em] transition-all shadow-xl shadow-amber-500/20 active:scale-95 flex items-center justify-center gap-3">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                  Sell Asset
+                               </button>
+                               <button onClick={() => setShowLicenseModal(true)} className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-xs uppercase tracking-[0.15em] transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-3">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                  Provision License Access
+                               </button>
+                            </>
+                         ) : (
+                            <button onClick={scrollToLicenses} className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold text-xs uppercase tracking-[0.15em] transition-all shadow-xl active:scale-95">View Listings</button>
+                         )}
                         <div className="grid grid-cols-2 gap-4">
                            <button className="py-4 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-white rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all border border-slate-100 dark:border-white/5 flex items-center justify-center gap-3">
                               <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
@@ -396,6 +459,17 @@ export default function TrademarkDetail() {
             }}
          />
 
+         <SellModal
+            isOpen={showSellModal}
+            onClose={() => setShowSellModal(false)}
+            tokenId={(trademark.blockchainTokenId || trademark.tokenId) as number}
+            trademarkName={trademark.sloganText}
+            onSuccess={() => {
+               const tokenId = (trademark.blockchainTokenId || trademark.tokenId) as number;
+               loadActiveListings(tokenId);
+            }}
+         />
+
          {selectedListing && (
             <PurchaseLicenseModal
                isOpen={showPurchaseModal}
@@ -406,6 +480,21 @@ export default function TrademarkDetail() {
                   const tokenId = (trademark.blockchainTokenId || trademark.tokenId) as number;
                   loadLicenses(tokenId);
                   loadActiveListings(tokenId);
+               }}
+            />
+         )}
+
+         {selectedSaleListing && (
+            <BuyModal
+               isOpen={showBuyModal}
+               onClose={() => { setShowBuyModal(false); setSelectedSaleListing(null); }}
+               listing={selectedSaleListing}
+               trademarkName={trademark.sloganText}
+               trademarkId={trademark.id}
+               onSuccess={() => {
+                  const tokenId = (trademark.blockchainTokenId || trademark.tokenId) as number;
+                  loadActiveListings(tokenId);
+                  loadTrademark(); // Reload to update "isOwner" state and UI buttons
                }}
             />
          )}
