@@ -26,15 +26,15 @@ export default function Navbar() {
     { name: 'Assets', href: '/marketplace' },
     { name: 'Register', href: '/register' },
     { name: 'Verify', href: '/verify' },
-    { name: 'Disputes', href: '/disputes' },
+    // { name: 'Disputes', href: '/disputes' },
   ];
 
   return (
     <nav className="fixed top-6 left-0 right-0 z-[100] transition-all duration-500">
       <div className="container-custom flex justify-center">
         <div className={`flex items-center gap-4 transition-all duration-500 rounded-full px-6 py-2 border ${scrolled
-            ? 'bg-mesh shadow-2xl backdrop-blur-2xl'
-            : 'bg-white/5 border-transparent backdrop-blur-md'
+          ? 'bg-mesh shadow-2xl backdrop-blur-2xl'
+          : 'bg-white/5 border-transparent backdrop-blur-md'
           } ${theme === 'dark' ? 'border-white/10' : 'border-black/5'}`}>
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 px-3">
@@ -52,12 +52,13 @@ export default function Navbar() {
                 className={`nav-pill ${router.pathname === item.href ? 'nav-pill-active' : ''}`}
               >
                 {item.name}
+
               </Link>
             ))}
-            <Link href="/verify" className="nav-pill flex items-center gap-2 group">
+            {/* <Link href="/verify" className="nav-pill flex items-center gap-2 group">
               Protection
-              <svg className="w-3 h-3 group-hover:rotate-12 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.47 4.34-2.85 8.23-7 9.5V11.99H5V6.3l7-3.11v8.8z" /></svg>
-            </Link>
+              
+            </Link> */}
           </div>
 
           <div className="w-[1px] h-4 bg-slate-900/10 dark:bg-white/10 mx-2 hidden lg:block" />

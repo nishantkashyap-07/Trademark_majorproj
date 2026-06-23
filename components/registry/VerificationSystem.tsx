@@ -79,8 +79,25 @@ export default function VerificationSystem() {
       // Get trademark info from contract
       const trademarkInfo = await contract.getTrademarkInfo(tokenId);
 
+      // Fetch from DB to get the IP-Guard verification status
+      // (The smart contract sets verified=false by default until an admin signs it, 
+      // but our platform auto-verifies 'clear' assets off-chain)
+      let isVerified = trademarkInfo.verified;
+      try {
+        const dbRes = await fetch(`/api/trademarks?blockchainTokenId=${tokenId}`);
+        const dbData = await dbRes.json();
+        if (dbData.success && dbData.data?.length > 0) {
+          isVerified = dbData.data[0].verified || trademarkInfo.verified;
+        }
+      } catch (e) {
+        console.error('Failed to sync DB verification status:', e);
+      }
+
       // Generate QR code
-      const verificationUrl = `${window.location.origin}/verify?tokenId=${tokenId}`;
+      const contractAddress = process.env.NEXT_PUBLIC_TRADEMARK_CONTRACT_ADDRESS || '';
+      const verificationUrl = contractAddress 
+        ? `https://amoy.polygonscan.com/token/${contractAddress}?a=${tokenId}`
+        : `${window.location.origin}/verify?tokenId=${tokenId}`;
       const qrCodeUrl = await QRCode.toDataURL(verificationUrl, {
         width: 300,
         margin: 2,
@@ -97,7 +114,7 @@ export default function VerificationSystem() {
         companyName: trademarkInfo.companyName,
         trademarkName: trademarkInfo.trademarkName || trademarkInfo.sloganText,
         owner: trademarkInfo.creator,
-        verified: trademarkInfo.verified,
+        verified: isVerified,
         category: trademarkInfo.category,
         createdAt: new Date((trademarkInfo.createdAt.toNumber ? trademarkInfo.createdAt.toNumber() : Number(trademarkInfo.createdAt)) * 1000).toLocaleDateString(),
         ipfsHash: trademarkInfo.ipfsHash,
@@ -105,8 +122,8 @@ export default function VerificationSystem() {
       });
 
       setToast({
-        message: trademarkInfo.verified ? 'Trademark verified successfully!' : 'Trademark found but not verified',
-        type: trademarkInfo.verified ? 'success' : 'info'
+        message: isVerified ? 'Trademark verified successfully!' : 'Trademark found but not verified',
+        type: isVerified ? 'success' : 'info'
       });
     } catch (error: any) {
       console.error('Verification error:', error);

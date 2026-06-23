@@ -302,7 +302,8 @@ export async function createListing(
       priceWei,
       listingData.isLicense,
       duration,
-      expiresAt
+      expiresAt,
+      { gasLimit: 300000 }
     );
     
     console.log('Listing transaction sent:', tx.hash);
@@ -351,6 +352,7 @@ export async function buyTrademark(
     
     const tx = await marketplace.buyTrademark(listingId, {
       value: priceWei,
+      gasLimit: 500000, // Hardcoded to bypass Amoy testnet estimateGas RPC bug
     });
     
     console.log('Purchase transaction sent:', tx.hash);
@@ -380,6 +382,7 @@ export async function licenseTrademark(
     
     const tx = await marketplace.licenseTrademark(listingId, duration, {
       value: priceWei,
+      gasLimit: 500000,
     });
     
     console.log('License transaction sent:', tx.hash);
